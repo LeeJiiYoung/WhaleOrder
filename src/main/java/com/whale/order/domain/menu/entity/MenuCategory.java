@@ -9,5 +9,6 @@ package com.whale.order.domain.menu.entity;
 public enum MenuCategory {
     BEVERAGE,
     FOOD,
-    DESSERT
+    DESSERT,
+    DRINK
 }

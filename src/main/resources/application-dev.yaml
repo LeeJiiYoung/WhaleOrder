@@ -1,0 +1,26 @@
+spring:
+  # PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5432/whaleorder
+    username: ${DB_USERNAME:whale}
+    password: ${DB_PASSWORD:whale}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+
+  # Redis
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  # JPA (개발환경 - SQL 로그 출력)
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com.whale.order: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

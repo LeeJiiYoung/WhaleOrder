@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 
 /**
@@ -46,10 +47,10 @@ public class Store extends BaseEntity {
 
     // 지도 API 기반 매장 검색에 사용 (소수점 7자리 = 약 1cm 정밀도)
     @Column(nullable = false, precision = 10, scale = 7)
-    private Double latitude;
+    private BigDecimal latitude;
 
     @Column(nullable = false, precision = 10, scale = 7)
-    private Double longitude;
+    private BigDecimal longitude;
 
     private String phone;
 
@@ -65,7 +66,7 @@ public class Store extends BaseEntity {
 
     @Builder
     public Store(Member owner, String name, String postalCode, String address,
-                 String addressDetail, Double latitude, Double longitude,
+                 String addressDetail, BigDecimal latitude, BigDecimal longitude,
                  String phone, LocalTime openTime, LocalTime closeTime) {
         this.owner = owner;
         this.name = name;

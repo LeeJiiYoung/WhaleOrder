@@ -9,15 +9,34 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 5
 
-  # Redis
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+  # Redis (로컬 미설치 시 자동 설정 제외 — 나중에 주석 해제)
+  # data:
+  #   redis:
+  #     host: ${REDIS_HOST:localhost}
+  #     port: ${REDIS_PORT:6379}
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
-  # JPA (개발환경 - SQL 로그 출력)
+  # JPA (개발환경 - 테이블 자동 생성 + SQL 로그)
   jpa:
+    hibernate:
+      ddl-auto: create   # 개발 환경에서만 사용, 운영은 validate
     show-sql: true
+
+  # 카카오 OAuth2 (실제 키는 환경변수로 주입, 없으면 dev 플레이스홀더 사용)
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID:dev-kakao-client-id}
+            client-secret: ${KAKAO_CLIENT_SECRET:dev-kakao-client-secret}
+
+# JWT (개발용 기본 시크릿 — 운영 환경에서는 반드시 환경변수로 교체)
+jwt:
+  secret: ${JWT_SECRET:whale-order-dev-secret-key-minimum-32-characters-long}
 
 logging:
   level:

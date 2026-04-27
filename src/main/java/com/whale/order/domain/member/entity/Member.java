@@ -31,7 +31,7 @@ public class Member extends BaseEntity {
 
     // 자체 회원가입 로그인 ID (카카오 로그인 시 null)
     @Column(unique = true)
-    private String id;
+    private String userId;
 
     // 자체 회원가입 비밀번호 - BCrypt 암호화하여 저장 (카카오 로그인 시 null)
     private String password;
@@ -57,9 +57,9 @@ public class Member extends BaseEntity {
     private MemberRole role;
 
     @Builder
-    public Member(String id, String password, String name, String nickname,
+    public Member(String userId, String password, String name, String nickname,
                   String phone, AuthProvider provider, String providerId, MemberRole role) {
-        this.id = id;
+        this.userId = userId;
         this.password = password;
         this.name = name;
         this.nickname = nickname;

@@ -1,0 +1,50 @@
+services:
+
+  # ─────────────────────────────────────────
+  # Backend (Spring Boot)
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./order
+      dockerfile: Dockerfile
+    container_name: siren-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - siren-net
+
+  # ─────────────────────────────────────────
+  # Redis (EC2 에 같이 올림 - ElastiCache 는 유료)
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: siren-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - siren-net
+
+volumes:
+  redis-data:
+
+networks:
+  siren-net:
+    driver: bridge

@@ -1,4 +1,9 @@
 spring:
+  # Kafka 미사용 (프리티어 배포 시 제외)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
   # PostgreSQL
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}

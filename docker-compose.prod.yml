@@ -29,21 +29,21 @@ services:
       - siren-net
 
   # ─────────────────────────────────────────
-  # Redis (EC2 에 같이 올림 - ElastiCache 는 유료)
+  # PostgreSQL
   # ─────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: siren-redis
+  postgres:
+    image: postgres:16
+    container_name: siren-postgres
     ports:
-      - "6379:6379"
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: whaleorder
+      POSTGRES_USER: whale
+      POSTGRES_PASSWORD: whale
     volumes:
-      - redis-data:/data
-    restart: unless-stopped
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - siren-net
-
-volumes:
-  redis-data:
 
 networks:
   siren-net:

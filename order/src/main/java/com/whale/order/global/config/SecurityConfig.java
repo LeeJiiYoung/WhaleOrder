@@ -35,6 +35,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         // 카카오 OAuth2 경로 (9단계에서 추가)
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        // 정적 어드민 페이지 (역할 체크는 클라이언트에서)
+                        .requestMatchers("/admin/**").permitAll()
+                        // 관리자 API - ADMIN 역할만 허용
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

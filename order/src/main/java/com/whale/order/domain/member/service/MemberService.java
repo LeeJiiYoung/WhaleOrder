@@ -2,6 +2,7 @@ package com.whale.order.domain.member.service;
 
 import com.whale.order.domain.member.dto.LoginRequest;
 import com.whale.order.domain.member.dto.LoginResponse;
+import com.whale.order.domain.member.dto.MemberSearchResponse;
 import com.whale.order.domain.member.dto.SignUpRequest;
 import com.whale.order.domain.member.entity.AuthProvider;
 import com.whale.order.domain.member.entity.Member;
@@ -13,6 +14,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.PageRequest;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -53,6 +57,16 @@ public class MemberService {
         }
 
         return issueTokens(member);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MemberSearchResponse> searchOwners(String keyword) {
+        String kw = keyword == null ? "" : keyword.trim();
+        return memberRepository
+                .searchByRoleAndKeyword(MemberRole.OWNER, kw, PageRequest.of(0, 20))
+                .stream()
+                .map(MemberSearchResponse::from)
+                .toList();
     }
 
     private LoginResponse issueTokens(Member member) {

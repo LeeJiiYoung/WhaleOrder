@@ -30,8 +30,6 @@ CREATE TABLE store (
     postal_code     VARCHAR(10)     NOT NULL,
     address         VARCHAR(255)    NOT NULL,
     address_detail  VARCHAR(255),
-    latitude        DECIMAL(10, 7)  NOT NULL,
-    longitude       DECIMAL(10, 7)  NOT NULL,
     phone           VARCHAR(20),
     open_time       TIME            NOT NULL,
     close_time      TIME            NOT NULL,

@@ -22,7 +22,7 @@ spring:
   # JPA (개발환경 - 테이블 자동 생성 + SQL 로그)
   jpa:
     hibernate:
-      ddl-auto: create   # 개발 환경에서만 사용, 운영은 validate
+      ddl-auto: update   # 기존 데이터 유지, 스키마 변경분만 반영
     show-sql: true
 
   # 카카오 OAuth2 (실제 키는 환경변수로 주입, 없으면 dev 플레이스홀더 사용)

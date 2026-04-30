@@ -4,7 +4,15 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git reset *)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(./gradlew compileJava)",
+      "Bash(npm --version)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(./gradlew bootRun *)",
+      "Bash(netstat -ano)",
+      "Bash(pkill -f \"bootRun\")"
     ]
   }
 }

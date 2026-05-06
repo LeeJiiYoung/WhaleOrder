@@ -41,5 +41,11 @@ out/
 .env.*
 !.env.example
 
+### 업로드 이미지 ###
+uploads/
+
+### Claude Code ###
+.claude/
+
 ### 중복 폴더 ###
 /order/

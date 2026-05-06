@@ -21,7 +21,8 @@ const SIDEBAR_NAV = [
     section: '메뉴',
     prefix: '/admin/menu',
     items: [
-      { label: '메뉴 관리', icon: '🍽️', path: '/admin/menus' },
+      { label: '메뉴 등록', icon: '➕', path: '/admin/menu-create' },
+      { label: '메뉴 목록', icon: '🍽️', path: '/admin/menus' },
     ],
   },
   {

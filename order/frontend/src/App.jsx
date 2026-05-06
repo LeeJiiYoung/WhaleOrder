@@ -1,18 +1,26 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import SignUpPage from './pages/SignUpPage'
 import LoginPage from './pages/LoginPage'
-import HomePage from './pages/HomePage'
 import StoreCreatePage from './pages/admin/StoreCreatePage'
 import StoreListPage from './pages/admin/StoreListPage'
 import StoreDetailPage from './pages/admin/StoreDetailPage'
+import MenuListPage from './pages/admin/MenuListPage'
+import MenuCreatePage from './pages/admin/MenuCreatePage'
+import MenuDetailPage from './pages/admin/MenuDetailPage'
 import AdminLayout from './components/admin/AdminLayout'
+import StoreSelectPage from './pages/customer/StoreSelectPage'
+import CustomerMenuListPage from './pages/customer/CustomerMenuListPage'
+import CustomerMenuDetailPage from './pages/customer/CustomerMenuDetailPage'
+import CartPage from './pages/customer/CartPage'
+import OrderDetailPage from './pages/customer/OrderDetailPage'
+import MyOrdersPage from './pages/customer/MyOrdersPage'
+import AdminOrderPage from './pages/admin/AdminOrderPage'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('accessToken')
   return token ? children : <Navigate to="/login" replace />
 }
 
-// ADMIN 역할만 접근 가능
 function AdminRoute({ children }) {
   const token = localStorage.getItem('accessToken')
   const role = localStorage.getItem('role')
@@ -27,26 +35,31 @@ export default function App() {
       <Routes>
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <HomePage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/admin/store-create"
-          element={
-            <AdminRoute>
-              <StoreCreatePage />
-            </AdminRoute>
-          }
-        />
+        <Route path="/" element={<Navigate to="/stores" replace />} />
+
+        {/* 고객 */}
+        <Route path="/stores" element={<PrivateRoute><StoreSelectPage /></PrivateRoute>} />
+        <Route path="/menus" element={<PrivateRoute><CustomerMenuListPage /></PrivateRoute>} />
+        <Route path="/menus/:menuId" element={<PrivateRoute><CustomerMenuDetailPage /></PrivateRoute>} />
+        <Route path="/cart" element={<PrivateRoute><CartPage /></PrivateRoute>} />
+        <Route path="/orders/:orderId" element={<PrivateRoute><OrderDetailPage /></PrivateRoute>} />
+        <Route path="/my-orders" element={<PrivateRoute><MyOrdersPage /></PrivateRoute>} />
+
+        {/* 매장 */}
+        <Route path="/admin/store-create" element={<AdminRoute><StoreCreatePage /></AdminRoute>} />
         <Route path="/admin/stores" element={<AdminRoute><StoreListPage /></AdminRoute>} />
         <Route path="/admin/stores/:storeId" element={<AdminRoute><StoreDetailPage /></AdminRoute>} />
-        {/* 아직 구현 전인 어드민 페이지 */}
-        {['/admin/menus', '/admin/orders', '/admin/members'].map((path) => (
+
+        {/* 메뉴 */}
+        <Route path="/admin/menus" element={<AdminRoute><MenuListPage /></AdminRoute>} />
+        <Route path="/admin/menu-create" element={<AdminRoute><MenuCreatePage /></AdminRoute>} />
+        <Route path="/admin/menus/:menuId" element={<AdminRoute><MenuDetailPage /></AdminRoute>} />
+
+        {/* 주문 */}
+        <Route path="/admin/orders" element={<AdminRoute><AdminOrderPage /></AdminRoute>} />
+
+        {/* 미구현 */}
+        {['/admin/members'].map((path) => (
           <Route
             key={path}
             path={path}
@@ -59,6 +72,7 @@ export default function App() {
             }
           />
         ))}
+
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

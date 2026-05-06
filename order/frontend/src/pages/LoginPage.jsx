@@ -87,6 +87,24 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <div className={styles.testBtns}>
+          <span className={styles.testLabel}>테스트 계정</span>
+          <div className={styles.testBtnRow}>
+            <button
+              className={styles.testBtn}
+              onClick={() => setForm({ userId: 'admin', password: 'adminadmin' })}
+            >
+              관리자
+            </button>
+            <button
+              className={styles.testBtn}
+              onClick={() => setForm({ userId: 'customer', password: 'customer' })}
+            >
+              고객
+            </button>
+          </div>
+        </div>
+
         <p className={styles.loginLink}>
           계정이 없으신가요? <Link to="/signup">회원가입</Link>
         </p>

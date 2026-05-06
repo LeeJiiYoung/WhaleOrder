@@ -110,3 +110,39 @@
 .loginLink a:hover {
   text-decoration: underline;
 }
+
+.testBtns {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.testLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #bbb;
+  text-align: center;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.testBtnRow {
+  display: flex;
+  gap: 8px;
+}
+
+.testBtn {
+  flex: 1;
+  padding: 8px 0;
+  background: #f9f9f9;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.testBtn:hover { border-color: #4f46e5; color: #4f46e5; background: #f5f3ff; }

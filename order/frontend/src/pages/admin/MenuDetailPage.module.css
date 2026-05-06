@@ -1,0 +1,352 @@
+.center {
+  text-align: center;
+  padding: 80px 0;
+  color: #aaa;
+  font-size: 14px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 6px;
+  display: block;
+}
+.backBtn:hover { text-decoration: underline; }
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* 좌(이미지) + 우(폼) 2단 레이아웃 */
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* 이미지 섹션 */
+.imageSection {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.uploadArea {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s;
+  background: #fafafa;
+}
+.uploadArea:hover { border-color: #4f46e5; }
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.uploadPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.uploadIcon { font-size: 32px; }
+
+.uploadText {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+}
+
+.changeImageBtn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+  background: transparent;
+  border: 1.5px solid #c4b5fd;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f46e5;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.changeImageBtn:hover { background: #ede9fe; }
+
+/* 폼 섹션 */
+.formSection {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4f46e5;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 20px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #ede9fe;
+}
+.imageSection .sectionTitle,
+.sectionTitle:first-child { margin-top: 0; }
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.required { color: #ef4444; }
+
+.input {
+  padding: 9px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  color: #222;
+  background: #fff;
+}
+.input:focus { border-color: #4f46e5; }
+
+.inputError { border-color: #ef4444; }
+
+.textarea {
+  padding: 9px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  color: #222;
+  transition: border-color 0.2s;
+}
+.textarea:focus { border-color: #4f46e5; }
+
+.errorMsg {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: -8px;
+  margin-bottom: 14px;
+}
+
+.alertError {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.alertSuccess {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.submitArea {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.submitBtn {
+  padding: 10px 32px;
+  background: #4f46e5;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.submitBtn:hover:not(:disabled) { background: #4338ca; }
+.submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 옵션 섹션 */
+.optionSection {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.optionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4f46e5;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #ede9fe;
+}
+
+.optionEmpty {
+  color: #aaa;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.optionTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.optionTable th {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  text-align: left;
+  background: #f9f9f9;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.optionTable td {
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 1px solid #f5f5f5;
+  vertical-align: middle;
+}
+
+.optionTable tbody tr:last-child td { border-bottom: none; }
+
+.groupBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #ede9fe;
+  color: #5b21b6;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.deleteOptionBtn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1.5px solid #fecaca;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.deleteOptionBtn:hover { background: #fef2f2; }
+
+/* 옵션 추가 폼 */
+.addOptionRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.addOptionField {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 120px;
+}
+
+.addOptionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.addOptionInput {
+  padding: 8px 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  color: #222;
+}
+.addOptionInput:focus { border-color: #4f46e5; }
+
+.addOptionBtn {
+  padding: 9px 20px;
+  background: #4f46e5;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  align-self: flex-end;
+}
+.addOptionBtn:hover:not(:disabled) { background: #4338ca; }
+.addOptionBtn:disabled { opacity: 0.6; cursor: not-allowed; }

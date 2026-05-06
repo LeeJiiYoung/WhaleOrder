@@ -75,5 +75,23 @@
 .badgeOpen   { background: #dcfce7; color: #166534; }
 .badgeClosed { background: #f3f4f6; color: #6b7280; }
 
+.toggleBtn {
+  margin-left: auto;
+  padding: 9px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggleBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.openBtn  { background: #dcfce7; color: #166534; }
+.openBtn:hover:not(:disabled)  { background: #bbf7d0; }
+
+.closeBtn { background: #fee2e2; color: #dc2626; }
+.closeBtn:hover:not(:disabled) { background: #fecaca; }
+
 .loading { text-align: center; padding: 60px 0; color: #aaa; font-size: 14px; }
 .error   { text-align: center; padding: 60px 0; color: #ef4444; font-size: 14px; }

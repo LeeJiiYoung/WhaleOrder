@@ -34,6 +34,22 @@ public class StoreService {
     }
 
     @Transactional
+    public StoreResponse openStore(Long storeId) {
+        Store store = storeRepository.findByIdWithOwner(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다: " + storeId));
+        store.open();
+        return StoreResponse.from(store);
+    }
+
+    @Transactional
+    public StoreResponse closeStore(Long storeId) {
+        Store store = storeRepository.findByIdWithOwner(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다: " + storeId));
+        store.close();
+        return StoreResponse.from(store);
+    }
+
+    @Transactional
     public StoreResponse createStore(StoreCreateRequest request) {
         Member owner = memberRepository.findByUserId(request.ownerUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + request.ownerUserId()));

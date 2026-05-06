@@ -35,6 +35,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         // 카카오 OAuth2 경로 (9단계에서 추가)
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        // 업로드된 이미지 파일 (인증 없이 접근 가능)
+                        .requestMatchers("/uploads/**").permitAll()
+                        // 고객용 조회 API (로그인 없이 메뉴/매장 탐색 가능)
+                        .requestMatchers("/api/stores/**", "/api/menus/**").permitAll()
                         // 정적 어드민 페이지 (역할 체크는 클라이언트에서)
                         .requestMatchers("/admin/**").permitAll()
                         // 관리자 API - ADMIN 역할만 허용

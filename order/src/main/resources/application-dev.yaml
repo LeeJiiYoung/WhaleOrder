@@ -9,15 +9,10 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 5
 
-  # Redis (로컬 미설치 시 자동 설정 제외 — 나중에 주석 해제)
-  # data:
-  #   redis:
-  #     host: ${REDIS_HOST:localhost}
-  #     port: ${REDIS_PORT:6379}
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
   # JPA (개발환경 - 테이블 자동 생성 + SQL 로그)
   jpa:
@@ -37,6 +32,12 @@ spring:
 # JWT (개발용 기본 시크릿 — 운영 환경에서는 반드시 환경변수로 교체)
 jwt:
   secret: ${JWT_SECRET:whale-order-dev-secret-key-minimum-32-characters-long}
+
+# 이미지 업로드 디렉토리 (로컬 개발용)
+app:
+  upload:
+    menu-dir: ./uploads/menus
+    url-prefix: /uploads/menus
 
 logging:
   level:

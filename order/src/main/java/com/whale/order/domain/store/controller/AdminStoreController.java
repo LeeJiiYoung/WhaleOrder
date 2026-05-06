@@ -29,6 +29,16 @@ public class AdminStoreController {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", storeService.getStore(storeId)));
     }
 
+    @PatchMapping("/{storeId}/open")
+    public ResponseEntity<ApiResponse<StoreResponse>> openStore(@PathVariable Long storeId) {
+        return ResponseEntity.ok(ApiResponse.ok("영업을 시작합니다", storeService.openStore(storeId)));
+    }
+
+    @PatchMapping("/{storeId}/close")
+    public ResponseEntity<ApiResponse<StoreResponse>> closeStore(@PathVariable Long storeId) {
+        return ResponseEntity.ok(ApiResponse.ok("영업을 종료합니다", storeService.closeStore(storeId)));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<StoreResponse>> createStore(
             @Valid @RequestBody StoreCreateRequest request) {

@@ -47,13 +47,21 @@ export default function StoreDetailPage() {
         <h1 className={styles.pageTitle}>{store?.name ?? '매장 상세'}</h1>
 
         {store && (
-          <button
-            className={`${styles.toggleBtn} ${store.status === 'OPEN' ? styles.closeBtn : styles.openBtn}`}
-            onClick={handleToggle}
-            disabled={toggling}
-          >
-            {toggling ? '변경 중...' : store.status === 'OPEN' ? '영업 종료' : '영업 시작'}
-          </button>
+          <>
+            <button
+              className={styles.stockBtn}
+              onClick={() => navigate(`/admin/stores/${storeId}/stocks`)}
+            >
+              재고 관리
+            </button>
+            <button
+              className={`${styles.toggleBtn} ${store.status === 'OPEN' ? styles.closeBtn : styles.openBtn}`}
+              onClick={handleToggle}
+              disabled={toggling}
+            >
+              {toggling ? '변경 중...' : store.status === 'OPEN' ? '영업 종료' : '영업 시작'}
+            </button>
+          </>
         )}
       </div>
 

@@ -15,6 +15,7 @@ import CartPage from './pages/customer/CartPage'
 import OrderDetailPage from './pages/customer/OrderDetailPage'
 import MyOrdersPage from './pages/customer/MyOrdersPage'
 import AdminOrderPage from './pages/admin/AdminOrderPage'
+import StockPage from './pages/admin/StockPage'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('accessToken')
@@ -57,6 +58,9 @@ export default function App() {
 
         {/* 주문 */}
         <Route path="/admin/orders" element={<AdminRoute><AdminOrderPage /></AdminRoute>} />
+
+        {/* 재고 */}
+        <Route path="/admin/stores/:storeId/stocks" element={<AdminRoute><StockPage /></AdminRoute>} />
 
         {/* 미구현 */}
         {['/admin/members'].map((path) => (

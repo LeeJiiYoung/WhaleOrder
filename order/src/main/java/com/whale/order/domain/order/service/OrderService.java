@@ -17,6 +17,7 @@ import com.whale.order.domain.order.entity.OrderStatusHistory;
 import com.whale.order.domain.order.entity.Orders;
 import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
+import com.whale.order.domain.stock.repository.StockRepository;
 import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class OrderService {
     private final MemberRepository memberRepository;
     private final StoreRepository storeRepository;
     private final MenuRepository menuRepository;
+    private final StockRepository stockRepository;
     private final CartService cartService;
     private final ObjectMapper objectMapper;
 
@@ -61,6 +63,10 @@ public class OrderService {
         for (CartItem cartItem : cart.items()) {
             Menu menu = menuRepository.findById(cartItem.getMenuId())
                     .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메뉴: " + cartItem.getMenuId()));
+
+            // 재고 차감 (재고 레코드가 없으면 무제한으로 간주하여 skip)
+            stockRepository.findWithLock(request.storeId(), cartItem.getMenuId())
+                    .ifPresent(stock -> stock.deduct(cartItem.getQuantity()));
 
             OrderItem orderItem = OrderItem.builder()
                     .orders(order)
@@ -114,6 +120,13 @@ public class OrderService {
             throw new IllegalArgumentException("본인 주문만 취소할 수 있습니다");
         }
         order.cancel();
+
+        // 재고 복구
+        Long storeId = order.getStore().getStoreId();
+        for (OrderItem item : order.getOrderItems()) {
+            stockRepository.findWithLock(storeId, item.getMenu().getMenuId())
+                    .ifPresent(stock -> stock.restore(item.getQuantity()));
+        }
 
         Member member = memberRepository.findById(memberId).orElseThrow();
         historyRepository.save(OrderStatusHistory.builder()

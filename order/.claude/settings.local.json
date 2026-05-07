@@ -12,7 +12,16 @@
       "Bash(npm run *)",
       "Bash(./gradlew bootRun *)",
       "Bash(netstat -ano)",
-      "Bash(pkill -f \"bootRun\")"
+      "Bash(pkill -f \"bootRun\")",
+      "Bash(docker-compose up *)",
+      "Bash(./gradlew bootRun)",
+      "Bash(echo \"백엔드 PID: $!\")",
+      "Bash(xargs grep *)",
+      "Bash(./gradlew compileJava --no-daemon)",
+      "Bash(npx vite *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(./gradlew compileJava --quiet)"
     ]
   }
 }

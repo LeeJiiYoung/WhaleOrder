@@ -7,7 +7,7 @@ services:
     build:
       context: ./order
       dockerfile: Dockerfile
-    container_name: siren-backend
+    container_name: whale-backend
     ports:
       - "8080:8080"
     environment:
@@ -26,14 +26,14 @@ services:
       - redis
     restart: unless-stopped
     networks:
-      - siren-net
+      - whale-net
 
   # ─────────────────────────────────────────
   # PostgreSQL
   # ─────────────────────────────────────────
   postgres:
     image: postgres:16
-    container_name: siren-postgres
+    container_name: whale-postgres
     ports:
       - "5432:5432"
     environment:
@@ -43,8 +43,8 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - siren-net
+      - whale-net
 
 networks:
-  siren-net:
+  whale-net:
     driver: bridge

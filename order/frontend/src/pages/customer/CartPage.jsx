@@ -66,11 +66,11 @@ export default function CartPage() {
     }
     setOrdering(true)
     try {
-      const res = await createOrder({
-        storeId: Number(storeId),
-        orderType,
-        customerRequest: customerRequest.trim() || null,
-      })
+      const idempotencyKey = crypto.randomUUID()
+      const res = await createOrder(
+        { storeId: Number(storeId), orderType, customerRequest: customerRequest.trim() || null },
+        idempotencyKey,
+      )
       navigate(`/orders/${res.data.data.orderId}`)
     } catch (err) {
       alert(err.response?.data?.message || '주문에 실패했습니다')

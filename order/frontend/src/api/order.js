@@ -1,7 +1,7 @@
 import client from './client'
 
 export const createOrder  = (data, idempotencyKey) =>
-  client.post('/orders', data, idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {})
+  client.post('/orders', data, { headers: { 'Idempotency-Key': idempotencyKey } })
 export const getMyOrders  = ()          => client.get('/orders')
 export const getOrder     = (orderId)   => client.get(`/orders/${orderId}`)
 export const cancelOrder  = (orderId)   => client.delete(`/orders/${orderId}`)

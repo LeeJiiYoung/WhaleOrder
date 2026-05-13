@@ -20,9 +20,17 @@ import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
 import com.whale.order.domain.stock.repository.StockRepository;
 import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
+import com.whale.order.global.exception.DuplicateRequestException;
+import com.whale.order.global.idempotency.IdempotencyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.Objects;
 
 import java.util.List;
 
@@ -37,6 +45,7 @@ public class OrderService {
     private final MenuRepository menuRepository;
     private final StockRepository stockRepository;
     private final CartService cartService;
+    private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
 
     // 장바구니 → 주문 생성
@@ -47,49 +56,86 @@ public class OrderService {
             throw new IllegalStateException("장바구니가 비어 있습니다");
         }
 
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다"));
-        Store store = storeRepository.findById(request.storeId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다"));
+        String key = generateIdempotencyKey(memberId, request, cart);
 
-        Orders order = Orders.builder()
-                .member(member)
-                .store(store)
-                .totalPrice(cart.totalPrice())
-                .orderType(request.orderType())
-                .customerRequest(request.customerRequest())
-                .build();
+        // 완료된 결과가 있으면 캐시 반환
+        OrderResponse cached = idempotencyService.getResult(key, OrderResponse.class);
+        if (cached != null) return cached;
 
-        for (CartItem cartItem : cart.items()) {
-            Menu menu = menuRepository.findById(cartItem.getMenuId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메뉴: " + cartItem.getMenuId()));
-
-            // 재고 차감 (재고 레코드가 없으면 무제한으로 간주하여 skip)
-            stockRepository.findWithLock(request.storeId(), cartItem.getMenuId())
-                    .ifPresent(stock -> stock.deduct(cartItem.getQuantity()));
-
-            OrderItem orderItem = OrderItem.builder()
-                    .orders(order)
-                    .menu(menu)
-                    .quantity(cartItem.getQuantity())
-                    .unitPrice(cartItem.getUnitPrice())
-                    .options(toJson(cartItem.getSelectedOptions()))
-                    .build();
-            order.addOrderItem(orderItem);
+        // 처리 권한 획득 실패 → 경쟁 조건으로 방금 완료됐을 수 있으니 재확인
+        if (!idempotencyService.markProcessing(key)) {
+            OrderResponse completed = idempotencyService.getResult(key, OrderResponse.class);
+            if (completed != null) return completed;
+            throw new DuplicateRequestException("동일한 요청이 처리 중입니다. 잠시 후 다시 시도해주세요.");
         }
 
-        orderRepository.save(order);
-        historyRepository.save(OrderStatusHistory.builder()
-                .orders(order)
-                .status(OrderStatus.PENDING)
-                .changedBy(null)
-                .build());
+        try {
+            Member member = memberRepository.findById(memberId)
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다"));
+            Store store = storeRepository.findById(request.storeId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다"));
 
-        cartService.clearCart(memberId);
+            Orders order = Orders.builder()
+                    .member(member)
+                    .store(store)
+                    .totalPrice(cart.totalPrice())
+                    .orderType(request.orderType())
+                    .customerRequest(request.customerRequest())
+                    .build();
 
-        return orderRepository.findByIdWithDetails(order.getOrderId())
-                .map(OrderResponse::from)
-                .orElseThrow();
+            for (CartItem cartItem : cart.items()) {
+                Menu menu = menuRepository.findById(cartItem.getMenuId())
+                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메뉴: " + cartItem.getMenuId()));
+
+                // 재고 차감 (재고 레코드가 없으면 무제한으로 간주하여 skip)
+                stockRepository.findWithLock(request.storeId(), cartItem.getMenuId())
+                        .ifPresent(stock -> stock.deduct(cartItem.getQuantity()));
+
+                OrderItem orderItem = OrderItem.builder()
+                        .orders(order)
+                        .menu(menu)
+                        .quantity(cartItem.getQuantity())
+                        .unitPrice(cartItem.getUnitPrice())
+                        .options(toJson(cartItem.getSelectedOptions()))
+                        .build();
+                order.addOrderItem(orderItem);
+            }
+
+            orderRepository.save(order);
+            historyRepository.save(OrderStatusHistory.builder()
+                    .orders(order)
+                    .status(OrderStatus.PENDING)
+                    .changedBy(null)
+                    .build());
+
+            cartService.clearCart(memberId);
+
+            OrderResponse response = orderRepository.findByIdWithDetails(order.getOrderId())
+                    .map(OrderResponse::from)
+                    .orElseThrow();
+
+            idempotencyService.saveResult(key, response);
+            return response;
+
+        } catch (Exception e) {
+            idempotencyService.delete(key);
+            throw e;
+        }
+    }
+
+    private String generateIdempotencyKey(Long memberId, OrderCreateRequest request, CartResponse cart) {
+        String raw = memberId + ":"
+                + request.storeId() + ":"
+                + request.orderType() + ":"
+                + Objects.toString(request.customerRequest(), "") + ":"
+                + toJson(cart);
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(raw.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 알고리즘을 찾을 수 없습니다", e);
+        }
     }
 
     // 내 주문 목록

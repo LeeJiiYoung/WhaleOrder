@@ -21,7 +21,9 @@
       "Bash(npx vite *)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(./gradlew compileJava --quiet)"
+      "Bash(./gradlew compileJava --quiet)",
+      "Bash(./gradlew clean *)",
+      "Bash(git stash *)"
     ]
   }
 }

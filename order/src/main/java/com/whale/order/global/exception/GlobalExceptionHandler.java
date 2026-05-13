@@ -34,6 +34,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(e.getMessage()));
     }
 
+    // 중복 요청 (멱등성 충돌)
+    @ExceptionHandler(DuplicateRequestException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateRequestException(DuplicateRequestException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
+    }
+
     // 그 외 서버 에러
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {

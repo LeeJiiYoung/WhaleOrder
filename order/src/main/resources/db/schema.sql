@@ -203,6 +203,15 @@ CREATE TABLE payment_history (
     CONSTRAINT fk_payment_history FOREIGN KEY (payment_id) REFERENCES payment (payment_id)
 );
 
+-- 멱등성 키 (중복 요청 방지)
+CREATE TABLE idempotency_key (
+    idempotency_key VARCHAR(255)     PRIMARY KEY,
+    status          VARCHAR(20)      NOT NULL,   -- PROCESSING, COMPLETED
+    response_body   TEXT,
+    created_at      TIMESTAMP        NOT NULL,
+    expires_at      TIMESTAMP        NOT NULL
+);
+
 -- ====================================
 -- 인덱스
 -- ====================================
@@ -218,3 +227,4 @@ CREATE INDEX idx_payment_order       ON payment            (order_id);
 CREATE INDEX idx_payment_history     ON payment_history    (payment_id);
 CREATE INDEX idx_menu_discount_menu  ON menu_discount      (menu_id);
 CREATE INDEX idx_menu_discount_date  ON menu_discount      (start_date, end_date);
+CREATE INDEX idx_idempotency_expires ON idempotency_key    (expires_at);

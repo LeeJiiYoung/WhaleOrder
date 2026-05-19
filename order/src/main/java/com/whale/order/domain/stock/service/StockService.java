@@ -35,6 +35,20 @@ public class StockService {
                 .toList();
     }
 
+    // 재고 차감 — StockLockFacade 가 Redis 락을 잡은 상태에서 호출
+    @Transactional
+    public void deductStock(Long storeId, Long menuId, int amount) {
+        stockRepository.findByStore_StoreIdAndMenu_MenuId(storeId, menuId)
+                .ifPresent(stock -> stock.deduct(amount));
+    }
+
+    // 주문 취소 시 재고 복구 — StockLockFacade 가 Redis 락을 잡은 상태에서 호출
+    @Transactional
+    public void restoreStock(Long storeId, Long menuId, int amount) {
+        stockRepository.findByStore_StoreIdAndMenu_MenuId(storeId, menuId)
+                .ifPresent(stock -> stock.restore(amount));
+    }
+
     // 특정 메뉴 재고 설정 (없으면 생성, 있으면 수정)
     @Transactional
     public StockResponse setStock(Long storeId, Long menuId, StockUpdateRequest request) {

@@ -23,7 +23,9 @@
       "Bash(git push *)",
       "Bash(./gradlew compileJava --quiet)",
       "Bash(./gradlew clean *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(./gradlew build *)",
+      "Bash(./gradlew dependencies *)"
     ]
   }
 }

@@ -17,7 +17,7 @@ import com.whale.order.domain.order.entity.OrderStatusHistory;
 import com.whale.order.domain.order.entity.Orders;
 import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
-import com.whale.order.domain.stock.repository.StockRepository;
+import com.whale.order.domain.stock.service.StockLockFacade;
 import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
 import com.whale.order.global.exception.DuplicateRequestException;
@@ -43,7 +43,7 @@ public class OrderService {
     private final MemberRepository memberRepository;
     private final StoreRepository storeRepository;
     private final MenuRepository menuRepository;
-    private final StockRepository stockRepository;
+    private final StockLockFacade stockLockFacade;
     private final CartService cartService;
     private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
@@ -87,9 +87,8 @@ public class OrderService {
                 Menu menu = menuRepository.findById(cartItem.getMenuId())
                         .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메뉴: " + cartItem.getMenuId()));
 
-                // 재고 차감 (재고 레코드가 없으면 무제한으로 간주하여 skip)
-                stockRepository.findWithLock(request.storeId(), cartItem.getMenuId())
-                        .ifPresent(stock -> stock.deduct(cartItem.getQuantity()));
+                // 재고 차감 (Redis 분산 락)
+                stockLockFacade.deductStock(request.storeId(), cartItem.getMenuId(), cartItem.getQuantity());
 
                 OrderItem orderItem = OrderItem.builder()
                         .orders(order)
@@ -167,11 +166,10 @@ public class OrderService {
         }
         order.cancel();
 
-        // 재고 복구
+        // 재고 복구 (Redis 분산 락)
         Long storeId = order.getStore().getStoreId();
         for (OrderItem item : order.getOrderItems()) {
-            stockRepository.findWithLock(storeId, item.getMenu().getMenuId())
-                    .ifPresent(stock -> stock.restore(item.getQuantity()));
+            stockLockFacade.restoreStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
         }
 
         Member member = memberRepository.findById(memberId).orElseThrow();

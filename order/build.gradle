@@ -36,6 +36,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	// Redis 분산 락
+	implementation 'org.redisson:redisson-spring-boot-starter:3.27.2'
+
 	// Querydsl (동적 쿼리)
 	implementation 'com.querydsl:querydsl-jpa::jakarta'
 	annotationProcessor 'com.querydsl:querydsl-apt::jakarta'

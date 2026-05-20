@@ -27,9 +27,9 @@ public class IdempotencyService {
         int inserted = idempotencyRepository.insertProcessingIfAbsent(key, now, now.plusHours(24));
         if (inserted == 1) return true;
 
-        // 타임아웃된 PROCESSING 레코드는 삭제 후 재획득 시도
+        // 만료됐거나 처리 타임아웃된 레코드는 삭제 후 재획득 시도
         return idempotencyRepository.findById(key)
-                .filter(IdempotencyRecord::isProcessingTimedOut)
+                .filter(r -> r.isExpired() || r.isProcessingTimedOut())
                 .map(record -> {
                     idempotencyRepository.delete(record);
                     idempotencyRepository.flush();

@@ -2,6 +2,7 @@ package com.whale.order.domain.order.controller;
 
 import com.whale.order.domain.order.dto.OrderCreateRequest;
 import com.whale.order.domain.order.dto.OrderResponse;
+import com.whale.order.domain.order.dto.QueuedOrderResponse;
 import com.whale.order.domain.order.service.OrderService;
 import com.whale.order.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -21,14 +22,14 @@ public class CustomerOrderController {
 
     private final OrderService orderService;
 
-    // 주문 생성
+    // 주문 생성 → 즉시 대기 순서 반환, 결과는 SSE로 수신
     @PostMapping
-    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
+    public ResponseEntity<ApiResponse<QueuedOrderResponse>> createOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody OrderCreateRequest request) {
-        OrderResponse response = orderService.createOrder(memberId(userDetails), request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("주문이 완료됐습니다", response));
+        QueuedOrderResponse response = orderService.createOrder(memberId(userDetails), request);
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(ApiResponse.ok("주문이 대기열에 등록됐습니다", response));
     }
 
     // 내 주문 목록

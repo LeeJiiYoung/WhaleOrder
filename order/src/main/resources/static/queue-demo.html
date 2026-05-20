@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>주문 대기열 동시성 데모</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 28px 16px;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #8b949e;
+      font-size: 0.88rem;
+      margin-bottom: 24px;
+    }
+
+    /* 컨트롤 */
+    .controls {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 0.78rem; color: #8b949e; font-weight: 500; }
+    .field input {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      font-size: 1rem;
+      padding: 8px 14px;
+      width: 110px;
+      outline: none;
+    }
+    .field input:focus { border-color: #388bfd; }
+
+    .btn-start {
+      background: #238636;
+      border: 1px solid #2ea043;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 9px 22px;
+      transition: background 0.2s;
+    }
+    .btn-start:hover:not(:disabled) { background: #2ea043; }
+    .btn-start:disabled { background: #21262d; border-color: #30363d; color: #484f58; cursor: not-allowed; }
+
+    /* 통계 */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+
+    .stat-label { font-size: 0.75rem; color: #8b949e; margin-bottom: 6px; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; }
+    .stat-card.success .stat-value { color: #3fb950; }
+    .stat-card.fail .stat-value    { color: #f85149; }
+    .stat-card.stock .stat-value   { color: #388bfd; }
+    .stat-card.queue .stat-value   { color: #d29922; }
+
+    /* 2패널 레이아웃 */
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #21262d;
+      font-size: 0.83rem;
+      color: #8b949e;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-body {
+      height: 440px;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .panel-body::-webkit-scrollbar { width: 5px; }
+    .panel-body::-webkit-scrollbar-track { background: #161b22; }
+    .panel-body::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    .empty-msg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #484f58;
+      font-size: 0.85rem;
+    }
+
+    /* 대기열 카드 */
+    .queue-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.83rem;
+      border: 1px solid #30363d;
+      background: #0d1117;
+      animation: slideIn 0.25s ease;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .queue-card.processing {
+      background: rgba(210, 153, 34, 0.1);
+      border-color: rgba(210, 153, 34, 0.4);
+    }
+
+    .queue-card.done-ok {
+      background: rgba(63, 185, 80, 0.08);
+      border-color: rgba(63, 185, 80, 0.25);
+    }
+
+    .queue-card.done-fail {
+      background: rgba(248, 81, 73, 0.08);
+      border-color: rgba(248, 81, 73, 0.2);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .pos-badge {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #21262d;
+      color: #8b949e;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pos-badge.active { background: #d29922; color: #0d1117; }
+    .pos-badge.ok     { background: #3fb950; color: #0d1117; }
+    .pos-badge.ng     { background: #f85149; color: #fff; }
+
+    .cust-label {
+      flex: 1;
+      font-weight: 600;
+      color: #e6edf3;
+    }
+
+    .queue-status {
+      font-size: 0.75rem;
+      color: #8b949e;
+    }
+
+    /* 결과 카드 */
+    .result-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.83rem;
+      animation: slideIn 0.25s ease;
+      border: 1px solid transparent;
+    }
+
+    .result-card.ok {
+      background: rgba(63, 185, 80, 0.08);
+      border-color: rgba(63, 185, 80, 0.25);
+    }
+
+    .result-card.ng {
+      background: rgba(248, 81, 73, 0.08);
+      border-color: rgba(248, 81, 73, 0.2);
+    }
+
+    .result-icon { font-size: 1rem; }
+    .result-text { flex: 1; color: #e6edf3; }
+    .result-remain { font-size: 0.75rem; color: #8b949e; min-width: 70px; text-align: right; }
+
+    /* 완료 배너 */
+    .complete-banner {
+      display: none;
+      background: rgba(56, 139, 253, 0.1);
+      border: 1px solid rgba(56, 139, 253, 0.3);
+      border-radius: 10px;
+      color: #58a6ff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 16px;
+      padding: 14px 20px;
+      text-align: center;
+    }
+
+    .complete-banner.show { display: block; }
+
+    /* 진행 표시 */
+    .phase-bar {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      font-size: 0.83rem;
+      color: #8b949e;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .phase-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #484f58;
+      flex-shrink: 0;
+    }
+
+    .phase-dot.active {
+      background: #d29922;
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>📋 주문 대기열 동시성 데모</h1>
+  <p class="subtitle">N명이 동시에 주문하면 서버 도착 순서대로 대기열에 배치되고, 순차적으로 처리됩니다.</p>
+
+  <div class="controls">
+    <div class="field">
+      <label>초기 재고</label>
+      <input type="number" id="stockInput" value="10" min="1" max="50">
+    </div>
+    <div class="field">
+      <label>동시 주문 고객 수</label>
+      <input type="number" id="customersInput" value="20" min="2" max="50">
+    </div>
+    <button class="btn-start" id="startBtn" onclick="startDemo()">데모 시작</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card queue">
+      <div class="stat-label">📋 대기열 등록</div>
+      <div class="stat-value" id="queuedCount">0</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-label">✅ 재고 차감 성공</div>
+      <div class="stat-value" id="successCount">0</div>
+    </div>
+    <div class="stat-card fail">
+      <div class="stat-label">❌ 재고 부족</div>
+      <div class="stat-value" id="failCount">0</div>
+    </div>
+    <div class="stat-card stock">
+      <div class="stat-label">📦 남은 재고</div>
+      <div class="stat-value" id="stockDisplay">-</div>
+    </div>
+  </div>
+
+  <div class="phase-bar" id="phaseBar">
+    <div class="phase-dot" id="phaseDot"></div>
+    <span id="phaseText">데모를 시작하면 진행 상황이 표시됩니다.</span>
+  </div>
+
+  <div class="panels">
+    <!-- 대기열 패널 -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>📋 대기열</span>
+        <span id="queueBadge" style="background:#21262d;border-radius:20px;padding:2px 10px;font-size:0.75rem;">0명</span>
+      </div>
+      <div class="panel-body" id="queuePanel">
+        <div class="empty-msg">고객들이 동시에 주문하면 도착 순서대로 배치됩니다.</div>
+      </div>
+    </div>
+
+    <!-- 처리 결과 패널 -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>⚡ 처리 결과</span>
+        <span id="resultBadge" style="background:#21262d;border-radius:20px;padding:2px 10px;font-size:0.75rem;">0건</span>
+      </div>
+      <div class="panel-body" id="resultPanel">
+        <div class="empty-msg">처리 결과가 순서대로 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="complete-banner" id="completeBanner"></div>
+
+</div>
+
+<script>
+  let evtSource = null;
+  let queueCards = {}; // position → DOM element
+  let queueCount = 0;
+  let resultCount = 0;
+  let successCount = 0;
+  let failCount = 0;
+  let initialStock = 10;
+
+  function startDemo() {
+    if (evtSource) evtSource.close();
+
+    initialStock = parseInt(document.getElementById('stockInput').value) || 10;
+    const customers = parseInt(document.getElementById('customersInput').value) || 20;
+
+    // 초기화
+    queueCards = {};
+    queueCount = 0; resultCount = 0; successCount = 0; failCount = 0;
+    document.getElementById('queuedCount').textContent = '0';
+    document.getElementById('successCount').textContent = '0';
+    document.getElementById('failCount').textContent = '0';
+    document.getElementById('stockDisplay').textContent = initialStock;
+    document.getElementById('queueBadge').textContent = '0명';
+    document.getElementById('resultBadge').textContent = '0건';
+    document.getElementById('queuePanel').innerHTML = '<div class="empty-msg">고객 스레드 준비 중...</div>';
+    document.getElementById('resultPanel').innerHTML = '<div class="empty-msg">처리 결과가 순서대로 표시됩니다.</div>';
+    document.getElementById('completeBanner').className = 'complete-banner';
+    document.getElementById('startBtn').disabled = true;
+    setPhase('active', `${customers}명 동시 주문 요청 중...`);
+
+    evtSource = new EventSource(`/demo/stock/queue-stream?stock=${initialStock}&customers=${customers}`);
+
+    evtSource.addEventListener('init', () => {
+      setPhase('active', '서버 도착 순서로 대기열 배정 중...');
+    });
+
+    evtSource.addEventListener('queued', (e) => {
+      const data = JSON.parse(e.data);
+      if (queueCount === 0) {
+        document.getElementById('queuePanel').innerHTML = '';
+      }
+      queueCount++;
+      document.getElementById('queuedCount').textContent = queueCount;
+      document.getElementById('queueBadge').textContent = `${queueCount}명`;
+      addQueueCard(data.customerId, data.position);
+      if (queueCount === 1) setPhase('active', '대기열 순서대로 처리 중...');
+    });
+
+    evtSource.addEventListener('result', (e) => {
+      const data = JSON.parse(e.data);
+      if (resultCount === 0) {
+        document.getElementById('resultPanel').innerHTML = '';
+      }
+      resultCount++;
+
+      if (data.success) {
+        successCount++;
+        document.getElementById('successCount').textContent = successCount;
+        document.getElementById('stockDisplay').textContent = data.remaining;
+        updateQueueCard(data.position, 'done-ok', '✅');
+      } else {
+        failCount++;
+        document.getElementById('failCount').textContent = failCount;
+        updateQueueCard(data.position, 'done-fail', '❌');
+      }
+
+      document.getElementById('resultBadge').textContent = `${resultCount}건`;
+      addResultCard(data);
+    });
+
+    evtSource.addEventListener('complete', (e) => {
+      const data = JSON.parse(e.data);
+      document.getElementById('stockDisplay').textContent = data.finalStock;
+      setPhase('done', '');
+
+      const banner = document.getElementById('completeBanner');
+      banner.textContent = `✅ 완료 — 선착순 ${data.successCount}명 성공 / 재고 부족 ${data.failCount}명 실패 / 최종 재고 ${data.finalStock}개`;
+      banner.className = 'complete-banner show';
+      document.getElementById('startBtn').disabled = false;
+      evtSource.close();
+    });
+
+    evtSource.onerror = () => {
+      setPhase('done', '');
+      document.getElementById('startBtn').disabled = false;
+      evtSource.close();
+    };
+  }
+
+  function addQueueCard(customerId, position) {
+    const panel = document.getElementById('queuePanel');
+    const card = document.createElement('div');
+    card.className = 'queue-card';
+    card.id = `qc-${position}`;
+    card.innerHTML = `
+      <div class="pos-badge" id="pb-${position}">${position}</div>
+      <span class="cust-label">고객 ${customerId}번</span>
+      <span class="queue-status" id="qs-${position}">대기 중</span>
+    `;
+    panel.appendChild(card);
+    panel.scrollTop = panel.scrollHeight;
+    queueCards[position] = card;
+  }
+
+  function updateQueueCard(position, cls, icon) {
+    const card = document.getElementById(`qc-${position}`);
+    const badge = document.getElementById(`pb-${position}`);
+    const status = document.getElementById(`qs-${position}`);
+    if (!card) return;
+    card.className = `queue-card ${cls}`;
+    if (cls === 'done-ok') {
+      badge.className = 'pos-badge ok';
+      badge.textContent = icon;
+      status.textContent = '성공';
+      status.style.color = '#3fb950';
+    } else {
+      badge.className = 'pos-badge ng';
+      badge.textContent = icon;
+      status.textContent = '재고 부족';
+      status.style.color = '#f85149';
+    }
+  }
+
+  function addResultCard(data) {
+    const panel = document.getElementById('resultPanel');
+    const card = document.createElement('div');
+    card.className = `result-card ${data.success ? 'ok' : 'ng'}`;
+    const remainText = data.success ? `남은 재고 ${data.remaining}개` : '';
+    card.innerHTML = `
+      <span class="result-icon">${data.success ? '✅' : '❌'}</span>
+      <span class="result-text">${data.position}번째 · 고객 ${data.customerId}번 · ${data.message}</span>
+      <span class="result-remain">${remainText}</span>
+    `;
+    panel.appendChild(card);
+    panel.scrollTop = panel.scrollHeight;
+  }
+
+  function setPhase(state, text) {
+    const dot = document.getElementById('phaseDot');
+    const phaseText = document.getElementById('phaseText');
+    dot.className = state === 'active' ? 'phase-dot active' : 'phase-dot';
+    phaseText.textContent = text || '완료';
+  }
+</script>
+</body>
+</html>

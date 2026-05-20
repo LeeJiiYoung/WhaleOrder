@@ -36,8 +36,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-	// Redis 분산 락
-	implementation 'org.redisson:redisson-spring-boot-starter:3.27.2'
+	// Redis 분산 락 (starter 대신 core만 사용 — StringRedisTemplate 충돌 방지)
+	implementation 'org.redisson:redisson:3.27.2'
 
 	// Querydsl (동적 쿼리)
 	implementation 'com.querydsl:querydsl-jpa::jakarta'
@@ -69,6 +69,11 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// Testcontainers (Redis + PostgreSQL 실제 컨테이너로 통합 테스트)
+	testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+	testImplementation 'org.testcontainers:postgresql:1.20.4'
+	testImplementation 'com.redis:testcontainers-redis:2.2.2'
 }
 
 // Querydsl QClass 생성 경로

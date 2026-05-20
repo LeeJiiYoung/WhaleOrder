@@ -11,6 +11,7 @@ import com.whale.order.domain.menu.entity.Menu;
 import com.whale.order.domain.menu.repository.MenuRepository;
 import com.whale.order.domain.order.dto.OrderCreateRequest;
 import com.whale.order.domain.order.dto.OrderResponse;
+import com.whale.order.domain.order.dto.QueuedOrderResponse;
 import com.whale.order.domain.order.entity.OrderItem;
 import com.whale.order.domain.order.entity.OrderStatus;
 import com.whale.order.domain.order.entity.OrderStatusHistory;
@@ -47,10 +48,12 @@ public class OrderService {
     private final CartService cartService;
     private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
+    private final OrderQueueService orderQueueService;
+    private final OrderSseService orderSseService;
 
-    // 장바구니 → 주문 생성
+    // 장바구니 → 주문 생성 후 대기열 등록
     @Transactional
-    public OrderResponse createOrder(Long memberId, OrderCreateRequest request) {
+    public QueuedOrderResponse createOrder(Long memberId, OrderCreateRequest request) {
         CartResponse cart = cartService.getCart(memberId);
         if (cart.items().isEmpty()) {
             throw new IllegalStateException("장바구니가 비어 있습니다");
@@ -58,13 +61,11 @@ public class OrderService {
 
         String key = generateIdempotencyKey(memberId, request, cart);
 
-        // 완료된 결과가 있으면 캐시 반환
-        OrderResponse cached = idempotencyService.getResult(key, OrderResponse.class);
+        QueuedOrderResponse cached = idempotencyService.getResult(key, QueuedOrderResponse.class);
         if (cached != null) return cached;
 
-        // 처리 권한 획득 실패 → 경쟁 조건으로 방금 완료됐을 수 있으니 재확인
         if (!idempotencyService.markProcessing(key)) {
-            OrderResponse completed = idempotencyService.getResult(key, OrderResponse.class);
+            QueuedOrderResponse completed = idempotencyService.getResult(key, QueuedOrderResponse.class);
             if (completed != null) return completed;
             throw new DuplicateRequestException("동일한 요청이 처리 중입니다. 잠시 후 다시 시도해주세요.");
         }
@@ -87,9 +88,7 @@ public class OrderService {
                 Menu menu = menuRepository.findById(cartItem.getMenuId())
                         .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메뉴: " + cartItem.getMenuId()));
 
-                // 재고 차감 (Redis 분산 락)
-                stockLockFacade.deductStock(request.storeId(), cartItem.getMenuId(), cartItem.getQuantity());
-
+                // 재고 차감은 워커가 처리 — 여기서는 주문 항목만 저장
                 OrderItem orderItem = OrderItem.builder()
                         .orders(order)
                         .menu(menu)
@@ -109,14 +108,17 @@ public class OrderService {
 
             cartService.clearCart(memberId);
 
-            OrderResponse response = orderRepository.findByIdWithDetails(order.getOrderId())
-                    .map(OrderResponse::from)
-                    .orElseThrow();
+            // 트랜잭션 커밋 후 대기열 등록
+            long position = orderQueueService.enqueue(order.getOrderId());
+            QueuedOrderResponse response = QueuedOrderResponse.of(order.getOrderId(), position);
 
             idempotencyService.saveResult(key, response);
             return response;
 
         } catch (Exception e) {
+            idempotencyService.delete(key);
+            throw e;
+        } catch (Error e) {
             idempotencyService.delete(key);
             throw e;
         }
@@ -166,10 +168,13 @@ public class OrderService {
         }
         order.cancel();
 
-        // 재고 복구 (Redis 분산 락)
-        Long storeId = order.getStore().getStoreId();
-        for (OrderItem item : order.getOrderItems()) {
-            stockLockFacade.restoreStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
+        boolean wasInQueue = orderQueueService.removeFromQueue(orderId);
+        if (!wasInQueue) {
+            // 이미 워커가 처리(재고 차감 완료) → 재고 복구 필요
+            Long storeId = order.getStore().getStoreId();
+            for (OrderItem item : order.getOrderItems()) {
+                stockLockFacade.restoreStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
+            }
         }
 
         Member member = memberRepository.findById(memberId).orElseThrow();
@@ -210,6 +215,15 @@ public class OrderService {
                 .status(order.getStatus())
                 .changedBy(admin)
                 .build());
+
+        // 고객에게 실시간 상태 알림
+        String message = switch (action) {
+            case "accept"   -> "주문이 수락되었습니다";
+            case "prepare"  -> "음료를 준비 중입니다";
+            case "complete" -> "주문이 완료되었습니다. 찾아가주세요 ☕";
+            default         -> "";
+        };
+        orderSseService.notifyStatusUpdate(orderId, order.getStatus().name(), message);
 
         return OrderResponse.from(order);
     }

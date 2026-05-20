@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/stores/**", "/api/menus/**").permitAll()
                         // 정적 어드민 페이지 (역할 체크는 클라이언트에서)
                         .requestMatchers("/admin/**").permitAll()
+                        // 분산락 데모 페이지
+                        .requestMatchers("/demo/**", "/stock-demo.html", "/queue-demo.html").permitAll()
                         // 관리자 API - ADMIN 역할만 허용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

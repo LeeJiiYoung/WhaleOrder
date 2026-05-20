@@ -10,21 +10,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RedissonConfig {
 
-    @Value("${spring.data.redis.host}")
+    @Value("${spring.data.redis.host:localhost}")
     private String host;
 
-    @Value("${spring.data.redis.port}")
+    @Value("${spring.data.redis.port:6379}")
     private int port;
 
-    @Bean
+    @Bean(destroyMethod = "shutdown")
     public RedissonClient redissonClient() {
         Config config = new Config();
         config.useSingleServer()
-                .setAddress("redis://" + host + ":" + port)
-                .setConnectionMinimumIdleSize(2)
-                .setConnectionPoolSize(10)
-                .setConnectTimeout(3000)
-                .setTimeout(3000);
+              .setAddress("redis://" + host + ":" + port);
         return Redisson.create(config);
     }
 }

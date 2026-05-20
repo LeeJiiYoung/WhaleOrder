@@ -74,6 +74,11 @@ public class CartService {
         return getCart(memberId);
     }
 
+    /**
+     * 장바구니 조회
+     * @param memberId 고객id
+     * @return
+     */
     public CartResponse getCart(Long memberId) {
         String cartKey = cartKey(memberId);
         Map<Object, Object> entries = redisTemplate.opsForHash().entries(cartKey);

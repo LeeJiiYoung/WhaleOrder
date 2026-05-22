@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getOrder, cancelOrder, getQueuePosition, subscribeOrderResult, subscribeOrderUpdates } from '../../api/order'
+import { getOrder, cancelOrder } from '../../api/order'
 import CustomerLayout from '../../components/customer/CustomerLayout'
 import styles from './OrderDetailPage.module.css'
 
@@ -21,8 +21,6 @@ const ORDER_TYPE_LABEL = {
   DINE_IN: '매장 내 취식',
 }
 
-const TERMINAL = new Set(['COMPLETED', 'CANCELLED'])
-
 export default function OrderDetailPage() {
   const { orderId } = useParams()
   const navigate = useNavigate()
@@ -30,54 +28,13 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [cancelling, setCancelling] = useState(false)
-  const [queuePosition, setQueuePosition] = useState(null)
-  const [notifications, setNotifications] = useState([])
 
-  // 주문 정보 초기 로드
   useEffect(() => {
     getOrder(orderId)
       .then((res) => setOrder(res.data.data))
       .catch(() => setError('주문 정보를 불러오지 못했습니다'))
       .finally(() => setLoading(false))
   }, [orderId])
-
-  // PENDING: 재고 차감 결과 대기 SSE
-  useEffect(() => {
-    if (!order || order.status !== 'PENDING') return
-
-    let active = true
-
-    getQueuePosition(orderId)
-      .then(res => { if (active) setQueuePosition(res.data.data.position) })
-      .catch(() => {})
-
-    const cancel = subscribeOrderResult(orderId, (data) => {
-      if (!active) return
-      if (data.status === 'SUCCESS') {
-        getOrder(orderId).then(res => { if (active) setOrder(res.data.data) })
-      } else {
-        setOrder(prev => prev ? { ...prev, status: 'CANCELLED' } : prev)
-      }
-    })
-
-    return () => { active = false; cancel() }
-  }, [order?.status, orderId])
-
-  // 어드민 상태 변경 알림 SSE (수락/제조/완료)
-  useEffect(() => {
-    if (!order || TERMINAL.has(order.status)) return
-
-    let active = true
-
-    const cancel = subscribeOrderUpdates(orderId, (data) => {
-      if (!active) return
-      const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-      setNotifications(prev => [...prev, { time, message: data.message }])
-      setOrder(prev => prev ? { ...prev, status: data.status } : prev)
-    })
-
-    return () => { active = false; cancel() }
-  }, [order?.status, orderId])
 
   const handleCancel = async () => {
     if (!window.confirm('주문을 취소하시겠습니까?')) return
@@ -97,48 +54,16 @@ export default function OrderDetailPage() {
   if (!order)  return null
 
   const statusInfo = STATUS_LABEL[order.status] || { text: order.status, color: '#888' }
-  const isPending = order.status === 'PENDING'
   const canCancel = order.status === 'PENDING'
 
   return (
     <CustomerLayout>
       <div className={styles.page}>
-        {/* 실시간 알림 */}
-        {notifications.length > 0 && (
-          <div className={styles.notifications}>
-            {notifications.map((n, i) => (
-              <div key={i} className={styles.notification}>
-                <span className={styles.notifTime}>{n.time}</span>
-                <span className={styles.notifMsg}>{n.message}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* 상태 배너 */}
         <div className={styles.statusBanner} style={{ borderColor: statusInfo.color }}>
-          <div>
-            <p className={styles.statusLabel} style={{ color: statusInfo.color }}>{statusInfo.text}</p>
-            {isPending && (
-              <p className={styles.queuePosition}>
-                {queuePosition === null
-                  ? '대기 순서 확인 중...'
-                  : queuePosition > 0
-                    ? `${queuePosition}번째 대기 중`
-                    : '처리 중...'}
-              </p>
-            )}
-          </div>
+          <p className={styles.statusLabel} style={{ color: statusInfo.color }}>{statusInfo.text}</p>
           <p className={styles.orderNum}>주문번호 #{order.orderId}</p>
         </div>
-
-        {/* PENDING: 처리 안내 */}
-        {isPending && (
-          <div className={styles.pendingNotice}>
-            <span className={styles.pendingDot} />
-            재고 확인 후 자동으로 상태가 업데이트됩니다
-          </div>
-        )}
 
         {/* 주문 정보 */}
         <div className={styles.card}>
@@ -191,7 +116,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {/* 버튼 */}
+        {/* 버튼 영역 */}
         <div className={styles.actions}>
           {canCancel && (
             <button className={styles.cancelBtn} onClick={handleCancel} disabled={cancelling}>

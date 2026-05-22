@@ -1,0 +1,217 @@
+.loading {
+  text-align: center;
+  padding: 80px 0;
+  color: #aaa;
+  font-size: 15px;
+}
+
+.back {
+  background: none;
+  border: none;
+  color: #f59e0b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.back:hover { color: #d97706; }
+
+/* 상품 정보 카드 */
+.productCard {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.productImage {
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.productImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.productEmoji {
+  font-size: 64px;
+}
+
+.productInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.eventLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.goodsName {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111;
+  margin: 0;
+}
+
+.goodsDesc {
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+}
+
+.price {
+  font-size: 24px;
+  font-weight: 800;
+  color: #f59e0b;
+  margin: 0;
+}
+
+.capacityRow {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #aaa;
+}
+
+.remaining {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* 액션 영역 */
+.actionArea {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.errorBox {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.statusBox {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  padding: 40px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusIcon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.statusTitle {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111;
+  margin: 0;
+}
+
+.statusDesc {
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+}
+
+.positionBadge {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  color: #92400e;
+  font-size: 28px;
+  font-weight: 900;
+  padding: 10px 28px;
+  border-radius: 50px;
+}
+
+.joinBtn {
+  margin-top: 8px;
+  padding: 14px 40px;
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.joinBtn:hover { background: #d97706; }
+
+/* READY 상태 */
+.readyBox {
+  border: 3px solid #f59e0b;
+  background: linear-gradient(135deg, #fffbeb, #fff);
+}
+
+.countdown {
+  font-size: 48px;
+  font-weight: 900;
+  color: #ef4444;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.purchaseBtn {
+  margin-top: 8px;
+  padding: 16px 48px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(239,68,68,0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.purchaseBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(239,68,68,0.45);
+}
+
+/* DONE 상태 */
+.doneBox {
+  border: 3px solid #22c55e;
+  background: linear-gradient(135deg, #f0fdf4, #fff);
+}

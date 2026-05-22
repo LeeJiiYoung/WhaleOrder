@@ -31,7 +31,10 @@
       "Bash(curl -s http://localhost:8080/stock-demo.html)",
       "Bash(curl -s \"http://localhost:8080/demo/stock/stream?initialStock=5&threadCount=10\" --max-time 30 -N)",
       "PowerShell(Stop-Process *)",
-      "PowerShell(Get-NetTCPConnection *)"
+      "PowerShell(Get-NetTCPConnection *)",
+      "WebSearch",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(git checkout *)"
     ]
   }
 }

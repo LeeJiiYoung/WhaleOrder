@@ -14,8 +14,11 @@ import CustomerMenuDetailPage from './pages/customer/CustomerMenuDetailPage'
 import CartPage from './pages/customer/CartPage'
 import OrderDetailPage from './pages/customer/OrderDetailPage'
 import MyOrdersPage from './pages/customer/MyOrdersPage'
+import EventListPage from './pages/customer/EventListPage'
+import EventDetailPage from './pages/customer/EventDetailPage'
 import AdminOrderPage from './pages/admin/AdminOrderPage'
 import StockPage from './pages/admin/StockPage'
+import EventManagePage from './pages/admin/EventManagePage'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('accessToken')
@@ -45,6 +48,8 @@ export default function App() {
         <Route path="/cart" element={<PrivateRoute><CartPage /></PrivateRoute>} />
         <Route path="/orders/:orderId" element={<PrivateRoute><OrderDetailPage /></PrivateRoute>} />
         <Route path="/my-orders" element={<PrivateRoute><MyOrdersPage /></PrivateRoute>} />
+        <Route path="/events" element={<PrivateRoute><EventListPage /></PrivateRoute>} />
+        <Route path="/events/:eventId" element={<PrivateRoute><EventDetailPage /></PrivateRoute>} />
 
         {/* 매장 */}
         <Route path="/admin/store-create" element={<AdminRoute><StoreCreatePage /></AdminRoute>} />
@@ -61,6 +66,9 @@ export default function App() {
 
         {/* 재고 */}
         <Route path="/admin/stores/:storeId/stocks" element={<AdminRoute><StockPage /></AdminRoute>} />
+
+        {/* 한정판매 */}
+        <Route path="/admin/events" element={<AdminRoute><EventManagePage /></AdminRoute>} />
 
         {/* 미구현 */}
         {['/admin/members'].map((path) => (

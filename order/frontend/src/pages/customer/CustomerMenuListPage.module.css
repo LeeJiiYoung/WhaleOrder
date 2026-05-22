@@ -32,6 +32,22 @@
   font-weight: 700;
 }
 
+.tabEvent {
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1.5px solid #f59e0b;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tabEvent:hover {
+  background: linear-gradient(135deg, #fde68a, #fcd34d);
+  box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+}
+
 .searchInput {
   margin-left: auto;
   padding: 8px 16px;

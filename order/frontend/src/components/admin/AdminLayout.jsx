@@ -2,9 +2,10 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import styles from './AdminLayout.module.css'
 
 const TOP_NAV = [
-  { label: '매장 관리', prefix: '/admin/store', path: '/admin/store-create' },
-  { label: '메뉴 관리', prefix: '/admin/menu',  path: '/admin/menus' },
-  { label: '주문 관리', prefix: '/admin/order', path: '/admin/orders' },
+  { label: '매장 관리', prefix: '/admin/store',  path: '/admin/store-create' },
+  { label: '메뉴 관리', prefix: '/admin/menu',   path: '/admin/menus' },
+  { label: '주문 관리', prefix: '/admin/order',  path: '/admin/orders' },
+  { label: '한정판매',  prefix: '/admin/events', path: '/admin/events' },
   { label: '회원 관리', prefix: '/admin/member', path: '/admin/members' },
 ]
 
@@ -30,6 +31,13 @@ const SIDEBAR_NAV = [
     prefix: '/admin/order',
     items: [
       { label: '주문 현황', icon: '📦', path: '/admin/orders' },
+    ],
+  },
+  {
+    section: '한정판매',
+    prefix: '/admin/events',
+    items: [
+      { label: '이벤트/굿즈 관리', icon: '🎁', path: '/admin/events' },
     ],
   },
   {

@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCart, updateQuantity, removeFromCart, clearCart } from '../../api/cart'
-import { createOrder, subscribeOrderResult } from '../../api/order'
+import { createOrder } from '../../api/order'
 import CustomerLayout from '../../components/customer/CustomerLayout'
 import styles from './CartPage.module.css'
 
@@ -18,11 +18,6 @@ export default function CartPage() {
   const [orderType, setOrderType] = useState('TAKEOUT')
   const [customerRequest, setCustomerRequest] = useState('')
   const [ordering, setOrdering] = useState(false)
-  const [queueState, setQueueState] = useState(null) // { orderId, position }
-  const cancelSseRef = useRef(null)
-
-  // 언마운트 시 SSE 연결 해제
-  useEffect(() => () => cancelSseRef.current?.(), [])
 
   const load = () => {
     setLoading(true)
@@ -76,21 +71,10 @@ export default function CartPage() {
         { storeId: Number(storeId), orderType, customerRequest: customerRequest.trim() || null },
         idempotencyKey,
       )
-      const { orderId, position } = res.data.data
-      setQueueState({ orderId, position })
-
-      cancelSseRef.current = subscribeOrderResult(orderId, (data) => {
-        cancelSseRef.current = null
-        setQueueState(null)
-        setOrdering(false)
-        if (data.status === 'SUCCESS') {
-          navigate(`/orders/${orderId}`)
-        } else {
-          alert('주문 처리에 실패했습니다. 재고가 부족할 수 있습니다.')
-        }
-      })
+      navigate(`/orders/${res.data.data.orderId}`)
     } catch (err) {
       alert(err.response?.data?.message || '주문에 실패했습니다')
+    } finally {
       setOrdering(false)
     }
   }
@@ -99,18 +83,6 @@ export default function CartPage() {
 
   return (
     <CustomerLayout>
-      {/* 대기열 처리 오버레이 */}
-      {queueState && (
-        <div className={styles.queueOverlay}>
-          <div className={styles.queueBox}>
-            <div className={styles.queueSpinner} />
-            <p className={styles.queueTitle}>주문 처리 중</p>
-            <p className={styles.queuePos}>{queueState.position}번째 대기 중</p>
-            <p className={styles.queueHint}>처리 완료 시 자동으로 이동합니다</p>
-          </div>
-        </div>
-      )}
-
       <div className={styles.titleRow}>
         <h1 className={styles.title}>장바구니</h1>
         {!isEmpty && (
@@ -178,7 +150,7 @@ export default function CartPage() {
               <span>{cart.totalPrice.toLocaleString()}원</span>
             </div>
             <button className={styles.orderBtn} onClick={handleOrder} disabled={ordering}>
-              {ordering ? '대기열 등록 중...' : `${cart.totalPrice.toLocaleString()}원 주문하기`}
+              {ordering ? '주문 중...' : `${cart.totalPrice.toLocaleString()}원 주문하기`}
             </button>
           </div>
         </div>

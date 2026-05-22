@@ -46,6 +46,12 @@ export default function CustomerMenuListPage() {
               {label}
             </button>
           ))}
+          <button
+            className={styles.tabEvent}
+            onClick={() => navigate('/events')}
+          >
+            🎁 한정판매
+          </button>
         </div>
         <input
           className={styles.searchInput}

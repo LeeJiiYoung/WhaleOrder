@@ -6,6 +6,7 @@ export default function OwnerSearchPopup({ onSelect, onClose }) {
   const [keyword, setKeyword] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState('')
   const debounceRef = useRef(null)
 
   useEffect(() => {
@@ -23,9 +24,13 @@ export default function OwnerSearchPopup({ onSelect, onClose }) {
 
   const fetchOwners = async (kw) => {
     setLoading(true)
+    setFetchError('')
     try {
       const res = await searchOwners(kw)
       setResults(res.data.data)
+    } catch (e) {
+      setFetchError(`오류 ${e.response?.status ?? ''}: ${e.response?.data?.message ?? e.message}`)
+      setResults([])
     } finally {
       setLoading(false)
     }
@@ -68,16 +73,20 @@ export default function OwnerSearchPopup({ onSelect, onClose }) {
               </tr>
             </thead>
             <tbody>
-              {results.length === 0 && !loading ? (
+              {fetchError ? (
                 <tr>
-                  <td colSpan={4} className={styles.empty}>검색 결과가 없습니다</td>
+                  <td colSpan={4} className={styles.empty}>{fetchError}</td>
+                </tr>
+              ) : results.length === 0 && !loading ? (
+                <tr>
+                  <td colSpan={4} className={styles.empty}>검색 결과가 없습니다 (OWNER 역할 회원만 표시됩니다)</td>
                 </tr>
               ) : (
                 results.map((m) => (
                   <tr
                     key={m.memberId}
                     className={styles.row}
-                    onClick={() => { onSelect(m.userId); onClose() }}
+                    onClick={() => { onSelect(m); onClose() }}
                   >
                     <td className={styles.tdUserId}>{m.userId}</td>
                     <td>{m.name}</td>
@@ -85,7 +94,7 @@ export default function OwnerSearchPopup({ onSelect, onClose }) {
                     <td className={styles.tdAction}>
                       <button
                         className={styles.selectBtn}
-                        onClick={(e) => { e.stopPropagation(); onSelect(m.userId); onClose() }}
+                        onClick={(e) => { e.stopPropagation(); onSelect(m); onClose() }}
                       >
                         선택
                       </button>

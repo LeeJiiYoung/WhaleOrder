@@ -19,7 +19,9 @@
       "PowerShell(Get-ExecutionPolicy -List)",
       "Bash(./gradlew compileJava --quiet)",
       "Bash(grep -E \"\\\\.\\(java\\)$\")",
-      "Bash(xargs ls -la)"
+      "Bash(xargs ls -la)",
+      "Bash(git *)",
+      "PowerShell(Get-Process | Where-Object { $_.MainWindowTitle -ne \"\" -or $_.Name -match \"node|npm|vite|java\" } | Select-Object Id, Name, MainWindowTitle)"
     ]
   }
 }

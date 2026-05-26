@@ -22,6 +22,7 @@ export default function StoreCreatePage() {
   const [serverError, setServerError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showOwnerPopup, setShowOwnerPopup] = useState(false)
+  const [ownerName, setOwnerName] = useState('')
 
   useEffect(() => {
     const script = document.createElement('script')
@@ -175,7 +176,7 @@ export default function StoreCreatePage() {
               <input
                 className={`${styles.input} ${errors.ownerUserId ? styles.inputError : ''}`}
                 name="ownerUserId"
-                value={form.ownerUserId}
+                value={form.ownerUserId ? `${form.ownerUserId} / ${ownerName}` : ''}
                 onChange={handleChange}
                 placeholder="점주 회원 아이디"
                 autoComplete="off"
@@ -213,8 +214,9 @@ export default function StoreCreatePage() {
 
       {showOwnerPopup && (
         <OwnerSearchPopup
-          onSelect={(userId) => {
-            setForm((prev) => ({ ...prev, ownerUserId: userId }))
+          onSelect={(member) => {
+            setForm((prev) => ({ ...prev, ownerUserId: member.userId }))
+            setOwnerName(member.name)
             setErrors((prev) => ({ ...prev, ownerUserId: '' }))
           }}
           onClose={() => setShowOwnerPopup(false)}

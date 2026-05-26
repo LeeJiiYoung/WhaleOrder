@@ -9,7 +9,17 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(git -C e:/WhaleOrder status --short)",
+      "Bash(git -C e:/WhaleOrder ls-files order/)",
+      "Bash(git -C e:/WhaleOrder ls-files \"order/order/\")",
+      "Bash(git -C e:/WhaleOrder ls-files \"order/.idea/\" \"order/uploads/\" \"order/order/\" \"order/bin/\")",
+      "Bash(git rm *)",
+      "Bash(git mv *)",
+      "PowerShell(Get-ExecutionPolicy -List)",
+      "Bash(./gradlew compileJava --quiet)",
+      "Bash(grep -E \"\\\\.\\(java\\)$\")",
+      "Bash(xargs ls -la)"
     ]
   }
 }

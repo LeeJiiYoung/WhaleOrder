@@ -1,0 +1,95 @@
+.layout {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+/* 이미지 컬럼 */
+.imageCol {
+  flex-shrink: 0;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.uploadArea {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
+  background: #fafafa;
+}
+.uploadArea:hover { border-color: #4f46e5; background: #f5f3ff; }
+.uploadAreaError  { border-color: #dc2626; }
+
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  text-align: center;
+}
+
+.uploadIcon { font-size: 32px; }
+
+.uploadText {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.uploadHint {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.imgError {
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.changeBtn {
+  padding: 7px 0;
+  width: 100%;
+  background: transparent;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.changeBtn:hover { border-color: #4f46e5; color: #4f46e5; }
+
+/* 폼 컬럼 */
+.formCol {
+  flex: 1;
+}
+
+/* 목록 썸네일 */
+.thumbImg {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.noImg {
+  color: #d1d5db;
+}

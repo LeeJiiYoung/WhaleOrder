@@ -7,6 +7,10 @@ import com.whale.order.domain.order.entity.OrderStatusHistory;
 import com.whale.order.domain.order.entity.Orders;
 import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
+import com.whale.order.domain.payment.entity.PaymentHistory;
+import com.whale.order.domain.payment.entity.PaymentStatus;
+import com.whale.order.domain.payment.repository.PaymentHistoryRepository;
+import com.whale.order.domain.payment.repository.PaymentRepository;
 import com.whale.order.domain.stock.service.StockLockFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +31,8 @@ public class OrderProcessingService {
     private final OrderStatusHistoryRepository historyRepository;
     private final StockLockFacade stockLockFacade;
     private final OrderSseService orderSseService;
+    private final PaymentRepository paymentRepository;
+    private final PaymentHistoryRepository paymentHistoryRepository;
 
     // 대기열에서 꺼내서 재고 차감 처리
     public void processNext() {
@@ -43,7 +49,6 @@ public class OrderProcessingService {
         if (order.getStatus() == OrderStatus.CANCELLED) return;
 
         Long storeId = order.getStore().getStoreId();
-        Long memberId = order.getMember().getMemberId();
         List<OrderItem> deducted = new ArrayList<>();
 
         try {
@@ -89,6 +94,18 @@ public class OrderProcessingService {
                     .status(OrderStatus.CANCELLED)
                     .changedBy(null)
                     .build());
+
+            // Saga 보상 트랜잭션 — 재고 부족으로 주문 취소 시 결제도 함께 취소(환불)
+            paymentRepository.findByOrders(order).ifPresent(payment -> {
+                payment.cancel("재고 부족으로 인한 자동 환불");
+                paymentHistoryRepository.save(PaymentHistory.builder()
+                        .payment(payment)
+                        .status(PaymentStatus.CANCELLED)
+                        .reason("재고 부족으로 인한 자동 환불")
+                        .build());
+                log.info("Saga 보상 트랜잭션 — 결제 취소 paymentId={} orderId={}",
+                        payment.getPaymentId(), orderId);
+            });
         });
     }
 }

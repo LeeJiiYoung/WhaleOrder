@@ -87,10 +87,10 @@ public class Orders extends BaseEntity {
         this.status = OrderStatus.COMPLETED;
     }
 
-    // 주문 취소 - PENDING, ACCEPTED 상태에서만 가능
+    // 주문 취소 - 접수 대기(PENDING) 상태에서만 가능
     public void cancel() {
-        if (this.status == OrderStatus.PREPARING || this.status == OrderStatus.COMPLETED) {
-            throw new IllegalStateException("제조 중이거나 완료된 주문은 취소할 수 없습니다.");
+        if (this.status != OrderStatus.PENDING) {
+            throw new IllegalStateException("접수 대기 중인 주문만 취소할 수 있습니다.");
         }
         this.status = OrderStatus.CANCELLED;
     }

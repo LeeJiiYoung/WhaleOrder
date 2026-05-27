@@ -40,6 +40,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(e.getMessage()));
     }
 
+    // 결제 실패 (Mock PG 오류)
+    @ExceptionHandler(PaymentFailedException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePaymentFailedException(PaymentFailedException e) {
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(ApiResponse.fail(e.getMessage()));
+    }
+
     // 그 외 서버 에러
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {

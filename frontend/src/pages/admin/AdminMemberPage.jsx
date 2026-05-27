@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getMembers, createMember, updateMember, deleteMember } from '../../api/member'
+import { getMembers, createMember, updateMember, deleteMember, resetPassword } from '../../api/member'
 import AdminLayout from '../../components/admin/AdminLayout'
 import styles from './AdminMemberPage.module.css'
 
@@ -102,6 +102,17 @@ export default function AdminMemberPage() {
     }
   }
 
+  // ── 비밀번호 초기화 ──────────────────────────────────────────────
+  const handleResetPassword = async (member) => {
+    if (!window.confirm(`"${member.name}" 회원의 비밀번호를 초기화하시겠습니까?\n초기 비밀번호: ${member.userId}${member.userId}`)) return
+    try {
+      await resetPassword(member.memberId)
+      alert('비밀번호가 초기화됐습니다')
+    } catch (err) {
+      alert(err.response?.data?.message || '초기화에 실패했습니다')
+    }
+  }
+
   // ── 삭제 ────────────────────────────────────────────────────────
   const handleDelete = async (member) => {
     if (!window.confirm(`"${member.name}" 회원을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) return
@@ -183,6 +194,9 @@ export default function AdminMemberPage() {
                     <td>{new Date(m.createdAt).toLocaleDateString('ko-KR')}</td>
                     <td className={styles.actions}>
                       <button className={styles.editBtn} onClick={() => openEdit(m)}>수정</button>
+                      {m.provider !== 'KAKAO' && (
+                        <button className={styles.resetBtn} onClick={() => handleResetPassword(m)}>비번초기화</button>
+                      )}
                       <button className={styles.deleteBtn} onClick={() => handleDelete(m)}>삭제</button>
                     </td>
                   </tr>

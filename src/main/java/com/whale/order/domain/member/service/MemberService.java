@@ -115,6 +115,16 @@ public class MemberService {
         memberRepository.deleteById(memberId);
     }
 
+    @Transactional
+    public void resetPassword(Long memberId) {
+        Member member = findById(memberId);
+        if (member.getProvider() != AuthProvider.LOCAL) {
+            throw new IllegalArgumentException("소셜 로그인 회원은 비밀번호를 초기화할 수 없습니다");
+        }
+        String initialPassword = member.getUserId() + member.getUserId();
+        member.updatePassword(passwordEncoder.encode(initialPassword));
+    }
+
     // ── 내 정보 (고객 본인) ──────────────────────────────────────────
 
     @Transactional(readOnly = true)

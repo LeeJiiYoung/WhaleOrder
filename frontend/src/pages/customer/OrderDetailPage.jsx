@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getOrder, cancelOrder } from '../../api/order'
+import { getPaymentByOrder } from '../../api/payment'
 import CustomerLayout from '../../components/customer/CustomerLayout'
 import styles from './OrderDetailPage.module.css'
+
+const TERMINAL = new Set(['COMPLETED', 'CANCELLED'])
 
 const parseOptions = (raw) => {
   try { return JSON.parse(raw || '[]') } catch { return [] }
@@ -24,17 +27,72 @@ const ORDER_TYPE_LABEL = {
 export default function OrderDetailPage() {
   const { orderId } = useParams()
   const navigate = useNavigate()
-  const [order, setOrder] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [order,      setOrder]      = useState(null)
+  const [payment,    setPayment]    = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState('')
   const [cancelling, setCancelling] = useState(false)
+  const [statusMsg,  setStatusMsg]  = useState('')
 
   useEffect(() => {
-    getOrder(orderId)
-      .then((res) => setOrder(res.data.data))
+    Promise.all([
+      getOrder(orderId),
+      getPaymentByOrder(orderId).catch(() => ({ data: { data: null } })),
+    ])
+      .then(([orderRes, paymentRes]) => {
+        setOrder(orderRes.data.data)
+        setPayment(paymentRes.data.data)
+      })
       .catch(() => setError('주문 정보를 불러오지 못했습니다'))
       .finally(() => setLoading(false))
   }, [orderId])
+
+  // 관리자 상태 변경 실시간 구독
+  // order?.orderId 를 dep 으로 사용 — 주문이 처음 로드될 때 한 번만 연결,
+  // status 업데이트로 setOrder 가 호출돼도 orderId 는 바뀌지 않으므로 재연결 없음
+  useEffect(() => {
+    if (!order || TERMINAL.has(order.status)) return
+
+    const ctrl = new AbortController()
+    ;(async () => {
+      try {
+        const token = localStorage.getItem('accessToken')
+        const res = await fetch(`/api/orders/${orderId}/updates`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: ctrl.signal,
+        })
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buf = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          const parts = buf.split('\n\n')
+          buf = parts.pop()
+
+          for (const chunk of parts) {
+            let eventName = '', dataLine = ''
+            for (const line of chunk.split('\n')) {
+              if (line.startsWith('event:')) eventName = line.slice(6).trim()
+              if (line.startsWith('data:')) dataLine = line.slice(5).trim()
+            }
+            if (eventName === 'status' && dataLine) {
+              const { status, message } = JSON.parse(dataLine)
+              setOrder((prev) => prev ? { ...prev, status } : prev)
+              if (message) setStatusMsg(message)
+              if (TERMINAL.has(status)) ctrl.abort()
+            }
+          }
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') console.warn('상태 SSE 연결 끊김', e)
+      }
+    })()
+
+    return () => ctrl.abort()
+  }, [orderId, order?.orderId])
 
   const handleCancel = async () => {
     if (!window.confirm('주문을 취소하시겠습니까?')) return
@@ -61,8 +119,11 @@ export default function OrderDetailPage() {
       <div className={styles.page}>
         {/* 상태 배너 */}
         <div className={styles.statusBanner} style={{ borderColor: statusInfo.color }}>
-          <p className={styles.statusLabel} style={{ color: statusInfo.color }}>{statusInfo.text}</p>
-          <p className={styles.orderNum}>주문번호 #{order.orderId}</p>
+          <div className={styles.statusBannerRow}>
+            <p className={styles.statusLabel} style={{ color: statusInfo.color }}>{statusInfo.text}</p>
+            <p className={styles.orderNum}>주문번호 #{order.orderId}</p>
+          </div>
+          {statusMsg && <p className={styles.statusMsg}>{statusMsg}</p>}
         </div>
 
         {/* 주문 정보 */}
@@ -115,6 +176,33 @@ export default function OrderDetailPage() {
             <span className={styles.totalPrice}>{order.totalPrice.toLocaleString()}원</span>
           </div>
         </div>
+
+        {/* 결제 정보 */}
+        {payment && (
+          <div className={styles.card}>
+            <p className={styles.cardTitle}>결제 정보</p>
+            <div className={styles.infoRow}>
+              <span className={styles.infoKey}>결제 수단</span>
+              <span className={styles.infoVal}>{payment.methodLabel}</span>
+            </div>
+            <div className={styles.infoRow}>
+              <span className={styles.infoKey}>결제 금액</span>
+              <span className={styles.infoVal}>{payment.amount?.toLocaleString()}원</span>
+            </div>
+            <div className={styles.infoRow}>
+              <span className={styles.infoKey}>결제 상태</span>
+              <span className={styles.infoVal} style={{ color: payment.status === 'CANCELLED' ? '#ef4444' : payment.status === 'SUCCESS' ? '#10b981' : '#6b7280' }}>
+                {payment.statusLabel}
+              </span>
+            </div>
+            {payment.externalTxId && (
+              <div className={styles.infoRow}>
+                <span className={styles.infoKey}>거래 번호</span>
+                <span className={styles.infoVal} style={{ fontFamily: 'monospace', fontSize: 12 }}>{payment.externalTxId}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 버튼 영역 */}
         <div className={styles.actions}>

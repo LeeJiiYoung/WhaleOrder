@@ -22,6 +22,7 @@ import EventManagePage from './pages/admin/EventManagePage'
 import GoodsManagePage from './pages/admin/GoodsManagePage'
 import AdminMemberPage from './pages/admin/AdminMemberPage'
 import MyProfilePage from './pages/customer/MyProfilePage'
+import PaymentPage from './pages/customer/PaymentPage'
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('accessToken')
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/menus" element={<PrivateRoute><CustomerMenuListPage /></PrivateRoute>} />
         <Route path="/menus/:menuId" element={<PrivateRoute><CustomerMenuDetailPage /></PrivateRoute>} />
         <Route path="/cart" element={<PrivateRoute><CartPage /></PrivateRoute>} />
+        <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
         <Route path="/orders/:orderId" element={<PrivateRoute><OrderDetailPage /></PrivateRoute>} />
         <Route path="/my-orders" element={<PrivateRoute><MyOrdersPage /></PrivateRoute>} />
         <Route path="/profile"   element={<PrivateRoute><MyProfilePage /></PrivateRoute>} />

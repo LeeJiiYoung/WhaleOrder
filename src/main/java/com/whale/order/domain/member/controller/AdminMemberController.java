@@ -54,6 +54,13 @@ public class AdminMemberController {
         return ResponseEntity.ok(ApiResponse.ok("회원이 삭제됐습니다", null));
     }
 
+    // 비밀번호 초기화 (아이디×2로 초기화)
+    @PatchMapping("/{memberId}/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@PathVariable Long memberId) {
+        memberService.resetPassword(memberId);
+        return ResponseEntity.ok(ApiResponse.ok("비밀번호가 초기화됐습니다", null));
+    }
+
     // OWNER 역할 회원 검색 (매장 생성 팝업용)
     @GetMapping("/owners")
     public ResponseEntity<ApiResponse<List<MemberSearchResponse>>> searchOwners(

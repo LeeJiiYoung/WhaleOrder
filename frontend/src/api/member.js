@@ -14,4 +14,5 @@ export const getMembers   = (keyword = '', role = '') =>
 export const getMember    = (memberId) => client.get(`/admin/members/${memberId}`)
 export const createMember = (data)     => client.post('/admin/members', data)
 export const updateMember = (memberId, data) => client.put(`/admin/members/${memberId}`, data)
-export const deleteMember = (memberId) => client.delete(`/admin/members/${memberId}`)
+export const deleteMember   = (memberId) => client.delete(`/admin/members/${memberId}`)
+export const resetPassword  = (memberId) => client.patch(`/admin/members/${memberId}/reset-password`)

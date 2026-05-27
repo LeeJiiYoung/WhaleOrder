@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCart, updateQuantity, removeFromCart, clearCart } from '../../api/cart'
-import { createOrder } from '../../api/order'
 import CustomerLayout from '../../components/customer/CustomerLayout'
 import styles from './CartPage.module.css'
 
@@ -17,7 +16,7 @@ export default function CartPage() {
   const [error, setError] = useState('')
   const [orderType, setOrderType] = useState('TAKEOUT')
   const [customerRequest, setCustomerRequest] = useState('')
-  const [ordering, setOrdering] = useState(false)
+  const [ordering] = useState(false)
 
   const load = () => {
     setLoading(true)
@@ -57,26 +56,21 @@ export default function CartPage() {
     }
   }
 
-  const handleOrder = async () => {
+  const handleOrder = () => {
     const storeId = localStorage.getItem('selectedStoreId')
     if (!storeId) {
       alert('매장을 먼저 선택해주세요')
       navigate('/stores')
       return
     }
-    setOrdering(true)
-    try {
-      const idempotencyKey = crypto.randomUUID()
-      const res = await createOrder(
-        { storeId: Number(storeId), orderType, customerRequest: customerRequest.trim() || null },
-        idempotencyKey,
-      )
-      navigate(`/orders/${res.data.data.orderId}`)
-    } catch (err) {
-      alert(err.response?.data?.message || '주문에 실패했습니다')
-    } finally {
-      setOrdering(false)
-    }
+    navigate('/payment', {
+      state: {
+        orderType,
+        customerRequest: customerRequest.trim() || null,
+        totalPrice: cart.totalPrice,
+        totalCount: cart.totalCount,
+      },
+    })
   }
 
   const isEmpty = !cart || cart.items.length === 0
@@ -150,7 +144,7 @@ export default function CartPage() {
               <span>{cart.totalPrice.toLocaleString()}원</span>
             </div>
             <button className={styles.orderBtn} onClick={handleOrder} disabled={ordering}>
-              {ordering ? '주문 중...' : `${cart.totalPrice.toLocaleString()}원 주문하기`}
+              {`${cart.totalPrice.toLocaleString()}원 결제하기`}
             </button>
           </div>
         </div>

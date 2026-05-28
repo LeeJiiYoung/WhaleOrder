@@ -26,7 +26,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderProcessingService {
 
-    private final OrderQueueService orderQueueService;
     private final OrderRepository orderRepository;
     private final OrderStatusHistoryRepository historyRepository;
     private final StockLockFacade stockLockFacade;
@@ -34,17 +33,17 @@ public class OrderProcessingService {
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
 
-    // 대기열에서 꺼내서 재고 차감 처리
-    public void processNext() {
-        Long orderId = orderQueueService.dequeue();
-        if (orderId == null) return;
-
+    // Kafka Consumer에서 직접 orderId를 받아서 처리 (Redis 폴링 불필요)
+    public void process(Long orderId) {
         Orders order = orderRepository.findByIdWithDetails(orderId).orElse(null);
         if (order == null) {
-            log.warn("대기열에서 꺼냈으나 주문을 찾을 수 없음 orderId={}", orderId);
+            log.warn("주문을 찾을 수 없음 orderId={}", orderId);
             return;
         }
+        processOrder(orderId, order);
+    }
 
+    private void processOrder(Long orderId, Orders order) {
         // 이미 취소된 주문은 스킵
         if (order.getStatus() == OrderStatus.CANCELLED) return;
 
@@ -56,7 +55,9 @@ public class OrderProcessingService {
                 stockLockFacade.deductStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
                 deducted.add(item);
             }
-            // 재고 차감 성공 → 주문 유지 (매장 접수 대기 PENDING)
+            // 재고 차감 성공 → stockDeducted 플래그 설정 (취소 시 재고 복구 여부 판단에 사용)
+            order.markStockDeducted();
+            orderRepository.save(order);
             log.info("주문 처리 완료 orderId={}", orderId);
             orderSseService.notify(orderId, Map.of(
                     "status", "SUCCESS",

@@ -21,7 +21,7 @@ const STATUS_LABEL = {
 
 const ORDER_TYPE_LABEL = {
   TAKEOUT: '포장',
-  DINE_IN: '매장 내 취식',
+  DINE_IN: '매장',
 }
 
 export default function OrderDetailPage() {

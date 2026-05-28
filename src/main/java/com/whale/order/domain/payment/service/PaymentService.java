@@ -15,7 +15,7 @@ import com.whale.order.domain.order.entity.OrderStatusHistory;
 import com.whale.order.domain.order.entity.Orders;
 import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
-import com.whale.order.domain.order.service.OrderQueueService;
+import com.whale.order.domain.order.service.OrderKafkaProducer;
 import com.whale.order.domain.payment.dto.PaymentInfoResponse;
 import com.whale.order.domain.payment.dto.PaymentRequest;
 import com.whale.order.domain.payment.dto.PaymentResponse;
@@ -48,7 +48,7 @@ public class PaymentService {
     private final OrderStatusHistoryRepository orderHistoryRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
-    private final OrderQueueService orderQueueService;
+    private final OrderKafkaProducer orderKafkaProducer;
     private final ObjectMapper objectMapper;
 
     /**
@@ -108,10 +108,10 @@ public class PaymentService {
                     .orders(order).status(OrderStatus.PENDING).changedBy(null).build());
 
             cartService.clearCart(memberId);
-            long position = orderQueueService.enqueue(order.getOrderId());
+            orderKafkaProducer.publish(order.getOrderId());
 
             log.info("결제 성공 paymentId={} orderId={} txId={}", payment.getPaymentId(), order.getOrderId(), txId);
-            return PaymentResponse.from(payment, order, position);
+            return PaymentResponse.from(payment, order, 0);
 
         } else {
             // 결제 실패 → 주문 취소 (보상 트랜잭션)

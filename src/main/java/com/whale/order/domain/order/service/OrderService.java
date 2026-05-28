@@ -22,6 +22,7 @@ import com.whale.order.domain.stock.service.StockLockFacade;
 import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
 import com.whale.order.global.exception.DuplicateRequestException;
+import com.whale.order.domain.order.service.OrderKafkaProducer;
 import com.whale.order.global.idempotency.IdempotencyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -48,7 +49,7 @@ public class OrderService {
     private final CartService cartService;
     private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
-    private final OrderQueueService orderQueueService;
+    private final OrderKafkaProducer orderKafkaProducer;
     private final OrderSseService orderSseService;
 
     // 장바구니 → 주문 생성 후 대기열 등록
@@ -108,9 +109,8 @@ public class OrderService {
 
             cartService.clearCart(memberId);
 
-            // 트랜잭션 커밋 후 대기열 등록
-            long position = orderQueueService.enqueue(order.getOrderId());
-            QueuedOrderResponse response = QueuedOrderResponse.of(order.getOrderId(), position);
+            orderKafkaProducer.publish(order.getOrderId());
+            QueuedOrderResponse response = QueuedOrderResponse.of(order.getOrderId(), 0);
 
             idempotencyService.saveResult(key, response);
             return response;
@@ -168,9 +168,9 @@ public class OrderService {
         }
         order.cancel();
 
-        boolean wasInQueue = orderQueueService.removeFromQueue(orderId);
-        if (!wasInQueue) {
-            // 이미 워커가 처리(재고 차감 완료) → 재고 복구 필요
+        // Kafka 방식: stockDeducted 플래그로 재고 차감 완료 여부 판단
+        // (기존 Redis 방식은 removeFromQueue() 성공 여부로 판단했음)
+        if (order.isStockDeducted()) {
             Long storeId = order.getStore().getStoreId();
             for (OrderItem item : order.getOrderItems()) {
                 stockLockFacade.restoreStock(storeId, item.getMenu().getMenuId(), item.getQuantity());

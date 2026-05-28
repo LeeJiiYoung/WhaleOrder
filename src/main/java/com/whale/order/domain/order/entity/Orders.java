@@ -50,6 +50,11 @@ public class Orders extends BaseEntity {
     @Column(length = 500)
     private String customerRequest;
 
+    // Kafka Consumer가 재고 차감 완료 후 true로 설정
+    // 주문 취소 시 이 값으로 재고 복구 여부를 결정 (Redis removeFromQueue 대체)
+    @Column(nullable = false)
+    private boolean stockDeducted = false;
+
     // 주문 항목 - 주문과 함께 생성/삭제됨
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
@@ -85,6 +90,11 @@ public class Orders extends BaseEntity {
     public void complete() {
         validateStatus(OrderStatus.PREPARING);
         this.status = OrderStatus.COMPLETED;
+    }
+
+    // Kafka Consumer 처리 완료 후 호출
+    public void markStockDeducted() {
+        this.stockDeducted = true;
     }
 
     // 주문 취소 - 접수 대기(PENDING) 상태에서만 가능

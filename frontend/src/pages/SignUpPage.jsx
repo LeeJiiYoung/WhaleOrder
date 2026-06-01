@@ -133,6 +133,23 @@ export default function SignUpPage() {
           </button>
         </form>
 
+        <div className={styles.divider}>
+          <span>또는</span>
+        </div>
+
+        <button
+          type="button"
+          className={styles.kakaoBtn}
+          onClick={() => { window.location.href = '/oauth2/authorization/kakao' }}
+        >
+          <img
+            src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png"
+            alt=""
+            className={styles.kakaoIcon}
+          />
+          카카오로 시작하기
+        </button>
+
         <p className={styles.loginLink}>
           이미 계정이 있으신가요? <Link to="/login">로그인</Link>
         </p>

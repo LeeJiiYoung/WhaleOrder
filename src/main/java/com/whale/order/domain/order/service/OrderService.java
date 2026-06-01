@@ -49,7 +49,7 @@ public class OrderService {
     private final CartService cartService;
     private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
-    private final OrderKafkaProducer orderKafkaProducer;
+    private final java.util.Optional<OrderKafkaProducer> orderKafkaProducer;
     private final OrderSseService orderSseService;
 
     // 장바구니 → 주문 생성 후 대기열 등록
@@ -109,7 +109,7 @@ public class OrderService {
 
             cartService.clearCart(memberId);
 
-            orderKafkaProducer.publish(order.getOrderId());
+            orderKafkaProducer.ifPresent(p -> p.publish(order.getOrderId()));
             QueuedOrderResponse response = QueuedOrderResponse.of(order.getOrderId(), 0);
 
             idempotencyService.saveResult(key, response);

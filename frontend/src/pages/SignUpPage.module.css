@@ -146,3 +146,47 @@
   transition: all 0.15s;
 }
 .testBtn:hover { border-color: #4f46e5; color: #4f46e5; background: #f5f3ff; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0 16px;
+  color: #bbb;
+  font-size: 12px;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+.divider span {
+  padding: 0 10px;
+}
+
+.kakaoBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #fee500;
+  color: #000;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.kakaoBtn:hover {
+  background-color: #f0d800;
+}
+
+.kakaoIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}

@@ -59,6 +59,9 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
+	// .env 파일 로드 (로컬 개발용)
+	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
 	// DevTools (자동 재시작)
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

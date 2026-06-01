@@ -87,6 +87,23 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <div className={styles.divider}>
+          <span>또는</span>
+        </div>
+
+        <button
+          type="button"
+          className={styles.kakaoBtn}
+          onClick={() => { window.location.href = 'http://localhost:8080/oauth2/authorization/kakao' }}
+        >
+          <img
+            src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png"
+            alt=""
+            className={styles.kakaoIcon}
+          />
+          카카오로 로그인
+        </button>
+
         <div className={styles.testBtns}>
           <span className={styles.testLabel}>테스트 계정</span>
           <div className={styles.testBtnRow}>

@@ -3,6 +3,8 @@ package com.whale.order.global.config;
 import com.whale.order.global.auth.CustomUserDetailsService;
 import com.whale.order.global.auth.jwt.JwtAuthenticationFilter;
 import com.whale.order.global.auth.jwt.JwtProvider;
+import com.whale.order.global.auth.oauth2.KakaoOAuth2UserService;
+import com.whale.order.global.auth.oauth2.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,13 +26,17 @@ public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final KakaoOAuth2UserService kakaoOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                // OAuth2 인가 코드 플로우는 state 저장을 위해 세션이 필요 → IF_REQUIRED 사용
+                // JWT 필터가 API 요청은 stateless하게 처리하므로 실질적으로 무상태 유지
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         // 카카오 OAuth2 경로 (9단계에서 추가)
@@ -47,6 +53,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(kakaoOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                        .failureHandler((req, res, ex) -> {
+                            org.slf4j.LoggerFactory.getLogger(SecurityConfig.class)
+                                .error("OAuth2 로그인 실패: {}", ex.getMessage(), ex);
+                            res.sendRedirect("/login?error=" + ex.getMessage());
+                        }))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

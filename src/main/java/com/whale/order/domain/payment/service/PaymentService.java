@@ -48,7 +48,7 @@ public class PaymentService {
     private final OrderStatusHistoryRepository orderHistoryRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
-    private final OrderKafkaProducer orderKafkaProducer;
+    private final java.util.Optional<OrderKafkaProducer> orderKafkaProducer;
     private final ObjectMapper objectMapper;
 
     /**
@@ -108,7 +108,7 @@ public class PaymentService {
                     .orders(order).status(OrderStatus.PENDING).changedBy(null).build());
 
             cartService.clearCart(memberId);
-            orderKafkaProducer.publish(order.getOrderId());
+            orderKafkaProducer.ifPresent(p -> p.publish(order.getOrderId()));
 
             log.info("결제 성공 paymentId={} orderId={} txId={}", payment.getPaymentId(), order.getOrderId(), txId);
             return PaymentResponse.from(payment, order, 0);

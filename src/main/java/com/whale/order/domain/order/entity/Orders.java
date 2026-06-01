@@ -52,7 +52,7 @@ public class Orders extends BaseEntity {
 
     // Kafka Consumer가 재고 차감 완료 후 true로 설정
     // 주문 취소 시 이 값으로 재고 복구 여부를 결정 (Redis removeFromQueue 대체)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
     private boolean stockDeducted = false;
 
     // 주문 항목 - 주문과 함께 생성/삭제됨

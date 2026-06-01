@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import SignUpPage from './pages/SignUpPage'
 import LoginPage from './pages/LoginPage'
+import OAuth2CallbackPage from './pages/OAuth2CallbackPage'
 import StoreCreatePage from './pages/admin/StoreCreatePage'
 import StoreListPage from './pages/admin/StoreListPage'
 import StoreDetailPage from './pages/admin/StoreDetailPage'
@@ -43,6 +44,7 @@ export default function App() {
       <Routes>
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
         <Route path="/" element={<Navigate to="/stores" replace />} />
 
         {/* 고객 */}

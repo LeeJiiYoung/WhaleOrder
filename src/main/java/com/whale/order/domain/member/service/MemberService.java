@@ -5,6 +5,7 @@ import com.whale.order.domain.member.entity.AuthProvider;
 import com.whale.order.domain.member.entity.Member;
 import com.whale.order.domain.member.entity.MemberRole;
 import com.whale.order.domain.member.repository.MemberRepository;
+import com.whale.order.global.auth.RefreshTokenService;
 import com.whale.order.global.auth.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public LoginResponse signUp(SignUpRequest request) {
@@ -154,9 +156,33 @@ public class MemberService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다"));
     }
 
+    // RTR: 기존 Refresh Token 폐기 후 새 Access Token + Refresh Token 동시 발급
+    public LoginResponse refresh(String refreshToken) {
+        if (!jwtProvider.validateToken(refreshToken)) {
+            throw new IllegalArgumentException("유효하지 않은 리프레시 토큰입니다");
+        }
+        Long memberId = jwtProvider.getMemberId(refreshToken);
+        String stored = refreshTokenService.get(memberId);
+        if (!refreshToken.equals(stored)) {
+            // 탈취 가능성 — 저장된 토큰도 즉시 삭제
+            refreshTokenService.delete(memberId);
+            throw new IllegalArgumentException("리프레시 토큰이 일치하지 않습니다");
+        }
+        Member member = findById(memberId);
+        refreshTokenService.delete(memberId);
+        return issueTokens(member);
+    }
+
+    public void logout(String refreshToken) {
+        if (!jwtProvider.validateToken(refreshToken)) return;
+        Long memberId = jwtProvider.getMemberId(refreshToken);
+        refreshTokenService.delete(memberId);
+    }
+
     private LoginResponse issueTokens(Member member) {
         String accessToken = jwtProvider.generateAccessToken(member.getMemberId(), member.getRole());
         String refreshToken = jwtProvider.generateRefreshToken(member.getMemberId());
+        refreshTokenService.save(member.getMemberId(), refreshToken);
         return new LoginResponse(accessToken, refreshToken, member.getNickname(), member.getRole().name());
     }
 }

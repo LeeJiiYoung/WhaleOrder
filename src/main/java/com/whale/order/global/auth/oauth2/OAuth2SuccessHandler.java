@@ -1,6 +1,7 @@
 package com.whale.order.global.auth.oauth2;
 
 import com.whale.order.domain.member.entity.Member;
+import com.whale.order.global.auth.RefreshTokenService;
 import com.whale.order.global.auth.jwt.JwtProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,6 +21,7 @@ import java.io.IOException;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     @Value("${app.oauth2.redirect-uri}")
     private String redirectUri;
@@ -36,6 +38,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         String accessToken = jwtProvider.generateAccessToken(member.getMemberId(), member.getRole());
         String refreshToken = jwtProvider.generateRefreshToken(member.getMemberId());
+        refreshTokenService.save(member.getMemberId(), refreshToken);
 
         // nickname은 URL에 포함하지 않음 — 한글 등 비ASCII 문자가 Tomcat Location 헤더를 깨뜨림
         // 프론트엔드는 로그인 후 /api/members/me 로 프로필을 조회할 것

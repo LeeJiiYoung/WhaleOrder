@@ -19,6 +19,7 @@ import EventListPage from './pages/customer/EventListPage'
 import EventDetailPage from './pages/customer/EventDetailPage'
 import AdminOrderPage from './pages/admin/AdminOrderPage'
 import StockPage from './pages/admin/StockPage'
+import StockRestoreFailurePage from './pages/admin/StockRestoreFailurePage'
 import EventManagePage from './pages/admin/EventManagePage'
 import GoodsManagePage from './pages/admin/GoodsManagePage'
 import AdminMemberPage from './pages/admin/AdminMemberPage'
@@ -74,6 +75,7 @@ export default function App() {
 
         {/* 재고 */}
         <Route path="/admin/stores/:storeId/stocks" element={<AdminRoute><StockPage /></AdminRoute>} />
+        <Route path="/admin/stock-restore-failures" element={<AdminRoute><StockRestoreFailurePage /></AdminRoute>} />
 
         {/* 한정판매 */}
         <Route path="/admin/events" element={<AdminRoute><EventManagePage /></AdminRoute>} />

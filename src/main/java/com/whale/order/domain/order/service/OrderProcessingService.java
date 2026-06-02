@@ -11,6 +11,8 @@ import com.whale.order.domain.payment.entity.PaymentHistory;
 import com.whale.order.domain.payment.entity.PaymentStatus;
 import com.whale.order.domain.payment.repository.PaymentHistoryRepository;
 import com.whale.order.domain.payment.repository.PaymentRepository;
+import com.whale.order.domain.stock.entity.StockRestoreFailure;
+import com.whale.order.domain.stock.repository.StockRestoreFailureRepository;
 import com.whale.order.domain.stock.service.StockLockFacade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class OrderProcessingService {
     private final OrderSseService orderSseService;
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
+    private final StockRestoreFailureRepository stockRestoreFailureRepository;
 
     // Kafka Consumer에서 직접 orderId를 받아서 처리 (Redis 폴링 불필요)
     public void process(Long orderId) {
@@ -73,7 +76,19 @@ public class OrderProcessingService {
                 try {
                     stockLockFacade.restoreStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
                 } catch (Exception restoreEx) {
-                    log.error("재고 복구 실패 menuId={}", item.getMenu().getMenuId(), restoreEx);
+                    Long menuId = item.getMenu().getMenuId();
+                    int quantity = item.getQuantity();
+                    log.error("재고 복구 실패 menuId={} quantity={}", menuId, quantity, restoreEx);
+                    // DB에 기록 — 관리자가 나중에 수동 보정
+                    stockRestoreFailureRepository.save(StockRestoreFailure.builder()
+                            .orderId(orderId)
+                            .storeId(storeId)
+                            .menuId(menuId)
+                            .quantity(quantity)
+                            .reason(restoreEx.getMessage())
+                            .build());
+                    // 관리자 SSE 실시간 알림
+                    orderSseService.broadcastStockRestoreFailure(orderId, menuId, quantity);
                 }
             }
             cancelOrder(orderId);
@@ -86,9 +101,20 @@ public class OrderProcessingService {
         }
     }
 
+    // DLQ Consumer에서 호출 — 3회 재시도 후에도 실패한 주문의 보상 트랜잭션 진입점
+    @Transactional
+    public void compensate(Long orderId) {
+        log.warn("DLQ 보상 트랜잭션 시작 orderId={}", orderId);
+        cancelOrder(orderId);
+    }
+
     @Transactional
     protected void cancelOrder(Long orderId) {
         orderRepository.findById(orderId).ifPresent(order -> {
+            if (order.getStatus() == OrderStatus.CANCELLED) {
+                log.warn("이미 취소된 주문 스킵 orderId={}", orderId);
+                return;
+            }
             order.cancel();
             historyRepository.save(OrderStatusHistory.builder()
                     .orders(order)

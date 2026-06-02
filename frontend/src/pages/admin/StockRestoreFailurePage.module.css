@@ -1,0 +1,78 @@
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 4px;
+}
+
+.desc {
+  font-size: 13px;
+  color: #888;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 0;
+  color: #aaa;
+  font-size: 15px;
+}
+
+.errorBox {
+  text-align: center;
+  padding: 60px 0;
+  color: #dc2626;
+  font-size: 15px;
+}
+
+.table {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.tableHead {
+  display: grid;
+  grid-template-columns: 130px 80px 80px 80px 60px 1fr;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #fef2f2;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dc2626;
+  border-bottom: 1px solid #fecaca;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 130px 80px 80px 80px 60px 1fr;
+  gap: 12px;
+  padding: 14px 20px;
+  align-items: center;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 13px;
+  color: #333;
+}
+.tableRow:last-child { border-bottom: none; }
+
+.time {
+  font-size: 12px;
+  color: #888;
+}
+
+.qty {
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.reason {
+  color: #555;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

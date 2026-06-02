@@ -134,6 +134,19 @@ public class OrderSseService {
         adminEmitters.forEach((clientId, emitter) -> send(emitter, "newOrder", json));
     }
 
+    /** 재고 복구 실패 시 연결된 모든 어드민 브라우저에 경고 전송 */
+    public void broadcastStockRestoreFailure(Long orderId, Long menuId, int quantity) {
+        Map<String, Object> data = Map.of(
+                "orderId", orderId,
+                "menuId", menuId,
+                "quantity", quantity,
+                "message", "재고 복구 실패 — 수동 보정 필요"
+        );
+        String json = toJson(data);
+        if (json == null) return;
+        adminEmitters.forEach((clientId, emitter) -> send(emitter, "stockRestoreFailure", json));
+    }
+
     /** 25초마다 heartbeat 전송 — 브라우저/프록시의 유휴 연결 끊김 방지 */
     @Scheduled(fixedDelay = 25_000)
     public void sendAdminHeartbeat() {

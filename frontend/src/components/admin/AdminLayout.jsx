@@ -2,20 +2,21 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import styles from './AdminLayout.module.css'
 
 const TOP_NAV = [
-  { label: '매장 관리', prefixes: ['/admin/store'],            path: '/admin/store-create' },
-  { label: '메뉴 관리', prefixes: ['/admin/menu'],             path: '/admin/menus' },
-  { label: '주문 관리', prefixes: ['/admin/order'],            path: '/admin/orders' },
+  { label: '매장 관리', prefixes: ['/admin/store', '/admin/stock'],  path: '/admin/store-create' },
+  { label: '메뉴 관리', prefixes: ['/admin/menu'],                   path: '/admin/menus' },
+  { label: '주문 관리', prefixes: ['/admin/order'],                  path: '/admin/orders' },
   { label: '한정판매',  prefixes: ['/admin/events', '/admin/goods'], path: '/admin/events' },
-  { label: '회원 관리', prefixes: ['/admin/member'],           path: '/admin/members' },
+  { label: '회원 관리', prefixes: ['/admin/member'],                 path: '/admin/members' },
 ]
 
 const SIDEBAR_NAV = [
   {
     section: '매장',
-    prefixes: ['/admin/store'],
+    prefixes: ['/admin/store', '/admin/stock'],
     items: [
-      { label: '매장 생성', icon: '🏪', path: '/admin/store-create' },
-      { label: '매장 목록', icon: '📋', path: '/admin/stores' },
+      { label: '매장 생성',       icon: '🏪', path: '/admin/store-create' },
+      { label: '매장 목록',       icon: '📋', path: '/admin/stores' },
+      { label: '재고 복구 실패',  icon: '⚠️', path: '/admin/stock-restore-failures' },
     ],
   },
   {

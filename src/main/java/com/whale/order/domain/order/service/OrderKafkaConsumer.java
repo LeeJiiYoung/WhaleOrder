@@ -1,5 +1,7 @@
 package com.whale.order.domain.order.service;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 public class OrderKafkaConsumer {
 
     private final OrderProcessingService orderProcessingService;
+    private final MeterRegistry meterRegistry;
 
     // groupId: 같은 그룹의 Consumer들이 파티션을 나눠서 처리
     // 파티션 3개 → Consumer 최대 3개까지 병렬 처리 가능
@@ -36,6 +39,9 @@ public class OrderKafkaConsumer {
     public void consumeDlt(Long orderId,
                            @Header(KafkaHeaders.EXCEPTION_MESSAGE) String exceptionMessage) {
         log.error("DLT 수신 orderId={} 원인={}", orderId, exceptionMessage);
+        Counter.builder("kafka.dlt.received")
+                .description("DLT 수신 횟수 — 3회 재시도 후에도 처리 실패한 메시지")
+                .register(meterRegistry).increment();
         try {
             orderProcessingService.compensate(orderId);
         } catch (Exception e) {

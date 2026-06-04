@@ -27,6 +27,8 @@ import com.whale.order.domain.payment.repository.PaymentRepository;
 import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
 import com.whale.order.global.exception.PaymentFailedException;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -50,6 +52,7 @@ public class PaymentService {
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final java.util.Optional<OrderKafkaProducer> orderKafkaProducer;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Mock 결제 처리.
@@ -110,6 +113,10 @@ public class PaymentService {
             cartService.clearCart(memberId);
             orderKafkaProducer.ifPresent(p -> p.publish(order.getOrderId()));
 
+            Counter.builder("payment.processed")
+                    .tag("result", "success")
+                    .description("결제 처리 횟수")
+                    .register(meterRegistry).increment();
             log.info("결제 성공 paymentId={} orderId={} txId={}", payment.getPaymentId(), order.getOrderId(), txId);
             return PaymentResponse.from(payment, order, 0);
 
@@ -122,6 +129,10 @@ public class PaymentService {
             orderHistoryRepository.save(OrderStatusHistory.builder()
                     .orders(order).status(OrderStatus.CANCELLED).changedBy(null).build());
 
+            Counter.builder("payment.processed")
+                    .tag("result", "failure")
+                    .description("결제 처리 횟수")
+                    .register(meterRegistry).increment();
             log.warn("결제 실패 paymentId={} orderId={}", payment.getPaymentId(), order.getOrderId());
             throw new PaymentFailedException("결제에 실패했습니다. 다시 시도해주세요.");
         }

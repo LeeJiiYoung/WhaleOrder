@@ -14,6 +14,9 @@ import com.whale.order.domain.payment.repository.PaymentRepository;
 import com.whale.order.domain.stock.entity.StockRestoreFailure;
 import com.whale.order.domain.stock.repository.StockRestoreFailureRepository;
 import com.whale.order.domain.stock.service.StockLockFacade;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ public class OrderProcessingService {
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final StockRestoreFailureRepository stockRestoreFailureRepository;
+    private final MeterRegistry meterRegistry;
 
     // Kafka Consumer에서 직접 orderId를 받아서 처리 (Redis 폴링 불필요)
     public void process(Long orderId) {
@@ -47,31 +51,51 @@ public class OrderProcessingService {
     }
 
     private void processOrder(Long orderId, Orders order) {
-        // 이미 취소된 주문은 스킵
         if (order.getStatus() == OrderStatus.CANCELLED) return;
 
         Long storeId = order.getStore().getStoreId();
         List<OrderItem> deducted = new ArrayList<>();
+
+        Timer.Sample sample = Timer.start(meterRegistry);
 
         try {
             for (OrderItem item : order.getOrderItems()) {
                 stockLockFacade.deductStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
                 deducted.add(item);
             }
-            // 재고 차감 성공 → stockDeducted 플래그 설정 (취소 시 재고 복구 여부 판단에 사용)
             order.markStockDeducted();
             orderRepository.save(order);
+
+            sample.stop(Timer.builder("order.processing.time")
+                    .tag("result", "success")
+                    .description("주문 처리 소요 시간")
+                    .register(meterRegistry));
+            Counter.builder("order.processed")
+                    .tag("result", "success")
+                    .description("주문 처리 성공 횟수")
+                    .register(meterRegistry).increment();
+
             log.info("주문 처리 완료 orderId={}", orderId);
             orderSseService.notify(orderId, Map.of(
                     "status", "SUCCESS",
                     "orderId", orderId,
                     "message", "주문이 접수되었습니다. 매장에서 확인 중입니다."
             ));
-            // 어드민 화면에 새 주문 실시간 브로드캐스트
             orderSseService.broadcastNewOrder(OrderResponse.from(order));
 
         } catch (Exception e) {
-            // 재고 부족 → 이미 차감된 항목 복구 후 주문 취소
+            sample.stop(Timer.builder("order.processing.time")
+                    .tag("result", "failure")
+                    .description("주문 처리 소요 시간")
+                    .register(meterRegistry));
+            Counter.builder("order.processed")
+                    .tag("result", "failure")
+                    .description("주문 처리 실패 횟수")
+                    .register(meterRegistry).increment();
+            Counter.builder("order.stock.shortage")
+                    .description("재고 부족 발생 횟수")
+                    .register(meterRegistry).increment();
+
             for (OrderItem item : deducted) {
                 try {
                     stockLockFacade.restoreStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
@@ -79,7 +103,6 @@ public class OrderProcessingService {
                     Long menuId = item.getMenu().getMenuId();
                     int quantity = item.getQuantity();
                     log.error("재고 복구 실패 menuId={} quantity={}", menuId, quantity, restoreEx);
-                    // DB에 기록 — 관리자가 나중에 수동 보정
                     stockRestoreFailureRepository.save(StockRestoreFailure.builder()
                             .orderId(orderId)
                             .storeId(storeId)
@@ -87,7 +110,6 @@ public class OrderProcessingService {
                             .quantity(quantity)
                             .reason(restoreEx.getMessage())
                             .build());
-                    // 관리자 SSE 실시간 알림
                     orderSseService.broadcastStockRestoreFailure(orderId, menuId, quantity);
                 }
             }

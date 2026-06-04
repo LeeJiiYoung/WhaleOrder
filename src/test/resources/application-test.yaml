@@ -9,11 +9,11 @@ spring:
     show-sql: false
     open-in-view: false
 
-  # Kafka 리스너 자동 시작 끄기 (재고 테스트에서 Kafka 불필요)
   kafka:
     listener:
-      auto-startup: false
-    bootstrap-servers: localhost:9092
+      auto-startup: true
+    # @EmbeddedKafka가 있으면 해당 브로커 주소 사용, 없으면 localhost:9092 폴백
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
 
   # OAuth2 테스트용 더미값
   security:
@@ -42,6 +42,8 @@ jwt:
   refresh-token-expiry: 604800000
 
 app:
+  oauth2:
+    redirect-uri: http://localhost:5173/oauth2/callback
   upload:
     menu-dir: ./uploads/menus
     url-prefix: /uploads/menus

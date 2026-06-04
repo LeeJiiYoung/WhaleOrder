@@ -116,6 +116,7 @@ public class OrderProcessingService {
                 return;
             }
             order.cancel();
+            orderRepository.save(order);
             historyRepository.save(OrderStatusHistory.builder()
                     .orders(order)
                     .status(OrderStatus.CANCELLED)
@@ -125,6 +126,7 @@ public class OrderProcessingService {
             // Saga 보상 트랜잭션 — 재고 부족으로 주문 취소 시 결제도 함께 취소(환불)
             paymentRepository.findByOrders(order).ifPresent(payment -> {
                 payment.cancel("재고 부족으로 인한 자동 환불");
+                paymentRepository.save(payment);
                 paymentHistoryRepository.save(PaymentHistory.builder()
                         .payment(payment)
                         .status(PaymentStatus.CANCELLED)

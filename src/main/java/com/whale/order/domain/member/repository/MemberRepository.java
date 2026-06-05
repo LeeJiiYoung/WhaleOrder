@@ -34,7 +34,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("SELECT m FROM Member m WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            " LOWER(COALESCE(m.userId, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           " LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           " LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           " LOWER(COALESCE(m.nickname, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:role IS NULL OR m.role = :role) " +
            "ORDER BY m.createdAt DESC")
     List<Member> findAllWithFilters(@Param("keyword") String keyword,

@@ -3,9 +3,9 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.whale.order.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.whale.order.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.whale.order.main~2.iml" filepath="$PROJECT_DIR$/.idea/modules/com.whale.order.main~2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.whale.order.main~1.iml" filepath="$PROJECT_DIR$/.idea/modules/com.whale.order.main~1.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.whale.order.test.iml" filepath="$PROJECT_DIR$/.idea/modules/com.whale.order.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.whale.order.test~2.iml" filepath="$PROJECT_DIR$/.idea/modules/com.whale.order.test~2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.whale.order.test~1.iml" filepath="$PROJECT_DIR$/.idea/modules/com.whale.order.test~1.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/order.main.iml" filepath="$PROJECT_DIR$/.idea/modules/order.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/order.test.iml" filepath="$PROJECT_DIR$/.idea/modules/order.test.iml" />
     </modules>

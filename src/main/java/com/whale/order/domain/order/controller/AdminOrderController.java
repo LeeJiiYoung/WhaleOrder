@@ -5,6 +5,8 @@ import com.whale.order.domain.order.entity.OrderStatus;
 import com.whale.order.domain.order.service.OrderService;
 import com.whale.order.domain.order.service.OrderSseService;
 import com.whale.order.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "주문 (관리자)", description = "주문 목록 조회 · 상태 변경 · SSE 실시간 알림")
 @RestController
 @RequestMapping("/api/admin/orders")
 @RequiredArgsConstructor
@@ -24,20 +27,20 @@ public class AdminOrderController {
     private final OrderService orderService;
     private final OrderSseService orderSseService;
 
-    // 전체 주문 목록 (상태 필터, 복수 가능)
+    @Operation(summary = "주문 목록 조회", description = "상태 필터 복수 가능 (PENDING, ACCEPTED, PREPARING, COMPLETED, CANCELLED)")
     @GetMapping
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrders(
             @RequestParam(required = false) List<OrderStatus> statuses) {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", orderService.getAllOrders(statuses)));
     }
 
-    // 새 주문 실시간 알림 SSE 구독
+    @Operation(summary = "새 주문 SSE 구독", description = "새 주문 접수 시 실시간 알림 스트림")
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamNewOrders() {
         return orderSseService.registerAdmin(UUID.randomUUID().toString());
     }
 
-    // 주문 상태 변경 (accept / prepare / complete)
+    @Operation(summary = "주문 상태 변경", description = "action: accept(접수) · prepare(제조 시작) · complete(완료)")
     @PatchMapping("/{orderId}/{action}")
     public ResponseEntity<ApiResponse<OrderResponse>> changeStatus(
             @PathVariable Long orderId,

@@ -7,12 +7,15 @@ import com.whale.order.domain.menu.entity.MenuCategory;
 import com.whale.order.domain.menu.repository.MenuOptionRepository;
 import com.whale.order.domain.menu.repository.MenuRepository;
 import com.whale.order.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "메뉴 (고객)", description = "판매 중인 메뉴 목록 · 상세 조회")
 @RestController
 @RequestMapping("/api/menus")
 @RequiredArgsConstructor
@@ -21,7 +24,7 @@ public class CustomerMenuController {
     private final MenuRepository menuRepository;
     private final MenuOptionRepository menuOptionRepository;
 
-    // 판매 중인 메뉴 목록 (카테고리 필터 선택)
+    @Operation(summary = "메뉴 목록 조회", description = "판매 중인 메뉴만 반환. 카테고리 필터 선택 가능")
     @GetMapping
     public ResponseEntity<ApiResponse<List<CustomerMenuResponse>>> getMenus(
             @RequestParam(required = false) MenuCategory category) {
@@ -39,7 +42,7 @@ public class CustomerMenuController {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", result));
     }
 
-    // 메뉴 상세 + 옵션 목록
+    @Operation(summary = "메뉴 상세 조회", description = "옵션 목록 포함")
     @GetMapping("/{menuId}")
     public ResponseEntity<ApiResponse<CustomerMenuResponse>> getMenu(@PathVariable Long menuId) {
         Menu menu = menuRepository.findById(menuId)

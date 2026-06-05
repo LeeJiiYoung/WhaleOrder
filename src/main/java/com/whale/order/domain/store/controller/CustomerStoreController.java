@@ -5,6 +5,8 @@ import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.entity.StoreStatus;
 import com.whale.order.domain.store.repository.StoreRepository;
 import com.whale.order.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "매장 (고객)", description = "영업 중인 매장 목록 · 상세 조회")
 @RestController
 @RequestMapping("/api/stores")
 @RequiredArgsConstructor
@@ -21,7 +24,7 @@ public class CustomerStoreController {
 
     private final StoreRepository storeRepository;
 
-    // 영업 중인 매장 목록
+    @Operation(summary = "영업 중인 매장 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<CustomerStoreResponse>>> getOpenStores() {
         List<CustomerStoreResponse> stores = storeRepository.findAllOpenStores().stream()
@@ -30,7 +33,7 @@ public class CustomerStoreController {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", stores));
     }
 
-    // 매장 상세 (영업 중 여부와 무관하게 조회 가능)
+    @Operation(summary = "매장 상세 조회", description = "영업 중 여부와 무관하게 조회 가능")
     @GetMapping("/{storeId}")
     public ResponseEntity<ApiResponse<CustomerStoreResponse>> getStore(@PathVariable Long storeId) {
         Store store = storeRepository.findById(storeId)

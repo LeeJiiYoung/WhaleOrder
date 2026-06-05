@@ -138,7 +138,7 @@ export default function AdminMemberPage() {
       <form className={styles.toolbar} onSubmit={handleSearch}>
         <input
           className={styles.searchInput}
-          placeholder="아이디 또는 이름 검색"
+          placeholder="아이디, 이름 또는 닉네임 검색"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
@@ -194,9 +194,6 @@ export default function AdminMemberPage() {
                     <td>{new Date(m.createdAt).toLocaleDateString('ko-KR')}</td>
                     <td className={styles.actions}>
                       <button className={styles.editBtn} onClick={() => openEdit(m)}>수정</button>
-                      {m.provider !== 'KAKAO' && (
-                        <button className={styles.resetBtn} onClick={() => handleResetPassword(m)}>비번초기화</button>
-                      )}
                       <button className={styles.deleteBtn} onClick={() => handleDelete(m)}>삭제</button>
                     </td>
                   </tr>
@@ -254,6 +251,9 @@ export default function AdminMemberPage() {
             </div>
 
             <div className={styles.modalFooter}>
+              {modal === 'edit' && editing?.provider !== 'KAKAO' && (
+                <button className={styles.resetBtn} onClick={() => handleResetPassword(editing)}>비번초기화</button>
+              )}
               <button className={styles.cancelBtn} onClick={closeModal}>취소</button>
               <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
                 {saving ? '저장 중...' : '저장'}

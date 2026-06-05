@@ -39,6 +39,8 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        // Swagger UI
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // 카카오 OAuth2 경로 (9단계에서 추가)
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         // 업로드된 이미지 파일 (인증 없이 접근 가능)

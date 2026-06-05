@@ -1,45 +1,6 @@
 services:
 
   # ─────────────────────────────────────────
-  # Backend (Spring Boot)
-  # ─────────────────────────────────────────
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: whale-backend
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/whaleorder
-      SPRING_DATASOURCE_USERNAME: whale
-      SPRING_DATASOURCE_PASSWORD: whale
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    depends_on:
-      - postgres
-      - redis
-      - kafka
-    networks:
-      - whale-net
-
-  # ─────────────────────────────────────────
-  # Frontend (React)
-  # ─────────────────────────────────────────
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: whale-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    networks:
-      - whale-net
-
-  # ─────────────────────────────────────────
   # PostgreSQL
   # ─────────────────────────────────────────
   postgres:
@@ -70,30 +31,25 @@ services:
       - whale-net
 
   # ─────────────────────────────────────────
-  # Kafka + Zookeeper
+  # Kafka (KRaft 모드 - Zookeeper 없음)
   # ─────────────────────────────────────────
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.6.0
-    container_name: whale-zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-    networks:
-      - whale-net
-
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: whale-kafka
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://kafka:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
     ports:
       - "9092:9092"
       - "29092:29092"
-    depends_on:
-      - zookeeper
     networks:
       - whale-net
 
@@ -145,29 +101,12 @@ services:
     networks:
       - whale-net
 
-  # ─────────────────────────────────────────
-  # Elasticsearch (선택)
-  # ─────────────────────────────────────────
-  elasticsearch:
-    image: elasticsearch:8.13.0
-    container_name: whale-elasticsearch
-    environment:
-      discovery.type: single-node
-      xpack.security.enabled: false
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
-    volumes:
-      - es-data:/usr/share/elasticsearch/data
-    networks:
-      - whale-net
 
 volumes:
   postgres-data:
   redis-data:
   prometheus-data:
   grafana-data:
-  es-data:
 
 networks:
   whale-net:

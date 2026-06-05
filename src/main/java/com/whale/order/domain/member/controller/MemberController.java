@@ -5,6 +5,8 @@ import com.whale.order.domain.member.dto.MyProfileUpdateRequest;
 import com.whale.order.domain.member.dto.PasswordChangeRequest;
 import com.whale.order.domain.member.service.MemberService;
 import com.whale.order.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "내 정보", description = "로그인한 회원의 프로필 조회 · 수정 · 비밀번호 변경")
 @RestController
 @RequestMapping("/api/members/me")
 @RequiredArgsConstructor
@@ -19,7 +22,7 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    // 내 정보 조회
+    @Operation(summary = "내 정보 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<MemberResponse>> getMyProfile(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -27,7 +30,7 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", memberService.getMyProfile(memberId)));
     }
 
-    // 내 정보 수정 (닉네임, 전화번호)
+    @Operation(summary = "내 정보 수정", description = "닉네임, 전화번호 수정 가능")
     @PutMapping
     public ResponseEntity<ApiResponse<MemberResponse>> updateMyProfile(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -36,7 +39,7 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.ok("정보가 수정됐습니다", memberService.updateMyProfile(memberId, request)));
     }
 
-    // 비밀번호 변경
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호 확인 후 변경")
     @PutMapping("/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @AuthenticationPrincipal UserDetails userDetails,

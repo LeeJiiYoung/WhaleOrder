@@ -4,6 +4,8 @@ import com.whale.order.domain.store.dto.StoreCreateRequest;
 import com.whale.order.domain.store.dto.StoreResponse;
 import com.whale.order.domain.store.service.StoreService;
 import com.whale.order.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "매장 (관리자)", description = "매장 생성 · 목록 조회 · 영업 상태 변경")
 @RestController
 @RequestMapping("/api/admin/stores")
 @RequiredArgsConstructor
@@ -19,26 +22,31 @@ public class AdminStoreController {
 
     private final StoreService storeService;
 
+    @Operation(summary = "매장 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<StoreResponse>>> getStores() {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", storeService.getStores()));
     }
 
+    @Operation(summary = "매장 단건 조회")
     @GetMapping("/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> getStore(@PathVariable Long storeId) {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", storeService.getStore(storeId)));
     }
 
+    @Operation(summary = "영업 시작", description = "매장 상태를 OPEN으로 변경")
     @PatchMapping("/{storeId}/open")
     public ResponseEntity<ApiResponse<StoreResponse>> openStore(@PathVariable Long storeId) {
         return ResponseEntity.ok(ApiResponse.ok("영업을 시작합니다", storeService.openStore(storeId)));
     }
 
+    @Operation(summary = "영업 종료", description = "매장 상태를 CLOSED로 변경")
     @PatchMapping("/{storeId}/close")
     public ResponseEntity<ApiResponse<StoreResponse>> closeStore(@PathVariable Long storeId) {
         return ResponseEntity.ok(ApiResponse.ok("영업을 종료합니다", storeService.closeStore(storeId)));
     }
 
+    @Operation(summary = "매장 생성")
     @PostMapping
     public ResponseEntity<ApiResponse<StoreResponse>> createStore(
             @Valid @RequestBody StoreCreateRequest request) {

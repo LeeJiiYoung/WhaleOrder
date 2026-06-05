@@ -42,6 +42,7 @@ jobs:
               --name whale-backend \
               --network whale-net \
               -p 8080:8080 \
+              -e SPRING_PROFILES_ACTIVE=prod \
               -e SPRING_DATASOURCE_URL=jdbc:postgresql://whale-postgres:5432/whaleorder \
               -e SPRING_DATASOURCE_USERNAME=whale \
               -e SPRING_DATASOURCE_PASSWORD=whale \

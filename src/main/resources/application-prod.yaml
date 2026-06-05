@@ -25,6 +25,8 @@ spring:
 
   # JPA (운영환경 - SQL 로그 미출력)
   jpa:
+    hibernate:
+      ddl-auto: update
     show-sql: false
 
 logging:

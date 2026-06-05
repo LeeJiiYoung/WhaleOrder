@@ -1,6 +1,44 @@
 services:
 
   # ─────────────────────────────────────────
+  # Backend (Spring Boot)
+  # ─────────────────────────────────────────
+  backend:
+    image: leejiyoung/whale-order:latest
+    container_name: whale-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: whale-postgres
+      DB_PORT: 5432
+      DB_NAME: whaleorder
+      DB_USERNAME: whale
+      DB_PASSWORD: whale
+      REDIS_HOST: whale-redis
+      REDIS_PORT: 6379
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - whale-net
+
+  # ─────────────────────────────────────────
+  # Frontend (React)
+  # ─────────────────────────────────────────
+  frontend:
+    image: leejiyoung/whale-order-frontend:latest
+    container_name: whale-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - whale-net
+
+  # ─────────────────────────────────────────
   # PostgreSQL
   # ─────────────────────────────────────────
   postgres:

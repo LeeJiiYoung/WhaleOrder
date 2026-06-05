@@ -17,12 +17,19 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Docker 이미지 빌드 & 푸시
+      - name: 백엔드 이미지 빌드 & 푸시
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/whale-order:latest
+
+      - name: 프론트엔드 이미지 빌드 & 푸시
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/whale-order-frontend:latest
 
   deploy:
     needs: build-and-push
@@ -35,18 +42,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/whale-order:latest
-            docker stop whale-backend || true
-            docker rm whale-backend || true
-            docker run -d \
-              --name whale-backend \
-              --network whale-net \
-              -p 8080:8080 \
-              -e SPRING_PROFILES_ACTIVE=prod \
-              -e SPRING_DATASOURCE_URL=jdbc:postgresql://whale-postgres:5432/whaleorder \
-              -e SPRING_DATASOURCE_USERNAME=whale \
-              -e SPRING_DATASOURCE_PASSWORD=whale \
-              -e SPRING_REDIS_HOST=whale-redis \
-              -e SPRING_REDIS_PORT=6379 \
-              -e SPRING_KAFKA_BOOTSTRAP_SERVERS=whale-kafka:9092 \
-              ${{ secrets.DOCKER_USERNAME }}/whale-order:latest
+            cd ~/whale-order
+            docker-compose -f docker-compose.prod.yml pull backend frontend
+            docker-compose -f docker-compose.prod.yml up -d backend frontend

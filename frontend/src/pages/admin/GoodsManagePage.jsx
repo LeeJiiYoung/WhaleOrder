@@ -5,6 +5,13 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import styles from './EventManagePage.module.css'
 import uploadStyles from './GoodsManagePage.module.css'
 
+/**
+ * 관리자 굿즈 관리 페이지. (@route /admin/goods)
+ *
+ * - 굿즈 등록 폼: 매장 선택·굿즈명·설명·가격·이미지(드래그&드롭, 최대 10MB)
+ * - 등록된 굿즈 목록 테이블: 이미지 썸네일·굿즈명·매장·가격·설명
+ * - 굿즈는 이벤트 생성 시 선택 대상이 됨 (EventManagePage 참조)
+ */
 export default function GoodsManagePage() {
   const [stores,    setStores]    = useState([])
   const [goodsList, setGoodsList] = useState([])

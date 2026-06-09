@@ -2,6 +2,14 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyProfile } from '../api/member'
 
+/**
+ * 카카오 OAuth2 로그인 콜백 처리 페이지. (@route /oauth2/callback)
+ *
+ * - URL 쿼리 파라미터에서 accessToken·refreshToken·role을 추출해 localStorage에 저장
+ * - 카카오 닉네임은 URL에 포함되지 않으므로 /api/members/me로 별도 조회
+ * - React StrictMode의 이중 실행을 useRef로 방지
+ * - 처리 완료 후 ADMIN은 /admin/store-create, 고객은 /stores로 이동
+ */
 export default function OAuth2CallbackPage() {
   const navigate = useNavigate()
   // StrictMode에서 useEffect가 두 번 실행될 때 중복 처리 방지

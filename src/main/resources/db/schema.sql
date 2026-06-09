@@ -34,6 +34,8 @@ CREATE TABLE store (
     open_time       TIME            NOT NULL,
     close_time      TIME            NOT NULL,
     status          VARCHAR(20)     NOT NULL,   -- OPEN, CLOSED
+    latitude        DOUBLE PRECISION,
+    longitude       DOUBLE PRECISION,
     created_by      BIGINT,
     created_at      TIMESTAMP,
     updated_by      BIGINT,

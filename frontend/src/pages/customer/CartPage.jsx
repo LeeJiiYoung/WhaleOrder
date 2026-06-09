@@ -9,6 +9,14 @@ const ORDER_TYPES = [
   { value: 'DINE_IN', label: '매장 내 취식' },
 ]
 
+/**
+ * 고객 장바구니 페이지. (@route /cart)
+ *
+ * - 장바구니 아이템 목록: 이미지·메뉴명·선택 옵션·수량 조절·단가·소계·삭제
+ * - 주문 방식 선택: 포장(TAKEOUT) / 매장 내 취식(DINE_IN)
+ * - 요청사항 텍스트 입력 (선택)
+ * - "결제하기" 클릭 시 orderType·customerRequest·합계를 state로 전달하며 /payment로 이동
+ */
 export default function CartPage() {
   const navigate = useNavigate()
   const [cart, setCart] = useState(null)

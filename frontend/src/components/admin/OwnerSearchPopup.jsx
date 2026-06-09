@@ -2,6 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { searchOwners } from '../../api/member'
 import styles from './OwnerSearchPopup.module.css'
 
+/**
+ * 점주 검색 팝업 컴포넌트. (매장 생성·수정 화면에서 사용)
+ *
+ * - OWNER 역할 회원만 목록에 표시
+ * - 키워드(아이디·이름) 입력 시 300ms 디바운스 후 자동 검색
+ * - 초기 진입 시 전체 목록 즉시 로드
+ * - ESC 키 또는 배경 클릭으로 닫기
+ * @param {{ onSelect: (member: object) => void, onClose: () => void }} props
+ */
 export default function OwnerSearchPopup({ onSelect, onClose }) {
   const [keyword, setKeyword] = useState('')
   const [results, setResults] = useState([])

@@ -47,9 +47,13 @@ public class Store extends BaseEntity {
     @Column(nullable = false, length = 20)
     private StoreStatus status;
 
+    private Double latitude;
+    private Double longitude;
+
     @Builder
     public Store(Member owner, String name, String postalCode, String address,
-                 String addressDetail, String phone, LocalTime openTime, LocalTime closeTime) {
+                 String addressDetail, String phone, LocalTime openTime, LocalTime closeTime,
+                 Double latitude, Double longitude) {
         this.owner = owner;
         this.name = name;
         this.postalCode = postalCode;
@@ -59,11 +63,14 @@ public class Store extends BaseEntity {
         this.openTime = openTime;
         this.closeTime = closeTime;
         this.status = StoreStatus.CLOSED;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public void updateInfo(String name, String postalCode, String address,
                            String addressDetail, String phone,
-                           LocalTime openTime, LocalTime closeTime) {
+                           LocalTime openTime, LocalTime closeTime,
+                           Double latitude, Double longitude) {
         this.name = name;
         this.postalCode = postalCode;
         this.address = address;
@@ -71,6 +78,8 @@ public class Store extends BaseEntity {
         this.phone = phone;
         this.openTime = openTime;
         this.closeTime = closeTime;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public void open()  { this.status = StoreStatus.OPEN; }

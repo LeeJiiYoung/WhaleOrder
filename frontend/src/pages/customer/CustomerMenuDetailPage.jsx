@@ -5,6 +5,14 @@ import { addToCart } from '../../api/cart'
 import CustomerLayout from '../../components/customer/CustomerLayout'
 import styles from './CustomerMenuDetailPage.module.css'
 
+/**
+ * 고객 메뉴 상세 페이지. (@route /menus/:menuId)
+ *
+ * - 메뉴 이미지·이름·설명·기본 가격 표시
+ * - 옵션 그룹별 라디오 선택 (같은 그룹 재클릭 시 선택 해제)
+ * - 수량 증감 버튼, 선택 옵션 추가 금액 합산하여 실시간 합계 표시
+ * - "장바구니 담기" 클릭 시 선택 옵션·수량과 함께 카트에 추가 후 /cart로 이동
+ */
 export default function CustomerMenuDetailPage() {
   const { menuId } = useParams()
   const navigate = useNavigate()

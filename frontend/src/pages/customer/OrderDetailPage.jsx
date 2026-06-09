@@ -24,6 +24,15 @@ const ORDER_TYPE_LABEL = {
   DINE_IN: '매장',
 }
 
+/**
+ * 고객 주문 상세 페이지. (@route /orders/:orderId)
+ *
+ * - 주문 상태 배너: 접수 대기·주문 수락·제조 중·완료·취소됨 (색상 구분)
+ * - SSE(/api/orders/:orderId/updates) 구독으로 상태 변경 실시간 반영
+ * - 터미널 상태(COMPLETED·CANCELLED) 도달 시 SSE 자동 연결 해제
+ * - 주문 정보·주문 메뉴 목록·결제 정보 카드 표시
+ * - PENDING 상태일 때만 "주문 취소" 버튼 노출
+ */
 export default function OrderDetailPage() {
   const { orderId } = useParams()
   const navigate = useNavigate()

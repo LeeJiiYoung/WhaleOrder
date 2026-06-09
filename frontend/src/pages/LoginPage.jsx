@@ -5,6 +5,14 @@ import styles from './SignUpPage.module.css'
 
 const initialForm = { userId: 'admin', password: 'adminadmin' }
 
+/**
+ * 로그인 페이지. (@route /login)
+ *
+ * - 아이디/비밀번호 자체 로그인
+ * - 카카오 OAuth2 로그인 (외부 리다이렉트)
+ * - 관리자 계정으로 로그인 시 /admin/store-create, 고객은 / 로 이동
+ * - 빠른 테스트를 위한 테스트 계정 버튼(관리자·고객) 제공
+ */
 export default function LoginPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState(initialForm)

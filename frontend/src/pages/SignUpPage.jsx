@@ -12,6 +12,13 @@ const initialForm = {
   phone: '',
 }
 
+/**
+ * 회원가입 페이지. (@route /signup)
+ *
+ * - 아이디(4~20자), 비밀번호(8자↑), 이름 필수 / 닉네임·전화번호 선택
+ * - 카카오 OAuth2 가입 버튼 제공
+ * - 가입 성공 시 토큰을 localStorage에 저장하고 / 로 이동
+ */
 export default function SignUpPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState(initialForm)

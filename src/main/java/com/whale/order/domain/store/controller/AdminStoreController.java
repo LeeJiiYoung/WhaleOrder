@@ -1,6 +1,7 @@
 package com.whale.order.domain.store.controller;
 
 import com.whale.order.domain.store.dto.StoreCreateRequest;
+import com.whale.order.domain.store.dto.StoreUpdateRequest;
 import com.whale.order.domain.store.dto.StoreResponse;
 import com.whale.order.domain.store.service.StoreService;
 import com.whale.order.global.response.ApiResponse;
@@ -44,6 +45,14 @@ public class AdminStoreController {
     @PatchMapping("/{storeId}/close")
     public ResponseEntity<ApiResponse<StoreResponse>> closeStore(@PathVariable Long storeId) {
         return ResponseEntity.ok(ApiResponse.ok("영업을 종료합니다", storeService.closeStore(storeId)));
+    }
+
+    @Operation(summary = "매장 수정")
+    @PutMapping("/{storeId}")
+    public ResponseEntity<ApiResponse<StoreResponse>> updateStore(
+            @PathVariable Long storeId,
+            @Valid @RequestBody StoreUpdateRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("매장 정보가 수정됐습니다", storeService.updateStore(storeId, request)));
     }
 
     @Operation(summary = "매장 생성")

@@ -19,6 +19,14 @@ const CATEGORY_LABELS = {
   DRINK: '드링크',
 }
 
+/**
+ * 관리자 메뉴 목록 페이지. (@route /admin/menus)
+ *
+ * - 카테고리 탭 필터(전체·음료·푸드·디저트·드링크) + 메뉴명 키워드 검색
+ * - 카드 형태로 표시: 이미지·카테고리·판매 여부·가격
+ * - 비활성화/활성화 토글 버튼으로 메뉴 노출 상태 즉시 변경
+ * - 수정 버튼 또는 이미지 클릭 시 /admin/menus/:menuId로 이동
+ */
 export default function MenuListPage() {
   const navigate = useNavigate()
   const [menus, setMenus] = useState([])

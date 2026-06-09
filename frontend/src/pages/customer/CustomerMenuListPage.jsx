@@ -12,6 +12,14 @@ const CATEGORIES = [
   { value: 'DRINK',    label: '드링크' },
 ]
 
+/**
+ * 고객 메뉴 목록 페이지. (@route /menus)
+ *
+ * - 카테고리 탭 필터(전체·음료·푸드·디저트·드링크) + 메뉴명 키워드 검색
+ * - 카테고리 변경 시 서버 재요청, 키워드 검색은 클라이언트 필터링
+ * - "🎁 한정판매" 탭 버튼으로 /events로 이동
+ * - 메뉴 카드 클릭 시 /menus/:menuId 상세 페이지로 이동
+ */
 export default function CustomerMenuListPage() {
   const navigate = useNavigate()
   const [menus, setMenus] = useState([])

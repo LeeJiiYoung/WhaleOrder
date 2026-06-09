@@ -38,6 +38,14 @@ const ORDER_TYPE_LABEL = {
   DINE_IN: '매장 내 취식',
 }
 
+/**
+ * 관리자 주문 현황 페이지. (@route /admin/orders)
+ *
+ * - 상태별 탭 필터: 진행 중(PENDING·ACCEPTED·PREPARING)·전체·접수 대기·수락됨·제조 중·완료·취소됨
+ * - SSE(/api/admin/orders/stream) 실시간 구독: 새 주문 수신 시 토스트 알림 + 목록 상단 즉시 추가
+ * - 각 주문 카드에서 수락·제조 시작·완료 처리 버튼으로 상태 전환
+ * - 네트워크 오류 시 3초 후 SSE 자동 재연결
+ */
 export default function AdminOrderPage() {
   const [orders, setOrders]           = useState([])
   const [loading, setLoading]         = useState(true)

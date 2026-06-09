@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalTime;
 
-public record StoreCreateRequest(
+public record StoreUpdateRequest(
 
         @NotBlank(message = "매장명을 입력해주세요")
         String name,
@@ -25,9 +25,6 @@ public record StoreCreateRequest(
 
         @NotNull(message = "영업 종료 시간을 입력해주세요")
         LocalTime closeTime,
-
-        @NotBlank(message = "점주 아이디를 입력해주세요")
-        String ownerUserId,
 
         Double latitude,
         Double longitude

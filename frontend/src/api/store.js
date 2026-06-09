@@ -5,6 +5,7 @@ export const createStore  = (data) => client.post('/admin/stores', data)
 export const getStores    = ()     => client.get('/admin/stores')
 export const getStore     = (id)   => client.get(`/admin/stores/${id}`)
 
+export const updateStore = (id, data) => client.put(`/admin/stores/${id}`, data)
 export const openStore  = (id) => client.patch(`/admin/stores/${id}/open`)
 export const closeStore = (id) => client.patch(`/admin/stores/${id}/close`)
 

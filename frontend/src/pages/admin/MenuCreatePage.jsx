@@ -20,6 +20,14 @@ const initialForm = {
   saleEndDate: '',
 }
 
+/**
+ * 관리자 메뉴 등록 페이지. (@route /admin/menu-create)
+ *
+ * - 이미지 드래그&드롭 또는 클릭 업로드 (PNG·JPG·WEBP, 최대 10MB)
+ * - 메뉴명·설명·기본 가격·카테고리 필수 입력
+ * - 판매 기간(시작일·종료일) 선택 입력 — 비워두면 상시 판매
+ * - 등록 성공 시 /admin/menus/:menuId 상세 페이지로 이동
+ */
 export default function MenuCreatePage() {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)

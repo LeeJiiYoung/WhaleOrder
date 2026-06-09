@@ -15,6 +15,14 @@ function formatOpenAt(openAt) {
   return d.toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+/**
+ * 고객 한정판매 이벤트 목록 페이지. (@route /events)
+ *
+ * - 전체 이벤트를 카드 그리드로 표시: 굿즈 이미지·이벤트명·가격·오픈 시각
+ * - 상태 뱃지: 진행 중(OPEN)·오픈 예정(SCHEDULED)·종료(CLOSED)
+ * - 진행 중 이벤트에는 잔여 수량 표시
+ * - 카드 클릭 시 /events/:eventId 상세 페이지로 이동
+ */
 export default function EventListPage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])

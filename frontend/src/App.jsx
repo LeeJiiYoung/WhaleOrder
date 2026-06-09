@@ -26,11 +26,21 @@ import AdminMemberPage from './pages/admin/AdminMemberPage'
 import MyProfilePage from './pages/customer/MyProfilePage'
 import PaymentPage from './pages/customer/PaymentPage'
 
+/**
+ * 로그인한 사용자만 접근 가능한 라우트 가드.
+ * accessToken 없으면 /login으로 리다이렉트.
+ * @param {{ children: React.ReactNode }} props
+ */
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('accessToken')
   return token ? children : <Navigate to="/login" replace />
 }
 
+/**
+ * ADMIN 역할만 접근 가능한 라우트 가드.
+ * 미로그인 시 /login, 비관리자 시 / 로 리다이렉트.
+ * @param {{ children: React.ReactNode }} props
+ */
 function AdminRoute({ children }) {
   const token = localStorage.getItem('accessToken')
   const role = localStorage.getItem('role')
@@ -39,6 +49,13 @@ function AdminRoute({ children }) {
   return children
 }
 
+/**
+ * 앱 루트 컴포넌트. 전체 라우팅 구조를 정의한다.
+ *
+ * - 공개 경로: /login, /signup, /oauth2/callback
+ * - 고객 경로 (PrivateRoute): /stores, /menus, /cart, /payment, /orders/:id, /events 등
+ * - 관리자 경로 (AdminRoute): /admin/** (매장·메뉴·주문·재고·한정판매·회원 관리)
+ */
 export default function App() {
   return (
     <BrowserRouter>

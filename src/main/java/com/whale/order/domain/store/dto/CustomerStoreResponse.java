@@ -12,7 +12,9 @@ public record CustomerStoreResponse(
         String phone,
         LocalTime openTime,
         LocalTime closeTime,
-        String status
+        String status,
+        Double latitude,
+        Double longitude
 ) {
     public static CustomerStoreResponse from(Store store) {
         return new CustomerStoreResponse(
@@ -23,7 +25,9 @@ public record CustomerStoreResponse(
                 store.getPhone(),
                 store.getOpenTime(),
                 store.getCloseTime(),
-                store.getStatus().name()
+                store.getStatus().name(),
+                store.getLatitude(),
+                store.getLongitude()
         );
     }
 }

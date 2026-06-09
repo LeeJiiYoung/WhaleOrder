@@ -3,6 +3,14 @@ import { useEffect, useState } from 'react'
 import { getCart } from '../../api/cart'
 import styles from './CustomerLayout.module.css'
 
+/**
+ * 고객 전용 레이아웃 컴포넌트.
+ *
+ * - 헤더: 브랜드명(클릭 시 /stores), 선택된 매장명, 장바구니 아이콘(수량 뱃지), 로그아웃
+ * - 경로가 바뀔 때마다 장바구니 수량을 다시 조회해 뱃지를 최신 상태로 유지
+ * - 선택된 매장명은 localStorage의 selectedStoreName에서 읽음
+ * @param {{ children: React.ReactNode }} props
+ */
 export default function CustomerLayout({ children }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()

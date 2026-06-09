@@ -17,6 +17,22 @@ const PHASE = {
 
 const MAX_JOIN_RETRIES = 10
 
+/**
+ * 고객 한정판매 이벤트 상세 페이지. (@route /events/:eventId)
+ *
+ * 페이즈(PHASE) 기반 UI 상태 머신:
+ * - LOADING  → 초기 데이터 로드 중
+ * - SCHEDULED→ 오픈 전 (오픈 예정 시각 표시)
+ * - OPEN     → 대기열 미입장 (입장 버튼 표시)
+ * - JOINING  → 대기열 입장 중 (429 Too Many Requests 시 최대 10회 자동 재시도)
+ * - WAITING  → 대기 중 (SSE로 실시간 순번 수신)
+ * - READY    → 구매 가능 (5분 카운트다운 시작, 만료 시 OPEN으로 복귀)
+ * - DONE     → 구매 완료
+ * - CLOSED   → 이벤트 종료
+ *
+ * SSE(/api/events/:eventId/queue/subscribe) 구독으로 순번·구매 가능 상태 실시간 수신.
+ * 언마운트 시 SSE 연결 자동 해제.
+ */
 export default function EventDetailPage() {
   const { eventId } = useParams()
   const navigate = useNavigate()

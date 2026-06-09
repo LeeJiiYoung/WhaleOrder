@@ -10,6 +10,14 @@ import styles from './EventManagePage.module.css'
 const STATUS_LABEL = { SCHEDULED: '예정', OPEN: '진행 중', CLOSED: '종료' }
 const STATUS_CLASS  = { SCHEDULED: styles.statusScheduled, OPEN: styles.statusOpen, CLOSED: styles.statusClosed }
 
+/**
+ * 관리자 한정판매 이벤트 관리 페이지. (@route /admin/events)
+ *
+ * - 이벤트 등록 폼: 이벤트명·굿즈·매장·오픈 시각·총 수량·1인 구매 한도
+ * - 이벤트 목록 테이블: 상태(예정·진행 중·종료) 표시
+ * - 예정 이벤트: "강제 오픈" 버튼으로 즉시 개시 가능
+ * - 진행 중 이벤트: "종료" 버튼으로 강제 종료
+ */
 export default function EventManagePage() {
   const [stores,    setStores]    = useState([])
   const [goodsList, setGoodsList] = useState([])

@@ -108,3 +108,167 @@
 
 .loading { text-align: center; padding: 60px 0; color: #aaa; font-size: 14px; }
 .error   { text-align: center; padding: 60px 0; color: #ef4444; font-size: 14px; }
+
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* 수정 버튼 */
+.editBtn {
+  padding: 9px 20px;
+  background: transparent;
+  border: 1.5px solid #4f46e5;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #4f46e5;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.editBtn:hover { background: #ede9fe; }
+
+.saveBtn {
+  margin-left: auto;
+  padding: 9px 24px;
+  background: #4f46e5;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.saveBtn:hover:not(:disabled) { background: #4338ca; }
+.saveBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.cancelBtn {
+  padding: 9px 20px;
+  background: transparent;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cancelBtn:hover:not(:disabled) { border-color: #999; color: #333; }
+.cancelBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 편집 폼 */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.editLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.required { color: #ef4444; margin-left: 2px; }
+
+.input {
+  padding: 10px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  color: #222;
+  transition: border-color 0.2s;
+}
+.input:focus { border-color: #4f46e5; }
+
+.addrRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.addrRow .input { flex: 1; }
+
+.searchBtn {
+  padding: 9px 14px;
+  background: #f5f3ff;
+  border: 1.5px solid #c4b5fd;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.searchBtn:hover { background: #ede9fe; border-color: #4f46e5; }
+
+.coordBadge {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+/* 위치 선택 지도 */
+.mapPickerHint {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+.mapPickerWrapper {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.mapPicker {
+  width: 100%;
+  height: 320px;
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+}
+
+.mapOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(249, 250, 251, 0.92);
+  color: #9ca3af;
+  font-size: 14px;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.coordDisplay {
+  font-size: 12px;
+  color: #4f46e5;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.saveError {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  margin-bottom: 20px;
+}

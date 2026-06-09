@@ -51,6 +51,14 @@ const SIDEBAR_NAV = [
   },
 ]
 
+/**
+ * 관리자 전용 레이아웃 컴포넌트.
+ *
+ * - 상단 네비게이션: 매장·메뉴·주문·한정판매·회원 관리 탭
+ * - 좌측 사이드바: 현재 경로에 해당하는 섹션 항목만 표시 (다른 섹션은 숨김)
+ * - 우측 상단: 로그인한 닉네임 표시 및 로그아웃 버튼
+ * @param {{ children: React.ReactNode }} props
+ */
 export default function AdminLayout({ children }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()

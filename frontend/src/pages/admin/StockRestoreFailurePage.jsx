@@ -3,6 +3,13 @@ import { getStockRestoreFailures } from '../../api/stock'
 import AdminLayout from '../../components/admin/AdminLayout'
 import styles from './StockRestoreFailurePage.module.css'
 
+/**
+ * 관리자 재고 복구 실패 목록 페이지. (@route /admin/stock-restore-failures)
+ *
+ * - 주문 취소 시 재고 복구에 실패한 내역을 조회
+ * - 발생 시각·주문 ID·매장 ID·메뉴 ID·수량·실패 원인 표시
+ * - SSE 알림을 놓쳤을 때 이 페이지에서 확인 후 수동 보정
+ */
 export default function StockRestoreFailurePage() {
   const [failures, setFailures] = useState([])
   const [loading, setLoading] = useState(true)

@@ -14,7 +14,9 @@ public record StoreResponse(
         LocalTime openTime,
         LocalTime closeTime,
         String status,
-        String ownerName
+        String ownerName,
+        Double latitude,
+        Double longitude
 ) {
     public static StoreResponse from(Store store) {
         return new StoreResponse(
@@ -27,7 +29,9 @@ public record StoreResponse(
                 store.getOpenTime(),
                 store.getCloseTime(),
                 store.getStatus().name(),
-                store.getOwner().getName()
+                store.getOwner().getName(),
+                store.getLatitude(),
+                store.getLongitude()
         );
     }
 }

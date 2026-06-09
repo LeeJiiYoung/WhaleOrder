@@ -4,6 +4,13 @@ import { getStores } from '../../api/store'
 import AdminLayout from '../../components/admin/AdminLayout'
 import styles from './StoreListPage.module.css'
 
+/**
+ * 관리자 매장 목록 페이지. (@route /admin/stores)
+ *
+ * - 전체 매장을 테이블로 표시 (매장명·전화번호·영업 시간·점주명·상태)
+ * - 매장명/점주명 키워드 검색 + 영업 상태 탭 필터 (전체·영업 중·마감)
+ * - 매장명 클릭 시 /admin/stores/:storeId 상세 페이지로 이동
+ */
 export default function StoreListPage() {
   const navigate = useNavigate()
   const [stores, setStores] = useState([])

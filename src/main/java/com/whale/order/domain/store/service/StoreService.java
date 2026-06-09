@@ -4,6 +4,7 @@ import com.whale.order.domain.member.entity.Member;
 import com.whale.order.domain.member.repository.MemberRepository;
 import com.whale.order.domain.store.dto.StoreCreateRequest;
 import com.whale.order.domain.store.dto.StoreResponse;
+import com.whale.order.domain.store.dto.StoreUpdateRequest;
 import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,19 @@ public class StoreService {
     }
 
     @Transactional
+    public StoreResponse updateStore(Long storeId, StoreUpdateRequest request) {
+        Store store = storeRepository.findByIdWithOwner(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다: " + storeId));
+        store.updateInfo(
+                request.name(), request.postalCode(), request.address(),
+                request.addressDetail(), request.phone(),
+                request.openTime(), request.closeTime(),
+                request.latitude(), request.longitude()
+        );
+        return StoreResponse.from(store);
+    }
+
+    @Transactional
     public StoreResponse createStore(StoreCreateRequest request) {
         Member owner = memberRepository.findByUserId(request.ownerUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + request.ownerUserId()));
@@ -63,6 +77,8 @@ public class StoreService {
                 .phone(request.phone())
                 .openTime(request.openTime())
                 .closeTime(request.closeTime())
+                .latitude(request.latitude())
+                .longitude(request.longitude())
                 .build();
 
         storeRepository.save(store);

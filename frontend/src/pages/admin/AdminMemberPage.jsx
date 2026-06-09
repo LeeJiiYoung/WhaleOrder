@@ -22,6 +22,15 @@ const ROLE_BADGE = {
 
 const EMPTY_FORM = { userId: '', password: '', name: '', nickname: '', phone: '', role: 'CUSTOMER' }
 
+/**
+ * 관리자 회원 관리 페이지. (@route /admin/members)
+ *
+ * - 아이디·이름·닉네임 키워드 검색 + 역할 필터(고객·바리스타·매장관리자·점주·관리자)
+ * - 회원 등록(모달): 아이디·비밀번호·이름·닉네임·전화번호·역할 입력
+ * - 회원 수정(모달): 이름·닉네임·전화번호·역할 변경
+ * - 비밀번호 초기화: `{userId}{userId}` 형식으로 리셋 (자체 가입 계정만)
+ * - 회원 삭제: 확인 후 영구 삭제
+ */
 export default function AdminMemberPage() {
   const [members, setMembers]       = useState([])
   const [loading, setLoading]       = useState(true)

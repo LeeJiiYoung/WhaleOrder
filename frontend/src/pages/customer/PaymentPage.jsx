@@ -16,6 +16,16 @@ const SAVED_KEY = 'wo_saved_card'
 const fmtCard   = (v) => v.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1-')
 const fmtExpiry = (v) => { const d = v.replace(/\D/g, '').slice(0, 4); return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d }
 
+/**
+ * 고객 결제 페이지. (@route /payment)
+ *
+ * - CartPage에서 location.state로 전달받은 주문 정보(orderType·customerRequest·합계) 표시
+ * - 결제 수단: 신용/체크카드·카카오페이·네이버페이
+ * - 카드 결제 시 카드번호(자동 하이픈)·유효기간·CVC·소유자명 입력
+ * - "다음 결제할 때도 사용하기" 체크 시 카드 마지막 4자리를 localStorage에 저장
+ * - 저장된 카드가 있으면 상단에 표시, 새 결제 수단 선택 가능
+ * - 결제 성공 시 /orders/:orderId로 이동 (Mock 결제 — 실제 청구 없음)
+ */
 export default function PaymentPage() {
   const navigate = useNavigate()
   const { state } = useLocation()

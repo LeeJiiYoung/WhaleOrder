@@ -16,6 +16,13 @@ const CATEGORIES = [
 
 const OPTION_GROUPS = ['SIZE', 'SHOT', 'SYRUP', 'TEMPERATURE', '기타']
 
+/**
+ * 관리자 메뉴 상세·수정 페이지. (@route /admin/menus/:menuId)
+ *
+ * - 메뉴명·설명·가격·카테고리·판매 기간 수정 (이미지 드래그&드롭 교체 가능)
+ * - 하단 옵션 관리 테이블: 옵션 그룹(SIZE·SHOT 등)·옵션 값·추가 금액 추가/삭제
+ * - 카테고리 변경은 목록 페이지에서 비활성화 처리로 대신함 (상세에선 수정 불가)
+ */
 export default function MenuDetailPage() {
   const { menuId } = useParams()
   const navigate = useNavigate()

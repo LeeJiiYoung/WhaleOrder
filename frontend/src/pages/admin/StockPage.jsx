@@ -11,6 +11,13 @@ const CATEGORY_LABEL = {
   MERCHANDISE: '상품',
 }
 
+/**
+ * 관리자 재고 관리 페이지. (@route /admin/stores/:storeId/stocks)
+ *
+ * - 해당 매장의 전체 메뉴 재고를 카테고리별로 그룹화해 표시
+ * - 수량 입력창: 빈 값 = 무제한(-1), 0 = 품절, 양수 = 실제 재고
+ * - 메뉴별 독립 저장 버튼으로 각각 즉시 반영
+ */
 export default function StockPage() {
   const { storeId } = useParams()
   const navigate = useNavigate()

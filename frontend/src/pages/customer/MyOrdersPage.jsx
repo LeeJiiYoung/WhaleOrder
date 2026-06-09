@@ -17,6 +17,13 @@ const ORDER_TYPE_LABEL = {
   DINE_IN: '매장 내 취식',
 }
 
+/**
+ * 고객 주문 내역 페이지. (@route /my-orders)
+ *
+ * - 로그인한 회원의 전체 주문을 최신순 카드 목록으로 표시
+ * - 카드: 주문번호·상태 뱃지·매장명·주문 방식·주문 시각·메뉴 요약·합계
+ * - 카드 클릭 시 /orders/:orderId 상세 페이지로 이동
+ */
 export default function MyOrdersPage() {
   const navigate = useNavigate()
   const [orders, setOrders] = useState([])

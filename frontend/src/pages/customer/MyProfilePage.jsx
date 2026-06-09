@@ -3,6 +3,13 @@ import { getMyProfile, updateMyProfile, changePassword } from '../../api/member'
 import CustomerLayout from '../../components/customer/CustomerLayout'
 import styles from './MyProfilePage.module.css'
 
+/**
+ * 고객 내 정보 페이지. (@route /profile)
+ *
+ * - 기본 정보 카드: 아이디·이름·가입 경로(자체/카카오)·가입일 (읽기 전용)
+ * - 정보 수정 폼: 닉네임·전화번호 변경, 성공 시 localStorage의 nickname도 동기화
+ * - 비밀번호 변경 폼: 자체 가입(LOCAL) 계정에만 표시, 카카오 가입자는 숨김
+ */
 export default function MyProfilePage() {
   const [profile,  setProfile]  = useState(null)
   const [loading,  setLoading]  = useState(true)

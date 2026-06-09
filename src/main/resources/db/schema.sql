@@ -6,7 +6,7 @@
 -- 회원
 CREATE TABLE member (
     member_id       BIGSERIAL       PRIMARY KEY,
-    id              VARCHAR(100)    UNIQUE,
+    user_id         VARCHAR(100)    UNIQUE,
     password        VARCHAR(255),
     name            VARCHAR(50)     NOT NULL,
     nickname        VARCHAR(50),

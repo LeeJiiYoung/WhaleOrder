@@ -5,6 +5,7 @@ import com.whale.order.global.auth.jwt.JwtAuthenticationFilter;
 import com.whale.order.global.auth.jwt.JwtProvider;
 import com.whale.order.global.auth.oauth2.KakaoOAuth2UserService;
 import com.whale.order.global.auth.oauth2.OAuth2SuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +38,13 @@ public class SecurityConfig {
                 // JWT 필터가 API 요청은 stateless하게 처리하므로 실질적으로 무상태 유지
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                // 폼 로그인 비활성화 — oauth2Login()이 DefaultLoginPageGeneratingFilter를 추가해
+                // 인증 실패 시 /login 으로 리다이렉트하는 것을 차단
+                .formLogin(AbstractHttpConfigurer::disable)
+                // 인증 실패 시 /login 리다이렉트 대신 401 반환 (REST API 서버)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         // Swagger UI

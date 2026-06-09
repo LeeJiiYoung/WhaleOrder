@@ -8,6 +8,7 @@ import com.whale.order.domain.event.service.EventQueueFacade;
 import com.whale.order.domain.event.service.EventQueueService;
 import com.whale.order.domain.event.service.SseEmitterRegistry;
 import com.whale.order.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -92,6 +93,7 @@ public class EventQueueController {
      * 연결되면 즉시 현재 순번을 전송하고, 이후 Scheduler가 주기적으로 푸시한다.
      * 연결 최대 유지 시간: 30분
      */
+    @Hidden
     @GetMapping(value = "/{eventId}/queue/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(
             @PathVariable Long eventId,

@@ -3,6 +3,7 @@ package com.whale.order.domain.stock.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whale.order.domain.stock.service.StockDemoService;
 import com.whale.order.domain.stock.service.StockLockFacade;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,7 @@ public class StockConcurrencyDemoController {
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
+    @Hidden
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(
             @RequestParam(defaultValue = "10") int initialStock,
@@ -118,6 +120,7 @@ public class StockConcurrencyDemoController {
      * @param customers 고객
      * @return
      */
+    @Hidden
     @GetMapping(value = "/queue-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter queueStream(
             @RequestParam(defaultValue = "10") int stock,

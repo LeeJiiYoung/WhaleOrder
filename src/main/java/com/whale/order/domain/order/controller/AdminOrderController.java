@@ -5,6 +5,7 @@ import com.whale.order.domain.order.entity.OrderStatus;
 import com.whale.order.domain.order.service.OrderService;
 import com.whale.order.domain.order.service.OrderSseService;
 import com.whale.order.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,7 @@ public class AdminOrderController {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", orderService.getAllOrders(statuses)));
     }
 
-    @Operation(summary = "새 주문 SSE 구독", description = "새 주문 접수 시 실시간 알림 스트림")
+    @Hidden
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamNewOrders() {
         return orderSseService.registerAdmin(UUID.randomUUID().toString());

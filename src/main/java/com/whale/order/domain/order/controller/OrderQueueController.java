@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +32,7 @@ public class OrderQueueController {
     private final OrderRepository orderRepository;
 
     // 처리 결과 대기 (SSE)
+    @Hidden
     @GetMapping(value = "/{orderId}/result", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter waitForResult(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -62,6 +64,7 @@ public class OrderQueueController {
     }
 
     // 상태 변경 실시간 구독 (수락/제조/완료 알림)
+    @Hidden
     @GetMapping(value = "/{orderId}/updates", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribeStatusUpdates(
             @AuthenticationPrincipal UserDetails userDetails,

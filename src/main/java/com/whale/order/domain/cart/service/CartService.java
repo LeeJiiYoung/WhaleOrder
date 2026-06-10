@@ -43,6 +43,7 @@ public class CartService {
         int unitPrice = menu.getBasePrice() + optionPrice;
 
         // 기존 항목이 있으면 수량 합산
+        // 장바구니json
         String existing = (String) redisTemplate.opsForHash().get(cartKey, itemKey);
         int finalQuantity = request.quantity();
         if (existing != null) {

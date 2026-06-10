@@ -120,8 +120,8 @@ class OrderCancelTest extends TestContainerBase {
     @Test
     @DisplayName("재고 차감 완료된 PENDING 주문 취소 시 재고가 복구된다")
     void 재고차감완료_PENDING_취소_재고복구됨() {
-        // given: 재고 10개, stockDeducted=true (Kafka 처리 완료 상태)
-        재고_설정(10);
+        // given: 재고 9개 (Kafka가 1개 차감 완료 상태), stockDeducted=true
+        재고_설정(9);
         Orders order = 주문_생성(true);
 
         // when

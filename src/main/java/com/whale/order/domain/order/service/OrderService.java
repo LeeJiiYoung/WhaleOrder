@@ -209,7 +209,6 @@ public class OrderService {
         Member admin = memberRepository.findById(adminMemberId).orElseThrow();
 
         switch (action) {
-            case "accept"   -> order.accept();
             case "prepare"  -> order.startPreparing();
             case "complete" -> order.complete();
             default -> throw new IllegalArgumentException("알 수 없는 액션: " + action);
@@ -223,14 +222,17 @@ public class OrderService {
 
         // 고객에게 실시간 상태 알림
         String message = switch (action) {
-            case "accept"   -> "주문이 수락되었습니다";
             case "prepare"  -> "음료를 준비 중입니다";
             case "complete" -> "주문이 완료되었습니다. 찾아가주세요 ☕";
             default         -> "";
         };
         orderSseService.notifyStatusUpdate(orderId, order.getStatus().name(), message);
 
-        return OrderResponse.from(order);
+        // 모든 어드민에게 상태 변경 브로드캐스트
+        OrderResponse response = OrderResponse.from(order);
+        orderSseService.broadcastOrderStatusChange(response);
+
+        return response;
     }
 
     private String toJson(Object obj) {

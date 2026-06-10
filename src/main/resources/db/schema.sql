@@ -132,7 +132,7 @@ CREATE TABLE orders (
     order_id            BIGSERIAL       PRIMARY KEY,
     member_id           BIGINT          NOT NULL,
     store_id            BIGINT          NOT NULL,
-    status              VARCHAR(20)     NOT NULL,   -- PENDING, ACCEPTED, PREPARING, COMPLETED, CANCELLED
+    status              VARCHAR(20)     NOT NULL,   -- PENDING, PREPARING, COMPLETED, CANCELLED
     total_price         INTEGER         NOT NULL,
     order_type          VARCHAR(20)     NOT NULL,   -- TAKEOUT, DINE_IN
     customer_request    VARCHAR(500),

@@ -6,7 +6,6 @@ import styles from './MyOrdersPage.module.css'
 
 const STATUS_LABEL = {
   PENDING:   { text: '접수 대기', color: '#f59e0b' },
-  ACCEPTED:  { text: '주문 수락', color: '#3b82f6' },
   PREPARING: { text: '제조 중',   color: '#8b5cf6' },
   COMPLETED: { text: '완료',      color: '#10b981' },
   CANCELLED: { text: '취소됨',    color: '#ef4444' },

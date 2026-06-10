@@ -1,6 +1,6 @@
 -- ============================================================
 -- WhaleOrder 테스트 데이터
--- 서버 기동 시 자동 삽입 (ON CONFLICT DO NOTHING 으로 멱등 실행)
+-- DataInitializer.java 가 member 테이블 비어있을 때만 실행함
 -- ============================================================
 
 -- ────────────────────────────────────────────────
@@ -23,7 +23,6 @@ SELECT setval('member_member_id_seq', (SELECT MAX(member_id) FROM member));
 
 -- ────────────────────────────────────────────────
 -- 2. 매장 (강남점 / 홍대점)
--- latitude·longitude 컬럼은 ddl-auto:update 로 Hibernate 가 추가
 -- ────────────────────────────────────────────────
 INSERT INTO store (store_id, owner_id, name, postal_code, address, address_detail, phone,
                    open_time, close_time, status, latitude, longitude,
@@ -127,7 +126,6 @@ ON CONFLICT (store_id, menu_id) DO NOTHING;
 
 -- ────────────────────────────────────────────────
 -- 8. 샘플 주문 (완료 1건 / 대기 1건)
--- stock_deducted 컬럼은 ddl-auto:update 로 Hibernate 가 추가
 -- ────────────────────────────────────────────────
 INSERT INTO orders (order_id, member_id, store_id, status, total_price, order_type,
                     customer_request, stock_deducted, created_by, created_at, updated_by, updated_at)
@@ -143,14 +141,12 @@ SELECT setval('orders_order_id_seq', (SELECT MAX(order_id) FROM orders));
 -- ────────────────────────────────────────────────
 -- 9. 주문 항목
 -- ────────────────────────────────────────────────
--- 완료 주문: 아메리카노 1잔 GRANDE·HOT (4500 + 500 = 5000)
 INSERT INTO order_item (order_id, menu_id, quantity, unit_price, options, created_by, created_at, updated_by, updated_at)
 SELECT 1, 1, 1, 5000,
        '[{"group":"SIZE","name":"GRANDE","additionalPrice":500},{"group":"TEMPERATURE","name":"HOT","additionalPrice":0}]'::jsonb,
        2, NOW() - INTERVAL '2 hours', 2, NOW() - INTERVAL '2 hours'
 WHERE NOT EXISTS (SELECT 1 FROM order_item WHERE order_id = 1 AND menu_id = 1);
 
--- 대기 주문: 카페라테 2잔 TALL·ICED (5500 × 2 = 11000)
 INSERT INTO order_item (order_id, menu_id, quantity, unit_price, options, created_by, created_at, updated_by, updated_at)
 SELECT 2, 2, 2, 5500,
        '[{"group":"SIZE","name":"TALL","additionalPrice":0},{"group":"TEMPERATURE","name":"ICED","additionalPrice":0}]'::jsonb,
@@ -158,14 +154,13 @@ SELECT 2, 2, 2, 5500,
 WHERE NOT EXISTS (SELECT 1 FROM order_item WHERE order_id = 2 AND menu_id = 2);
 
 -- ────────────────────────────────────────────────
--- 10. 주문 상태 이력 (완료 주문의 전체 흐름)
+-- 10. 주문 상태 이력
 -- ────────────────────────────────────────────────
 INSERT INTO order_status_history (order_id, status, changed_by, changed_at)
 SELECT v.order_id, v.status, v.changed_by, v.changed_at
 FROM (VALUES
     (1, 'PENDING',   2, NOW() - INTERVAL '2 hours'),
-    (1, 'ACCEPTED',  4, NOW() - INTERVAL '110 minutes'),
-    (1, 'PREPARING', 4, NOW() - INTERVAL '100 minutes'),
+    (1, 'PREPARING', 4, NOW() - INTERVAL '110 minutes'),
     (1, 'COMPLETED', 4, NOW() - INTERVAL '60 minutes')
 ) AS v(order_id, status, changed_by, changed_at)
 WHERE NOT EXISTS (
@@ -188,7 +183,7 @@ ON CONFLICT (payment_id) DO NOTHING;
 SELECT setval('payment_payment_id_seq', (SELECT MAX(payment_id) FROM payment));
 
 -- ────────────────────────────────────────────────
--- 12. 결제 이력 (완료 결제 흐름)
+-- 12. 결제 이력
 -- ────────────────────────────────────────────────
 INSERT INTO payment_history (payment_id, status, reason, changed_at)
 SELECT v.payment_id, v.status, v.reason, v.changed_at
@@ -202,7 +197,7 @@ WHERE NOT EXISTS (
 );
 
 -- ────────────────────────────────────────────────
--- 13. 굿즈 (goods 테이블은 Hibernate ddl-auto:update 로 생성됨)
+-- 13. 굿즈
 -- ────────────────────────────────────────────────
 INSERT INTO goods (goods_id, store_id, name, description, price, image_url, created_by, created_at, updated_by, updated_at)
 VALUES
@@ -216,9 +211,6 @@ SELECT setval('goods_goods_id_seq', (SELECT MAX(goods_id) FROM goods));
 
 -- ────────────────────────────────────────────────
 -- 14. 이벤트
---   OPEN      : 강남점 텀블러 한정 판매 (현재 진행 중)
---   SCHEDULED : 홍대점 에코백 선착순 (내일 오픈 예정)
---   CLOSED    : 강남점 머그컵 (완판 종료)
 -- ────────────────────────────────────────────────
 INSERT INTO event (event_id, store_id, goods_id, name, open_at, capacity, per_person_limit,
                    status, remaining_capacity, created_by, created_at, updated_by, updated_at)

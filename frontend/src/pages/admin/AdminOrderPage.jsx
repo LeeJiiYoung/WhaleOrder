@@ -4,10 +4,9 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import styles from './AdminOrderPage.module.css'
 
 const STATUS_TABS = [
-  { value: 'ACTIVE',    label: '진행 중', statuses: ['PENDING', 'ACCEPTED', 'PREPARING'] },
+  { value: 'ACTIVE',    label: '진행 중', statuses: ['PENDING', 'PREPARING'] },
   { value: '',          label: '전체',    statuses: [] },
   { value: 'PENDING',   label: '접수 대기', statuses: ['PENDING'] },
-  { value: 'ACCEPTED',  label: '수락됨',   statuses: ['ACCEPTED'] },
   { value: 'PREPARING', label: '제조 중',  statuses: ['PREPARING'] },
   { value: 'COMPLETED', label: '완료',     statuses: ['COMPLETED'] },
   { value: 'CANCELLED', label: '취소됨',   statuses: ['CANCELLED'] },
@@ -15,19 +14,23 @@ const STATUS_TABS = [
 
 const STATUS_LABEL = {
   PENDING:   { text: '접수 대기', color: '#f59e0b', bg: '#fffbeb' },
-  ACCEPTED:  { text: '수락됨',   color: '#3b82f6', bg: '#eff6ff' },
   PREPARING: { text: '제조 중',  color: '#8b5cf6', bg: '#f5f3ff' },
   COMPLETED: { text: '완료',     color: '#10b981', bg: '#ecfdf5' },
   CANCELLED: { text: '취소됨',   color: '#ef4444', bg: '#fef2f2' },
 }
 
 const NEXT_ACTIONS = {
-  PENDING:   [{ action: 'accept',   label: '수락' }],
-  ACCEPTED:  [{ action: 'prepare',  label: '제조 시작' }],
+  PENDING:   [{ action: 'prepare',  label: '제조 시작' }],
   PREPARING: [{ action: 'complete', label: '완료 처리' }],
   COMPLETED: [],
   CANCELLED: [],
 }
+
+const SUMMARY_STATS = [
+  { status: 'PENDING',   label: '접수 대기', color: '#f59e0b', bg: '#fffbeb', border: '#fde68a' },
+  { status: 'PREPARING', label: '제조 중',  color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
+  { status: 'COMPLETED', label: '오늘 완료', color: '#10b981', bg: '#ecfdf5', border: '#a7f3d0' },
+]
 
 const parseOptions = (raw) => {
   try { return JSON.parse(raw || '[]') } catch { return [] }
@@ -41,27 +44,31 @@ const ORDER_TYPE_LABEL = {
 /**
  * 관리자 주문 현황 페이지. (@route /admin/orders)
  *
- * - 상태별 탭 필터: 진행 중(PENDING·ACCEPTED·PREPARING)·전체·접수 대기·수락됨·제조 중·완료·취소됨
- * - SSE(/api/admin/orders/stream) 실시간 구독: 새 주문 수신 시 토스트 알림 + 목록 상단 즉시 추가
+ * - 상태별 탭 필터 + 요약 통계 카드
+ * - SSE(/api/admin/orders/stream) 실시간 구독:
+ *     newOrder → 토스트 + 목록 상단 추가
+ *     orderStatusChanged → 해당 주문 상태 실시간 동기화
+ *     stockRestoreFailure → 빨간 경고 토스트
  * - 각 주문 카드에서 수락·제조 시작·완료 처리 버튼으로 상태 전환
  * - 네트워크 오류 시 3초 후 SSE 자동 재연결
  */
 export default function AdminOrderPage() {
-  const [orders, setOrders]           = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState('')
-  const [activeTab, setActiveTab]     = useState('ACTIVE')
+  const [orders, setOrders]               = useState([])
+  const [allOrders, setAllOrders]         = useState([])  // 통계 계산용 전체 목록
+  const [loading, setLoading]             = useState(true)
+  const [error, setError]                 = useState('')
+  const [activeTab, setActiveTab]         = useState('ACTIVE')
   const [actionLoading, setActionLoading] = useState({})
-  const [toasts, setToasts]           = useState([])
+  const [toasts, setToasts]               = useState([])
 
   // SSE 재연결 시 activeTab 최신값을 읽기 위한 ref
   const activeTabRef = useRef(activeTab)
   useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
 
   // ── 토스트 ────────────────────────────────────────────────────────
-  const addToast = useCallback((msg) => {
+  const addToast = useCallback((msg, type = 'default') => {
     const id = Date.now()
-    setToasts((prev) => [...prev, { id, msg }])
+    setToasts((prev) => [...prev, { id, msg, type }])
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000)
   }, [])
 
@@ -69,15 +76,23 @@ export default function AdminOrderPage() {
   const load = useCallback(() => {
     setLoading(true)
     const tab = STATUS_TABS.find((t) => t.value === activeTab)
-    getAdminOrders(tab?.statuses ?? [])
-      .then((res) => setOrders(res.data.data))
+
+    // 현재 탭 목록 + 통계용 전체 목록 병렬 로드
+    Promise.all([
+      getAdminOrders(tab?.statuses ?? []),
+      getAdminOrders([]),
+    ])
+      .then(([tabRes, allRes]) => {
+        setOrders(tabRes.data.data)
+        setAllOrders(allRes.data.data)
+      })
       .catch(() => setError('주문 목록을 불러오지 못했습니다'))
       .finally(() => setLoading(false))
   }, [activeTab])
 
   useEffect(() => { load() }, [load])
 
-  // ── SSE 연결 (새 주문 실시간 알림) ───────────────────────────────
+  // ── SSE 연결 ──────────────────────────────────────────────────────
   useEffect(() => {
     const controller = new AbortController()
 
@@ -109,24 +124,55 @@ export default function AdminOrderPage() {
               if (line.startsWith('data:'))  data      = line.slice(5).trim()
             }
 
-            if (eventName === 'newOrder' && data) {
+            if (!data) continue
+
+            if (eventName === 'newOrder') {
               const order = JSON.parse(data)
-              addToast(`🔔 새 주문 #${order.orderId} — ${order.memberNickname}`)
+              addToast(`새 주문 #${order.orderId} — ${order.memberNickname}`)
+
+              // 통계용 전체 목록에 추가
+              setAllOrders((prev) => [order, ...prev.filter((o) => o.orderId !== order.orderId)])
 
               // 진행 중 / 접수 대기 탭이면 목록 상단에 즉시 추가
               const currentTab = STATUS_TABS.find((t) => t.value === activeTabRef.current)
-              const showNow = !currentTab?.statuses.length /* 전체 */ ||
+              const showNow = !currentTab?.statuses.length ||
                               currentTab.statuses.includes('PENDING')
               if (showNow) {
                 setOrders((prev) => [order, ...prev.filter((o) => o.orderId !== order.orderId)])
               }
+            }
+
+            if (eventName === 'orderStatusChanged') {
+              const updated = JSON.parse(data)
+
+              // 통계용 전체 목록 업데이트
+              setAllOrders((prev) => prev.map((o) => o.orderId === updated.orderId ? updated : o))
+
+              // 현재 탭에 해당하는 주문이면 상태 업데이트, 아니면 제거
+              const currentTab = STATUS_TABS.find((t) => t.value === activeTabRef.current)
+              const belongsToTab = !currentTab?.statuses.length ||
+                                   currentTab.statuses.includes(updated.status)
+              setOrders((prev) => {
+                if (belongsToTab) {
+                  return prev.map((o) => o.orderId === updated.orderId ? updated : o)
+                }
+                // 탭 필터 밖 상태로 변경됐으면 목록에서 제거
+                return prev.filter((o) => o.orderId !== updated.orderId)
+              })
+            }
+
+            if (eventName === 'stockRestoreFailure') {
+              const payload = JSON.parse(data)
+              addToast(
+                `재고 복구 실패 — 주문 #${payload.orderId} 메뉴ID ${payload.menuId} (${payload.quantity}개) 수동 확인 필요`,
+                'danger'
+              )
             }
             // heartbeat 이벤트는 무시
           }
         }
       } catch (err) {
         if (err.name === 'AbortError') return
-        // 네트워크 오류 시 3초 후 재연결
         setTimeout(connect, 3000)
       }
     }
@@ -140,7 +186,9 @@ export default function AdminOrderPage() {
     setActionLoading((prev) => ({ ...prev, [orderId]: true }))
     try {
       const res = await changeOrderStatus(orderId, action)
+      // SSE broadcastOrderStatusChange가 다른 창도 업데이트하므로 로컬도 즉시 반영
       setOrders((prev) => prev.map((o) => (o.orderId === orderId ? res.data.data : o)))
+      setAllOrders((prev) => prev.map((o) => (o.orderId === orderId ? res.data.data : o)))
     } catch (err) {
       alert(err.response?.data?.message || '상태 변경에 실패했습니다')
     } finally {
@@ -148,18 +196,38 @@ export default function AdminOrderPage() {
     }
   }
 
+  // ── 요약 통계 계산 ────────────────────────────────────────────────
+  const countByStatus = (status) => allOrders.filter((o) => o.status === status).length
+
   return (
     <AdminLayout>
       {/* 토스트 알림 */}
       <div className={styles.toastContainer}>
-        {toasts.map(({ id, msg }) => (
-          <div key={id} className={styles.toast}>{msg}</div>
+        {toasts.map(({ id, msg, type }) => (
+          <div key={id} className={`${styles.toast} ${type === 'danger' ? styles.toastDanger : ''}`}>
+            {msg}
+          </div>
         ))}
       </div>
 
       <div className={styles.header}>
         <h1 className={styles.title}>주문 현황</h1>
         <button className={styles.refreshBtn} onClick={load}>새로고침</button>
+      </div>
+
+      {/* 요약 통계 카드 */}
+      <div className={styles.summaryGrid}>
+        {SUMMARY_STATS.map(({ status, label, color, bg, border }) => (
+          <div
+            key={status}
+            className={styles.summaryCard}
+            style={{ background: bg, borderColor: border }}
+            onClick={() => setActiveTab(status)}
+          >
+            <span className={styles.summaryLabel}>{label}</span>
+            <span className={styles.summaryCount} style={{ color }}>{countByStatus(status)}</span>
+          </div>
+        ))}
       </div>
 
       {/* 상태 탭 */}

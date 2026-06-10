@@ -134,6 +134,13 @@ public class OrderSseService {
         adminEmitters.forEach((clientId, emitter) -> send(emitter, "newOrder", json));
     }
 
+    /** 어드민이 주문 상태를 변경할 때 모든 어드민 브라우저에 브로드캐스트 */
+    public void broadcastOrderStatusChange(Object orderData) {
+        String json = toJson(orderData);
+        if (json == null) return;
+        adminEmitters.forEach((clientId, emitter) -> send(emitter, "orderStatusChanged", json));
+    }
+
     /** 재고 복구 실패 시 연결된 모든 어드민 브라우저에 경고 전송 */
     public void broadcastStockRestoreFailure(Long orderId, Long menuId, int quantity) {
         Map<String, Object> data = Map.of(

@@ -26,25 +26,32 @@ import AdminMemberPage from './pages/admin/AdminMemberPage'
 import MyProfilePage from './pages/customer/MyProfilePage'
 import PaymentPage from './pages/customer/PaymentPage'
 
-/**
- * 로그인한 사용자만 접근 가능한 라우트 가드.
- * accessToken 없으면 /login으로 리다이렉트.
- * @param {{ children: React.ReactNode }} props
- */
-function PrivateRoute({ children }) {
-  const token = localStorage.getItem('accessToken')
-  return token ? children : <Navigate to="/login" replace />
+// JWT payload의 exp(Unix초)를 확인해 만료 여부 판단
+function isTokenValid(token) {
+  if (!token) return false
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp * 1000 > Date.now()
+  } catch {
+    return false
+  }
 }
 
-/**
- * ADMIN 역할만 접근 가능한 라우트 가드.
- * 미로그인 시 /login, 비관리자 시 / 로 리다이렉트.
- * @param {{ children: React.ReactNode }} props
- */
+// 만료된 토큰은 localStorage를 비우고 /login으로 보냄
+function clearAndRedirect() {
+  localStorage.clear()
+  return <Navigate to="/login" replace />
+}
+
+function PrivateRoute({ children }) {
+  const token = localStorage.getItem('accessToken')
+  return isTokenValid(token) ? children : clearAndRedirect()
+}
+
 function AdminRoute({ children }) {
   const token = localStorage.getItem('accessToken')
   const role = localStorage.getItem('role')
-  if (!token) return <Navigate to="/login" replace />
+  if (!isTokenValid(token)) return clearAndRedirect()
   if (role !== 'ADMIN') return <Navigate to="/" replace />
   return children
 }

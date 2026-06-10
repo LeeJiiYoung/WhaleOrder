@@ -35,6 +35,7 @@ public class StockLockFacade {
 
     // 재고 복구 (분산 락)
     public void restoreStock(Long storeId, Long menuId, int amount) {
+        //같은 매장, 메뉴에 대해서만 락걸기
         RLock lock = redissonClient.getLock("stock:lock:" + storeId + ":" + menuId);
         try {
             if (!lock.tryLock(5, 3, TimeUnit.SECONDS)) {

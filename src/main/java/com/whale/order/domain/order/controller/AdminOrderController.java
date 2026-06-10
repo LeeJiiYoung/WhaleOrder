@@ -28,7 +28,7 @@ public class AdminOrderController {
     private final OrderService orderService;
     private final OrderSseService orderSseService;
 
-    @Operation(summary = "주문 목록 조회", description = "상태 필터 복수 가능 (PENDING, ACCEPTED, PREPARING, COMPLETED, CANCELLED)")
+    @Operation(summary = "주문 목록 조회", description = "상태 필터 복수 가능 (PENDING, PREPARING, COMPLETED, CANCELLED)")
     @GetMapping
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrders(
             @RequestParam(required = false) List<OrderStatus> statuses) {
@@ -41,7 +41,7 @@ public class AdminOrderController {
         return orderSseService.registerAdmin(UUID.randomUUID().toString());
     }
 
-    @Operation(summary = "주문 상태 변경", description = "action: accept(접수) · prepare(제조 시작) · complete(완료)")
+    @Operation(summary = "주문 상태 변경", description = "action: prepare(제조 시작) · complete(완료)")
     @PatchMapping("/{orderId}/{action}")
     public ResponseEntity<ApiResponse<OrderResponse>> changeStatus(
             @PathVariable Long orderId,

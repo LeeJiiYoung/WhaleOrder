@@ -17,19 +17,19 @@
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.mysema.commons/mysema-commons-lang/0.2.4/d09c8489d54251a6c22fbce804bdd4a070557317/mysema-commons-lang-0.2.4.jar" />
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jdt/ecj/3.26.0/4837be609a3368a0f7e7cf0dc1bdbc7fe94993de/ecj-3.26.0.jar" />
         </processorPath>
-        <module name="order.main" />
+        <module name="com.whale.order.main~2" />
       </profile>
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.projectlombok/lombok/1.18.46/a5cfe99fdf320e84955ef653f2ce1bf789d11385/lombok-1.18.46.jar" />
         </processorPath>
-        <module name="order.test" />
+        <module name="com.whale.order.test~2" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="com.whale.order.main~2" target="21" />
-      <module name="com.whale.order.test~2" target="21" />
+      <module name="com.whale.order.main~1" target="21" />
+      <module name="com.whale.order.test~1" target="21" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

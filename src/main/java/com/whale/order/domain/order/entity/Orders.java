@@ -74,15 +74,9 @@ public class Orders extends BaseEntity {
         this.orderItems.add(orderItem);
     }
 
-    // 매장 접수
-    public void accept() {
-        validateStatus(OrderStatus.PENDING);
-        this.status = OrderStatus.ACCEPTED;
-    }
-
     // 제조 시작
     public void startPreparing() {
-        validateStatus(OrderStatus.ACCEPTED);
+        validateStatus(OrderStatus.PENDING);
         this.status = OrderStatus.PREPARING;
     }
 

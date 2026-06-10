@@ -25,11 +25,7 @@ export default function CustomerLayout({ children }) {
   }, [pathname])
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('nickname')
-    localStorage.removeItem('role')
-    localStorage.removeItem('selectedStoreId')
-    localStorage.removeItem('selectedStoreName')
+    localStorage.clear()
     navigate('/login')
   }
 

@@ -19,7 +19,11 @@
   font-weight: 600;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
   animation: slideIn 0.25s ease, fadeOut 0.4s ease 3.6s forwards;
-  max-width: 320px;
+  max-width: 340px;
+}
+
+.toastDanger {
+  background: #dc2626;
 }
 
 @keyframes slideIn {
@@ -56,6 +60,47 @@
   transition: all 0.15s;
 }
 .refreshBtn:hover { background: #f9fafb; border-color: #4f46e5; color: #4f46e5; }
+
+/* 요약 통계 카드 */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .summaryGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.summaryCard {
+  border: 1.5px solid;
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.summaryCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.summaryLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summaryCount {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+}
 
 /* 탭 */
 .tabs {

@@ -21,6 +21,10 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -150,6 +154,67 @@ class StockConcurrencyTest extends TestContainerBase {
         동시_차감_실행(threadCount, 1);
 
         assertThat(재고_조회()).isEqualTo(-1);
+    }
+
+    @Test
+    @DisplayName("재고 5개, 10개 스레드 동시 도착 → 도착 순서 앞 5명만 성공")
+    void 도착_순서대로_재고_차감_선착순_성공() throws InterruptedException {
+        int stock = 5;
+        int customers = 10;
+        재고_설정(stock);
+
+        // 동시 출발 후 각 스레드의 도착 시간 기록 (customerId, nanoTime)
+        CopyOnWriteArrayList<long[]> arrivals = new CopyOnWriteArrayList<>();
+
+        CountDownLatch ready = new CountDownLatch(customers);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done  = new CountDownLatch(customers);
+        ExecutorService pool = Executors.newFixedThreadPool(customers);
+
+        for (int i = 0; i < customers; i++) {
+            final int cNum = i + 1;
+            pool.submit(() -> {
+                ready.countDown();
+                try {
+                    start.await();
+                    arrivals.add(new long[]{cNum, System.nanoTime()});
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        ready.await();
+        start.countDown();
+        done.await(10, TimeUnit.SECONDS);
+        pool.shutdown();
+
+        // 도착 순서 확정
+        List<long[]> queue = new ArrayList<>(arrivals);
+        queue.sort(Comparator.comparingLong(a -> a[1]));
+
+        // 대기열 순서대로 재고 차감 시도
+        List<Boolean> results = new ArrayList<>();
+        for (long[] ignored : queue) {
+            try {
+                stockLockFacade.deductStock(storeId, menuId, 1);
+                results.add(true);
+            } catch (Exception e) {
+                results.add(false);
+            }
+        }
+
+        // 앞 stock개(위치 1~5)는 성공, 나머지(6~10)는 실패
+        for (int i = 0; i < results.size(); i++) {
+            if (i < stock) {
+                assertThat(results.get(i)).as("position %d 는 성공해야 함", i + 1).isTrue();
+            } else {
+                assertThat(results.get(i)).as("position %d 는 실패해야 함", i + 1).isFalse();
+            }
+        }
+        assertThat(재고_조회()).isEqualTo(0);
     }
 
     // --- 헬퍼 메서드 ---

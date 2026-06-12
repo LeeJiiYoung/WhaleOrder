@@ -123,7 +123,7 @@ export default function LoginPage() {
             </button>
             <button
               className={styles.testBtn}
-              onClick={() => setForm({ userId: 'customer', password: 'customer' })}
+              onClick={() => setForm({ userId: 'customer', password: 'customercustomer' })}
             >
               고객
             </button>

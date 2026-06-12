@@ -1,12 +1,14 @@
 package com.whale.order.domain.stock.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class StockLockFacade {
@@ -20,6 +22,7 @@ public class StockLockFacade {
         try {
             // 최대 5초 대기, 락 획득 후 3초 안에 자동 해제
             if (!lock.tryLock(5, 3, TimeUnit.SECONDS)) {
+                log.warn("[분산락] 차감 락 획득 실패 storeId={} menuId={}", storeId, menuId);
                 throw new IllegalStateException("재고 처리 중입니다. 잠시 후 다시 시도해주세요.");
             }
             stockService.deductStock(storeId, menuId, amount);
@@ -39,6 +42,7 @@ public class StockLockFacade {
         RLock lock = redissonClient.getLock("stock:lock:" + storeId + ":" + menuId);
         try {
             if (!lock.tryLock(5, 3, TimeUnit.SECONDS)) {
+                log.warn("[분산락] 복구 락 획득 실패 storeId={} menuId={}", storeId, menuId);
                 throw new IllegalStateException("재고 복구 처리 중입니다. 잠시 후 다시 시도해주세요.");
             }
             stockService.restoreStock(storeId, menuId, amount);

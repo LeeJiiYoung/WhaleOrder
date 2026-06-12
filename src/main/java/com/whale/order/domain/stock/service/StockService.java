@@ -3,12 +3,17 @@ package com.whale.order.domain.stock.service;
 import com.whale.order.domain.menu.entity.Menu;
 import com.whale.order.domain.menu.repository.MenuRepository;
 import com.whale.order.domain.stock.dto.StockResponse;
+import com.whale.order.domain.stock.dto.StockRestoreFailureResponse;
 import com.whale.order.domain.stock.dto.StockUpdateRequest;
 import com.whale.order.domain.stock.entity.Stock;
 import com.whale.order.domain.stock.repository.StockRepository;
+import com.whale.order.domain.stock.repository.StockRestoreFailureRepository;
 import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,13 +21,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StockService {
 
     private final StockRepository stockRepository;
+    private final StockRestoreFailureRepository stockRestoreFailureRepository;
     private final StoreRepository storeRepository;
     private final MenuRepository menuRepository;
+    private final MeterRegistry meterRegistry;
 
     // 매장의 전체 메뉴 재고 목록 (재고 미설정 메뉴 포함)
     @Transactional(readOnly = true)
@@ -35,18 +43,44 @@ public class StockService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<StockRestoreFailureResponse> getRestoreFailures() {
+        return stockRestoreFailureRepository.findAllByOrderByFailedAtDesc().stream()
+                .map(StockRestoreFailureResponse::from)
+                .toList();
+    }
+
     // 재고 차감 — StockLockFacade 가 Redis 락을 잡은 상태에서 호출
     @Transactional
     public void deductStock(Long storeId, Long menuId, int amount) {
-        stockRepository.findWithLock(storeId, menuId)
-                .ifPresent(stock -> stock.deduct(amount));
+        try {
+            stockRepository.findWithLock(storeId, menuId).ifPresent(stock -> {
+                int before = stock.getQuantity();
+                stock.deduct(amount);
+                log.info("[재고차감] storeId={} menuId={} {}개 차감 ({}→{})",
+                        storeId, menuId, amount, before, before - amount);
+            });
+        } catch (IllegalStateException e) {
+            log.warn("[재고부족] storeId={} menuId={} 요청={}개 error={}", storeId, menuId, amount, e.getMessage());
+            Counter.builder("stock.shortage.total")
+                    .tag("storeId", String.valueOf(storeId))
+                    .tag("menuId", String.valueOf(menuId))
+                    .description("재고 부족으로 주문 실패 횟수")
+                    .register(meterRegistry)
+                    .increment();
+            throw e;
+        }
     }
 
     // 주문 취소 시 재고 복구 — StockLockFacade 가 Redis 락을 잡은 상태에서 호출
     @Transactional
     public void restoreStock(Long storeId, Long menuId, int amount) {
-        stockRepository.findWithLock(storeId, menuId)
-                .ifPresent(stock -> stock.restore(amount));
+        stockRepository.findWithLock(storeId, menuId).ifPresent(stock -> {
+            int before = stock.getQuantity();
+            stock.restore(amount);
+            log.info("[재고복구] storeId={} menuId={} {}개 복구 ({}→{})",
+                    storeId, menuId, amount, before, before + amount);
+        });
     }
 
     // 특정 메뉴 재고 설정 (없으면 생성, 있으면 수정)

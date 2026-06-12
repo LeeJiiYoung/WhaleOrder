@@ -1,10 +1,9 @@
 package com.whale.order.domain.order.controller;
 
-import com.whale.order.domain.order.dto.OrderResponse;
 import com.whale.order.domain.order.entity.OrderStatus;
 import com.whale.order.domain.order.entity.Orders;
-import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.domain.order.service.OrderQueueService;
+import com.whale.order.domain.order.service.OrderService;
 import com.whale.order.domain.order.service.OrderSseService;
 import com.whale.order.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +26,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderQueueController {
 
+    private final OrderService orderService;
     private final OrderQueueService orderQueueService;
     private final OrderSseService orderSseService;
-    private final OrderRepository orderRepository;
 
     // 처리 결과 대기 (SSE)
     @Hidden
@@ -38,13 +37,8 @@ public class OrderQueueController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId) {
 
-        Orders order = orderRepository.findByIdWithDetails(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다"));
-
         Long memberId = Long.parseLong(userDetails.getUsername());
-        if (!order.getMember().getMemberId().equals(memberId)) {
-            throw new IllegalArgumentException("본인 주문만 조회할 수 있습니다");
-        }
+        Orders order = orderService.findOrderForSse(orderId, memberId);
 
         // 이미 처리 완료된 경우: 즉시 응답 후 종료
         if (order.getStatus() != OrderStatus.PENDING) {
@@ -70,13 +64,8 @@ public class OrderQueueController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long orderId) {
 
-        Orders order = orderRepository.findByIdWithDetails(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다"));
-
         Long memberId = Long.parseLong(userDetails.getUsername());
-        if (!order.getMember().getMemberId().equals(memberId)) {
-            throw new IllegalArgumentException("본인 주문만 조회할 수 있습니다");
-        }
+        orderService.findOrderForSse(orderId, memberId);
 
         return orderSseService.registerStatusStream(orderId);
     }

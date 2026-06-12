@@ -3,7 +3,6 @@ package com.whale.order.domain.stock.controller;
 import com.whale.order.domain.stock.dto.StockResponse;
 import com.whale.order.domain.stock.dto.StockRestoreFailureResponse;
 import com.whale.order.domain.stock.dto.StockUpdateRequest;
-import com.whale.order.domain.stock.repository.StockRestoreFailureRepository;
 import com.whale.order.domain.stock.service.StockService;
 import com.whale.order.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,7 +20,6 @@ import java.util.List;
 public class AdminStockController {
 
     private final StockService stockService;
-    private final StockRestoreFailureRepository stockRestoreFailureRepository;
 
     @Operation(summary = "매장 재고 목록 조회")
     @GetMapping
@@ -32,11 +30,7 @@ public class AdminStockController {
     @Operation(summary = "재고 복구 실패 목록 조회", description = "Kafka DLT 처리 중 재고 복구에 실패한 건. SSE를 놓쳤을 때 관리자가 직접 확인")
     @GetMapping("/restore-failures")
     public ResponseEntity<ApiResponse<List<StockRestoreFailureResponse>>> getRestoreFailures() {
-        List<StockRestoreFailureResponse> result = stockRestoreFailureRepository.findAll()
-                .stream()
-                .map(StockRestoreFailureResponse::from)
-                .toList();
-        return ResponseEntity.ok(ApiResponse.ok("조회 성공", result));
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", stockService.getRestoreFailures()));
     }
 
     @Operation(summary = "재고 설정", description = "특정 메뉴의 재고를 설정(upsert). 없으면 생성, 있으면 갱신")

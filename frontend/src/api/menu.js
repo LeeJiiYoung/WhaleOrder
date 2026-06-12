@@ -1,9 +1,8 @@
 import client from './client'
 
-// 고객
-export const getCustomerMenus = (category) =>
-  client.get('/menus', { params: category ? { category } : {} })
-export const getCustomerMenu = (menuId) => client.get(`/menus/${menuId}`)
+// 고객 — 매장별 메뉴 + 실시간 재고 통합 조회
+export const getCustomerMenus = (storeId, category) =>
+  client.get(`/stores/${storeId}/menus`, { params: category ? { category } : {} })
 
 // 어드민
 export const getMenus = (category) =>

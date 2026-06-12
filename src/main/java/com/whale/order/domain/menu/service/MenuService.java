@@ -6,13 +6,19 @@ import com.whale.order.domain.menu.entity.MenuCategory;
 import com.whale.order.domain.menu.entity.MenuOption;
 import com.whale.order.domain.menu.repository.MenuOptionRepository;
 import com.whale.order.domain.menu.repository.MenuRepository;
+import com.whale.order.domain.stock.entity.Stock;
 import com.whale.order.global.storage.ImageStorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +28,9 @@ public class MenuService {
     private final MenuOptionRepository menuOptionRepository;
     private final ImageStorageService imageStorageService;
 
+    // ─── 관리자용 조회 ───────────────────────────────────────────
+
+    @Cacheable(cacheNames = "menus", key = "#category != null ? #category.name() : 'all'")
     @Transactional(readOnly = true)
     public List<MenuResponse> getMenus(MenuCategory category) {
         List<Menu> menus = (category != null)
@@ -30,6 +39,7 @@ public class MenuService {
         return menus.stream().map(MenuResponse::from).toList();
     }
 
+    @Cacheable(cacheNames = "menu", key = "#menuId")
     @Transactional(readOnly = true)
     public MenuDetailResponse getMenu(Long menuId) {
         Menu menu = findMenuOrThrow(menuId);
@@ -37,6 +47,44 @@ public class MenuService {
         return MenuDetailResponse.from(menu, options);
     }
 
+    // ─── 고객용 조회 (메뉴 + 재고 통합, 캐시 없음) ───────────────
+
+    @Transactional(readOnly = true)
+    public List<StoreMenuResponse> getStoreMenus(Long storeId) {
+        // 쿼리 1: 메뉴 + 재고 LEFT JOIN으로 한 번에 조회
+        List<Object[]> rows = menuRepository.findActiveMenusWithStock(storeId);
+
+        List<Menu> menus = rows.stream()
+                .map(r -> (Menu) r[0])
+                .filter(Menu::isOnSale)
+                .toList();
+
+        Map<Long, Stock> stockMap = rows.stream()
+                .filter(r -> r[1] != null)
+                .collect(Collectors.toMap(r -> ((Menu) r[0]).getMenuId(), r -> (Stock) r[1]));
+
+        // 쿼리 2: 옵션 배치 조회
+        List<Long> menuIds = menus.stream().map(Menu::getMenuId).toList();
+        Map<Long, List<MenuOptionResponse>> optionMap = menuOptionRepository.findByMenuIds(menuIds).stream()
+                .collect(Collectors.groupingBy(
+                        o -> o.getMenu().getMenuId(),
+                        Collectors.mapping(MenuOptionResponse::from, Collectors.toList())
+                ));
+
+        return menus.stream()
+                .map(menu -> StoreMenuResponse.of(
+                        menu,
+                        stockMap.get(menu.getMenuId()),
+                        optionMap.getOrDefault(menu.getMenuId(), List.of())
+                ))
+                .toList();
+    }
+
+    // ─── 쓰기 (캐시 무효화) ──────────────────────────────────────
+
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "menus", allEntries = true)
+    })
     @Transactional
     public MenuDetailResponse createMenu(MenuCreateRequest request) {
         String imageUrl = uploadImageIfPresent(request.getImageFile());
@@ -55,6 +103,10 @@ public class MenuService {
         return MenuDetailResponse.from(menu, List.of());
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "menus", allEntries = true),
+            @CacheEvict(cacheNames = "menu", key = "#menuId")
+    })
     @Transactional
     public MenuDetailResponse updateMenu(Long menuId, MenuUpdateRequest request) {
         Menu menu = findMenuOrThrow(menuId);
@@ -78,17 +130,27 @@ public class MenuService {
         return MenuDetailResponse.from(menu, options);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "menus", allEntries = true),
+            @CacheEvict(cacheNames = "menu", key = "#menuId")
+    })
     @Transactional
     public void deactivateMenu(Long menuId) {
         findMenuOrThrow(menuId).deactivate();
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "menus", allEntries = true),
+            @CacheEvict(cacheNames = "menu", key = "#menuId")
+    })
     @Transactional
     public void activateMenu(Long menuId) {
         findMenuOrThrow(menuId).activate();
     }
 
-    // 옵션 추가
+    // ─── 옵션 관리 ────────────────────────────────────────────────
+
+    @CacheEvict(cacheNames = "menu", key = "#menuId")
     @Transactional
     public MenuOptionResponse addOption(Long menuId, MenuOptionRequest request) {
         Menu menu = findMenuOrThrow(menuId);
@@ -104,7 +166,7 @@ public class MenuService {
         return MenuOptionResponse.from(option);
     }
 
-    // 옵션 수정
+    @CacheEvict(cacheNames = "menu", key = "#menuId")
     @Transactional
     public MenuOptionResponse updateOption(Long menuId, Long optionId, MenuOptionRequest request) {
         MenuOption option = findOptionOrThrow(menuId, optionId);
@@ -112,7 +174,7 @@ public class MenuService {
         return MenuOptionResponse.from(option);
     }
 
-    // 옵션 삭제
+    @CacheEvict(cacheNames = "menu", key = "#menuId")
     @Transactional
     public void deleteOption(Long menuId, Long optionId) {
         MenuOption option = findOptionOrThrow(menuId, optionId);

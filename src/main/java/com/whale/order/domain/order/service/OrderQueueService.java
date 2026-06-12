@@ -1,11 +1,14 @@
 package com.whale.order.domain.order.service;
 
+import com.whale.order.domain.order.entity.OrderStatus;
+import com.whale.order.domain.order.repository.OrderRepository;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
-
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -14,6 +17,17 @@ public class OrderQueueService {
     private static final String QUEUE_KEY = "order:queue";
 
     private final StringRedisTemplate redisTemplate;
+    private final MeterRegistry meterRegistry;
+    private final OrderRepository orderRepository;
+
+    @PostConstruct
+    public void registerMetrics() {
+        // Kafka 기반으로 전환되어 Redis ZSet은 사용 안 함 → DB PENDING 카운트로 대체
+        Gauge.builder("order.queue.size", orderRepository,
+                        repo -> (double) repo.countByStatus(OrderStatus.PENDING))
+                .description("현재 처리 대기 중인 주문 수 (PENDING 상태)")
+                .register(meterRegistry);
+    }
 
     // 대기열 등록, 현재 내 순서(1-based) 반환
     public long enqueue(Long orderId) {

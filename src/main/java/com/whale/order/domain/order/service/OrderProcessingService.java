@@ -17,6 +17,7 @@ import com.whale.order.domain.stock.service.StockLockFacade;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,25 @@ public class OrderProcessingService {
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final StockRestoreFailureRepository stockRestoreFailureRepository;
     private final MeterRegistry meterRegistry;
+
+    private Counter processedSuccessCounter;
+    private Counter processedFailureCounter;
+    private Counter stockShortageCounter;
+
+    @PostConstruct
+    public void initMetrics() {
+        processedSuccessCounter = Counter.builder("order.processed")
+                .tag("result", "success")
+                .description("주문 처리 성공 횟수")
+                .register(meterRegistry);
+        processedFailureCounter = Counter.builder("order.processed")
+                .tag("result", "failure")
+                .description("주문 처리 실패 횟수")
+                .register(meterRegistry);
+        stockShortageCounter = Counter.builder("order.stock.shortage")
+                .description("재고 부족 발생 횟수")
+                .register(meterRegistry);
+    }
 
     // Kafka Consumer에서 직접 orderId를 받아서 처리 (Redis 폴링 불필요)
     public void process(Long orderId) {
@@ -70,10 +90,7 @@ public class OrderProcessingService {
                     .tag("result", "success")
                     .description("주문 처리 소요 시간")
                     .register(meterRegistry));
-            Counter.builder("order.processed")
-                    .tag("result", "success")
-                    .description("주문 처리 성공 횟수")
-                    .register(meterRegistry).increment();
+            processedSuccessCounter.increment();
 
             log.info("주문 처리 완료 orderId={}", orderId);
             orderSseService.notify(orderId, Map.of(
@@ -88,13 +105,8 @@ public class OrderProcessingService {
                     .tag("result", "failure")
                     .description("주문 처리 소요 시간")
                     .register(meterRegistry));
-            Counter.builder("order.processed")
-                    .tag("result", "failure")
-                    .description("주문 처리 실패 횟수")
-                    .register(meterRegistry).increment();
-            Counter.builder("order.stock.shortage")
-                    .description("재고 부족 발생 횟수")
-                    .register(meterRegistry).increment();
+            processedFailureCounter.increment();
+            stockShortageCounter.increment();
 
             for (OrderItem item : deducted) {
                 try {

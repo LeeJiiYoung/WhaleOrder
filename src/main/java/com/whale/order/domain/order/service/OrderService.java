@@ -24,7 +24,11 @@ import com.whale.order.domain.store.repository.StoreRepository;
 import com.whale.order.global.exception.DuplicateRequestException;
 import com.whale.order.domain.order.service.OrderKafkaProducer;
 import com.whale.order.global.idempotency.IdempotencyService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +40,7 @@ import java.util.Objects;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -51,6 +56,16 @@ public class OrderService {
     private final ObjectMapper objectMapper;
     private final java.util.Optional<OrderKafkaProducer> orderKafkaProducer;
     private final OrderSseService orderSseService;
+    private final MeterRegistry meterRegistry;
+
+    private Counter orderCreatedCounter;
+
+    @PostConstruct
+    public void initMetrics() {
+        orderCreatedCounter = Counter.builder("order.created.total")
+                .description("누적 주문 생성 수")
+                .register(meterRegistry);
+    }
 
     // 장바구니 → 주문 생성 후 대기열 등록
     @Transactional
@@ -63,11 +78,15 @@ public class OrderService {
         String key = generateIdempotencyKey(memberId, request, cart);
 
         QueuedOrderResponse cached = idempotencyService.getResult(key, QueuedOrderResponse.class);
-        if (cached != null) return cached;
+        if (cached != null) {
+            log.info("[주문생성] 멱등성 캐시 반환 memberId={} storeId={}", memberId, request.storeId());
+            return cached;
+        }
 
         if (!idempotencyService.markProcessing(key)) {
             QueuedOrderResponse completed = idempotencyService.getResult(key, QueuedOrderResponse.class);
             if (completed != null) return completed;
+            log.warn("[주문생성] 중복 요청 감지 memberId={} storeId={}", memberId, request.storeId());
             throw new DuplicateRequestException("동일한 요청이 처리 중입니다. 잠시 후 다시 시도해주세요.");
         }
 
@@ -109,13 +128,20 @@ public class OrderService {
 
             cartService.clearCart(memberId);
 
+            log.info("[주문생성] orderId={} memberId={} storeId={} totalPrice={} itemCount={}",
+                    order.getOrderId(), memberId, request.storeId(),
+                    cart.totalPrice(), cart.items().size());
+
             orderKafkaProducer.ifPresent(p -> p.publish(order.getOrderId()));
             QueuedOrderResponse response = QueuedOrderResponse.of(order.getOrderId(), 0);
+
+            orderCreatedCounter.increment();
 
             idempotencyService.saveResult(key, response);
             return response;
 
         } catch (Exception e) {
+            log.error("[주문생성] 실패 memberId={} storeId={} error={}", memberId, request.storeId(), e.getMessage());
             idempotencyService.delete(key);
             throw e;
         } catch (Error e) {
@@ -137,6 +163,17 @@ public class OrderService {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 알고리즘을 찾을 수 없습니다", e);
         }
+    }
+
+    // SSE 구독 전 주문 소유권 검증 후 반환 (OrderQueueController 전용)
+    @Transactional(readOnly = true)
+    public Orders findOrderForSse(Long orderId, Long memberId) {
+        Orders order = orderRepository.findByIdWithDetails(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다"));
+        if (!order.getMember().getMemberId().equals(memberId)) {
+            throw new IllegalArgumentException("본인 주문만 조회할 수 있습니다");
+        }
+        return order;
     }
 
     // 내 주문 목록
@@ -167,6 +204,7 @@ public class OrderService {
             throw new IllegalArgumentException("본인 주문만 취소할 수 있습니다");
         }
         order.cancel();
+        log.info("[주문취소] orderId={} memberId={} stockDeducted={}", orderId, memberId, order.isStockDeducted());
 
         // Kafka 방식: stockDeducted 플래그로 재고 차감 완료 여부 판단
         // (기존 Redis 방식은 removeFromQueue() 성공 여부로 판단했음)
@@ -208,11 +246,13 @@ public class OrderService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다"));
         Member admin = memberRepository.findById(adminMemberId).orElseThrow();
 
+        OrderStatus before = order.getStatus();
         switch (action) {
             case "prepare"  -> order.startPreparing();
             case "complete" -> order.complete();
             default -> throw new IllegalArgumentException("알 수 없는 액션: " + action);
         }
+        log.info("[상태변경] orderId={} {} → {} adminId={}", orderId, before, order.getStatus(), adminMemberId);
 
         historyRepository.save(OrderStatusHistory.builder()
                 .orders(order)

@@ -53,6 +53,8 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         // 업로드된 이미지 파일 (인증 없이 접근 가능)
                         .requestMatchers("/uploads/**").permitAll()
+                        // Prometheus 스크래핑 (내부 모니터링 전용)
+                        .requestMatchers("/actuator/prometheus", "/actuator/health").permitAll()
                         // 고객용 조회 API (로그인 없이 메뉴/매장 탐색 가능)
                         .requestMatchers("/api/stores/**", "/api/menus/**").permitAll()
                         // 정적 어드민 페이지 (역할 체크는 클라이언트에서)

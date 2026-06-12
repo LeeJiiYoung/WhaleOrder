@@ -1,11 +1,10 @@
 package com.whale.order.domain.event.controller;
 
 import com.whale.order.domain.event.dto.EventResponse;
-import com.whale.order.domain.event.repository.EventPurchaseRepository;
-import com.whale.order.domain.event.repository.EventRepository;
 import com.whale.order.domain.event.service.EventPurchaseService;
 import com.whale.order.domain.event.service.EventQueueFacade;
 import com.whale.order.domain.event.service.EventQueueService;
+import com.whale.order.domain.event.service.EventService;
 import com.whale.order.domain.event.service.SseEmitterRegistry;
 import com.whale.order.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -27,27 +26,22 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EventQueueController {
 
+    private final EventService eventService;
     private final EventQueueFacade eventQueueFacade;
     private final EventQueueService eventQueueService;
     private final SseEmitterRegistry sseEmitterRegistry;
     private final EventPurchaseService eventPurchaseService;
-    private final EventRepository eventRepository;
-    private final EventPurchaseRepository eventPurchaseRepository;
 
     // 활성 이벤트 목록 (OPEN + SCHEDULED)
     @GetMapping
     public ResponseEntity<ApiResponse<List<EventResponse>>> getEvents() {
-        List<EventResponse> events = eventRepository.findActiveEvents()
-                .stream().map(EventResponse::from).toList();
-        return ResponseEntity.ok(ApiResponse.ok("이벤트 목록 조회 성공", events));
+        return ResponseEntity.ok(ApiResponse.ok("이벤트 목록 조회 성공", eventService.getActiveEvents()));
     }
 
     // 이벤트 상세
     @GetMapping("/{eventId}")
     public ResponseEntity<ApiResponse<EventResponse>> getEvent(@PathVariable Long eventId) {
-        return eventRepository.findById(eventId)
-                .map(e -> ResponseEntity.ok(ApiResponse.ok("이벤트 조회 성공", EventResponse.from(e))))
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(ApiResponse.ok("이벤트 조회 성공", eventService.getEvent(eventId)));
     }
 
     // 내 대기 상태 조회 (페이지 새로고침 시 복원용)
@@ -58,10 +52,10 @@ public class EventQueueController {
 
         Long memberId = memberId(userDetails);
         return ResponseEntity.ok(ApiResponse.ok("상태 조회 성공", Map.of(
-                "inQueue", eventQueueService.isInQueue(eventId, memberId),
-                "position", eventQueueService.getPosition(eventId, memberId),
-                "isReady", eventPurchaseService.isReady(eventId, memberId),
-                "purchased", eventPurchaseRepository.existsByEvent_EventIdAndMember_MemberId(eventId, memberId)
+                "inQueue",    eventQueueService.isInQueue(eventId, memberId),
+                "position",   eventQueueService.getPosition(eventId, memberId),
+                "isReady",    eventPurchaseService.isReady(eventId, memberId),
+                "purchased",  eventPurchaseService.isPurchased(eventId, memberId)
         )));
     }
 

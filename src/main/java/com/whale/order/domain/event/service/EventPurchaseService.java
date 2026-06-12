@@ -43,6 +43,10 @@ public class EventPurchaseService {
         return redissonClient.<String>getBucket(readyKey(eventId, memberId)).get() != null;
     }
 
+    public boolean isPurchased(Long eventId, Long memberId) {
+        return eventPurchaseRepository.existsByEvent_EventIdAndMember_MemberId(eventId, memberId);
+    }
+
     @Transactional
     public void purchase(Long eventId, Long memberId) {
         RBucket<String> readyBucket = redissonClient.getBucket(readyKey(eventId, memberId));

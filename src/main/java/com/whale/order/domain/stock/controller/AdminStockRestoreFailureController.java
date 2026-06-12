@@ -1,7 +1,7 @@
 package com.whale.order.domain.stock.controller;
 
 import com.whale.order.domain.stock.dto.StockRestoreFailureResponse;
-import com.whale.order.domain.stock.repository.StockRestoreFailureRepository;
+import com.whale.order.domain.stock.service.StockService;
 import com.whale.order.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,14 +16,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminStockRestoreFailureController {
 
-    private final StockRestoreFailureRepository stockRestoreFailureRepository;
+    private final StockService stockService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<StockRestoreFailureResponse>>> getAll() {
-        List<StockRestoreFailureResponse> result = stockRestoreFailureRepository.findAllByOrderByFailedAtDesc()
-                .stream()
-                .map(StockRestoreFailureResponse::from)
-                .toList();
-        return ResponseEntity.ok(ApiResponse.ok("조회 성공", result));
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", stockService.getRestoreFailures()));
     }
 }

@@ -2,6 +2,7 @@ package com.whale.order.domain.store.service;
 
 import com.whale.order.domain.member.entity.Member;
 import com.whale.order.domain.member.repository.MemberRepository;
+import com.whale.order.domain.store.dto.CustomerStoreResponse;
 import com.whale.order.domain.store.dto.StoreCreateRequest;
 import com.whale.order.domain.store.dto.StoreResponse;
 import com.whale.order.domain.store.dto.StoreUpdateRequest;
@@ -61,6 +62,20 @@ public class StoreService {
                 request.latitude(), request.longitude()
         );
         return StoreResponse.from(store);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CustomerStoreResponse> getOpenStores() {
+        return storeRepository.findAllOpenStores().stream()
+                .map(CustomerStoreResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CustomerStoreResponse getCustomerStore(Long storeId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다: " + storeId));
+        return CustomerStoreResponse.from(store);
     }
 
     @Transactional

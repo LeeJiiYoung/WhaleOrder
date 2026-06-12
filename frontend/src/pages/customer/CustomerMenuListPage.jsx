@@ -22,6 +22,8 @@ const CATEGORIES = [
  */
 export default function CustomerMenuListPage() {
   const navigate = useNavigate()
+  const storeId = localStorage.getItem('selectedStoreId')
+  const storeName = localStorage.getItem('selectedStoreName')
   const [menus, setMenus] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -29,12 +31,16 @@ export default function CustomerMenuListPage() {
   const [keyword, setKeyword] = useState('')
 
   useEffect(() => {
+    if (!storeId) {
+      navigate('/stores', { replace: true })
+      return
+    }
     setLoading(true)
-    getCustomerMenus(category || undefined)
+    getCustomerMenus(storeId, category || undefined)
       .then((res) => setMenus(res.data.data))
       .catch(() => setError('메뉴를 불러오지 못했습니다'))
       .finally(() => setLoading(false))
-  }, [category])
+  }, [storeId, category])
 
   const filtered = useMemo(() => {
     if (!keyword.trim()) return menus
@@ -43,6 +49,7 @@ export default function CustomerMenuListPage() {
 
   return (
     <CustomerLayout>
+      {storeName && <p className={styles.storeName}>📍 {storeName}</p>}
       <div className={styles.filterBar}>
         <div className={styles.tabs}>
           {CATEGORIES.map(({ value, label }) => (
@@ -80,8 +87,9 @@ export default function CustomerMenuListPage() {
           {filtered.map((menu) => (
             <button
               key={menu.menuId}
-              className={styles.card}
-              onClick={() => navigate(`/menus/${menu.menuId}`)}
+              className={`${styles.card} ${menu.soldOut ? styles.soldOut : ''}`}
+              disabled={menu.soldOut}
+              onClick={() => navigate(`/menus/${menu.menuId}`, { state: { menu } })}
             >
               <div className={styles.imageWrap}>
                 {menu.imageUrl ? (
@@ -89,6 +97,7 @@ export default function CustomerMenuListPage() {
                 ) : (
                   <div className={styles.imagePlaceholder}>☕</div>
                 )}
+                {menu.soldOut && <div className={styles.soldOutBadge}>품절</div>}
               </div>
               <div className={styles.cardBody}>
                 <p className={styles.menuName}>{menu.name}</p>

@@ -30,4 +30,7 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
     // 어드민 - 상태 복수 필터 (진행 중 탭 등)
     @Query("SELECT o FROM Orders o JOIN FETCH o.store JOIN FETCH o.member WHERE o.status IN :statuses ORDER BY o.createdAt DESC")
     List<Orders> findByStatusesWithDetails(@Param("statuses") List<OrderStatus> statuses);
+
+    // 메트릭용 - 상태별 주문 수 카운트
+    long countByStatus(OrderStatus status);
 }

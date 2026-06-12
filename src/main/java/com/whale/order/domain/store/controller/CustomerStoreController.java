@@ -1,9 +1,9 @@
 package com.whale.order.domain.store.controller;
 
+import com.whale.order.domain.menu.dto.StoreMenuResponse;
+import com.whale.order.domain.menu.service.MenuService;
 import com.whale.order.domain.store.dto.CustomerStoreResponse;
-import com.whale.order.domain.store.entity.Store;
-import com.whale.order.domain.store.entity.StoreStatus;
-import com.whale.order.domain.store.repository.StoreRepository;
+import com.whale.order.domain.store.service.StoreService;
 import com.whale.order.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,22 +22,25 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CustomerStoreController {
 
-    private final StoreRepository storeRepository;
+    private final StoreService storeService;
+    private final MenuService menuService;
 
     @Operation(summary = "영업 중인 매장 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<CustomerStoreResponse>>> getOpenStores() {
-        List<CustomerStoreResponse> stores = storeRepository.findAllOpenStores().stream()
-                .map(CustomerStoreResponse::from)
-                .toList();
-        return ResponseEntity.ok(ApiResponse.ok("조회 성공", stores));
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", storeService.getOpenStores()));
     }
 
     @Operation(summary = "매장 상세 조회", description = "영업 중 여부와 무관하게 조회 가능")
     @GetMapping("/{storeId}")
     public ResponseEntity<ApiResponse<CustomerStoreResponse>> getStore(@PathVariable Long storeId) {
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 매장입니다: " + storeId));
-        return ResponseEntity.ok(ApiResponse.ok("조회 성공", CustomerStoreResponse.from(store)));
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", storeService.getCustomerStore(storeId)));
+    }
+
+    @Operation(summary = "매장별 메뉴 + 재고 통합 조회",
+               description = "판매 중인 메뉴와 해당 매장의 실시간 재고를 함께 반환. soldOut=true면 품절")
+    @GetMapping("/{storeId}/menus")
+    public ResponseEntity<ApiResponse<List<StoreMenuResponse>>> getStoreMenus(@PathVariable Long storeId) {
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", menuService.getStoreMenus(storeId)));
     }
 }

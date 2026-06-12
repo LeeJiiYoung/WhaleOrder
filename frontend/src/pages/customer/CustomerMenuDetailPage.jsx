@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { getCustomerMenu } from '../../api/menu'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { getCustomerMenus } from '../../api/menu'
 import { addToCart } from '../../api/cart'
 import CustomerLayout from '../../components/customer/CustomerLayout'
 import styles from './CustomerMenuDetailPage.module.css'
@@ -16,9 +16,10 @@ import styles from './CustomerMenuDetailPage.module.css'
 export default function CustomerMenuDetailPage() {
   const { menuId } = useParams()
   const navigate = useNavigate()
+  const { state } = useLocation()
 
-  const [menu, setMenu] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [menu, setMenu] = useState(state?.menu ?? null)
+  const [loading, setLoading] = useState(!state?.menu)
   const [error, setError] = useState('')
 
   // optionGroup → 선택된 옵션 (라디오 방식)
@@ -26,9 +27,17 @@ export default function CustomerMenuDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [adding, setAdding] = useState(false)
 
+  // 직접 URL 접근 시 (state 없음) — 매장 메뉴 목록에서 해당 메뉴 탐색
   useEffect(() => {
-    getCustomerMenu(menuId)
-      .then((res) => setMenu(res.data.data))
+    if (state?.menu) return
+    const storeId = localStorage.getItem('selectedStoreId')
+    if (!storeId) { navigate('/stores', { replace: true }); return }
+    getCustomerMenus(storeId)
+      .then((res) => {
+        const found = res.data.data.find((m) => String(m.menuId) === String(menuId))
+        if (found) setMenu(found)
+        else setError('메뉴 정보를 불러오지 못했습니다')
+      })
       .catch(() => setError('메뉴 정보를 불러오지 못했습니다'))
       .finally(() => setLoading(false))
   }, [menuId])

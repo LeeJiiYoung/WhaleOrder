@@ -6,3 +6,8 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets: ['host.docker.internal:8080']
+
+  # k6가 remote write로 밀어넣은 메트릭을 수집
+  - job_name: 'k6'
+    static_configs:
+      - targets: ['localhost:9090']

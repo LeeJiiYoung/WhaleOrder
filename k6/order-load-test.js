@@ -9,6 +9,8 @@ const orderFailRate  = new Rate('order_fail_rate');
 const orderDuration  = new Trend('order_duration_ms', true);
 
 // ── 테스트 시나리오 설정 ───────────────────────────────────────────
+// 실행: docker run --rm -i grafana/k6 run --out experimental-prometheus-rw - < k6/order-load-test.js
+// 환경변수: K6_PROMETHEUS_RW_SERVER_URL=http://host.docker.internal:9090/api/v1/write
 export const options = {
   scenarios: {
     // 시나리오 1: 점진적 부하 (일반 성능 측정)

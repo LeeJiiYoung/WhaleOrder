@@ -119,6 +119,10 @@ services:
     container_name: whale-prometheus
     ports:
       - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-remote-write-receiver'
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
@@ -130,7 +134,7 @@ services:
   # Grafana
   # ─────────────────────────────────────────
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.4.3
     container_name: whale-grafana
     ports:
       - "3001:3000"
@@ -139,6 +143,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin1234
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
     restart: unless-stopped

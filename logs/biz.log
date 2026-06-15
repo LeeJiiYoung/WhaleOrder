@@ -765,3 +765,4 @@
 2026-06-12 19:16:17.358 : [주문생성] orderId=14 memberId=6 storeId=1 totalPrice=4500 itemCount=1
 2026-06-12 19:16:17.373 : [API] POST /api/orders → 202 (30096ms)
 2026-06-12 19:16:17.376 : [API] POST /api/orders → 202 (30099ms)
+2026-06-15 09:06:48.432 : [API] POST /api/auth/signup → 200 (716ms)

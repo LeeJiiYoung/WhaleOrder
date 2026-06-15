@@ -49,3 +49,7 @@ uploads/
 
 ### 중복 폴더 ###
 /order/
+
+### 로그 ###
+logs/
+*.log

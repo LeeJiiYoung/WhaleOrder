@@ -23,6 +23,7 @@ import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
 import com.whale.order.global.exception.DuplicateRequestException;
 import com.whale.order.domain.order.service.OrderKafkaProducer;
+import com.whale.order.domain.order.service.OrderProcessingService;
 import com.whale.order.global.idempotency.IdempotencyService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -55,6 +56,7 @@ public class OrderService {
     private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
     private final java.util.Optional<OrderKafkaProducer> orderKafkaProducer;
+    private final OrderProcessingService orderProcessingService;
     private final OrderSseService orderSseService;
     private final MeterRegistry meterRegistry;
 
@@ -132,7 +134,10 @@ public class OrderService {
                     order.getOrderId(), memberId, request.storeId(),
                     cart.totalPrice(), cart.items().size());
 
-            orderKafkaProducer.ifPresent(p -> p.publish(order.getOrderId()));
+            orderKafkaProducer.ifPresentOrElse(
+                    p -> p.publish(order.getOrderId()),
+                    () -> orderProcessingService.process(order.getOrderId())
+            );
             QueuedOrderResponse response = QueuedOrderResponse.of(order.getOrderId(), 0);
 
             orderCreatedCounter.increment();

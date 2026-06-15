@@ -47,15 +47,11 @@ app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/callback}
 
-# Kafka 비활성화 (로컬 테스트 시 — 주문 기능 테스트 때는 true로 변경)
 kafka:
-  enabled: false
+  enabled: true
 
 logging:
   level:
     com.whale.order: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
-    # 로컬에서 Kafka 미실행 시 연결 오류 로그 억제
-    org.apache.kafka: WARN
-    org.springframework.kafka: WARN

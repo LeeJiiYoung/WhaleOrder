@@ -48,7 +48,7 @@ public class EventScheduler {
     }
 
     @Scheduled(fixedDelay = 3_000)
-    @Transactional(readOnly = true)
+    @Transactional
     public void processQueues() {
         List<Event> openEvents = eventRepository.findByStatus(EventStatus.OPEN);
         for (Event event : openEvents) {

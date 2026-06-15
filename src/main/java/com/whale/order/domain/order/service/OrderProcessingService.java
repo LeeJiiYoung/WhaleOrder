@@ -3,14 +3,9 @@ package com.whale.order.domain.order.service;
 import com.whale.order.domain.order.dto.OrderResponse;
 import com.whale.order.domain.order.entity.OrderItem;
 import com.whale.order.domain.order.entity.OrderStatus;
-import com.whale.order.domain.order.entity.OrderStatusHistory;
 import com.whale.order.domain.order.entity.Orders;
 import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
-import com.whale.order.domain.payment.entity.PaymentHistory;
-import com.whale.order.domain.payment.entity.PaymentStatus;
-import com.whale.order.domain.payment.repository.PaymentHistoryRepository;
-import com.whale.order.domain.payment.repository.PaymentRepository;
 import com.whale.order.domain.stock.entity.StockRestoreFailure;
 import com.whale.order.domain.stock.repository.StockRestoreFailureRepository;
 import com.whale.order.domain.stock.service.StockLockFacade;
@@ -21,7 +16,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +30,8 @@ public class OrderProcessingService {
     private final OrderStatusHistoryRepository historyRepository;
     private final StockLockFacade stockLockFacade;
     private final OrderSseService orderSseService;
-    private final PaymentRepository paymentRepository;
-    private final PaymentHistoryRepository paymentHistoryRepository;
     private final StockRestoreFailureRepository stockRestoreFailureRepository;
+    private final OrderCancelService orderCancelService;
     private final MeterRegistry meterRegistry;
 
     private Counter processedSuccessCounter;
@@ -125,7 +118,7 @@ public class OrderProcessingService {
                     orderSseService.broadcastStockRestoreFailure(orderId, menuId, quantity);
                 }
             }
-            cancelOrder(orderId);
+            orderCancelService.cancelOrder(orderId);
             log.info("재고 부족으로 주문 취소 orderId={} reason={}", orderId, e.getMessage());
             orderSseService.notify(orderId, Map.of(
                     "status", "FAILED",
@@ -136,39 +129,8 @@ public class OrderProcessingService {
     }
 
     // DLQ Consumer에서 호출 — 3회 재시도 후에도 실패한 주문의 보상 트랜잭션 진입점
-    @Transactional
     public void compensate(Long orderId) {
         log.warn("DLQ 보상 트랜잭션 시작 orderId={}", orderId);
-        cancelOrder(orderId);
-    }
-
-    @Transactional
-    protected void cancelOrder(Long orderId) {
-        orderRepository.findById(orderId).ifPresent(order -> {
-            if (order.getStatus() == OrderStatus.CANCELLED) {
-                log.warn("이미 취소된 주문 스킵 orderId={}", orderId);
-                return;
-            }
-            order.cancel();
-            orderRepository.save(order);
-            historyRepository.save(OrderStatusHistory.builder()
-                    .orders(order)
-                    .status(OrderStatus.CANCELLED)
-                    .changedBy(null)
-                    .build());
-
-            // Saga 보상 트랜잭션 — 재고 부족으로 주문 취소 시 결제도 함께 취소(환불)
-            paymentRepository.findByOrders(order).ifPresent(payment -> {
-                payment.cancel("재고 부족으로 인한 자동 환불");
-                paymentRepository.save(payment);
-                paymentHistoryRepository.save(PaymentHistory.builder()
-                        .payment(payment)
-                        .status(PaymentStatus.CANCELLED)
-                        .reason("재고 부족으로 인한 자동 환불")
-                        .build());
-                log.info("Saga 보상 트랜잭션 — 결제 취소 paymentId={} orderId={}",
-                        payment.getPaymentId(), orderId);
-            });
-        });
+        orderCancelService.cancelOrder(orderId);
     }
 }

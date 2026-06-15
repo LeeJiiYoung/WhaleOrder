@@ -54,12 +54,12 @@ public class StockService {
     @Transactional
     public void deductStock(Long storeId, Long menuId, int amount) {
         try {
-            stockRepository.findWithLock(storeId, menuId).ifPresent(stock -> {
-                int before = stock.getQuantity();
-                stock.deduct(amount);
-                log.info("[재고차감] storeId={} menuId={} {}개 차감 ({}→{})",
-                        storeId, menuId, amount, before, before - amount);
-            });
+            Stock stock = stockRepository.findByStoreAndMenu(storeId, menuId)
+                    .orElseThrow(() -> new IllegalStateException("재고가 설정되지 않은 메뉴입니다 (menuId=" + menuId + ")"));
+            int before = stock.getQuantity();
+            stock.deduct(amount);
+            log.info("[재고차감] storeId={} menuId={} {}개 차감 ({}→{})",
+                    storeId, menuId, amount, before, before - amount);
         } catch (IllegalStateException e) {
             log.warn("[재고부족] storeId={} menuId={} 요청={}개 error={}", storeId, menuId, amount, e.getMessage());
             Counter.builder("stock.shortage.total")
@@ -75,7 +75,7 @@ public class StockService {
     // 주문 취소 시 재고 복구 — StockLockFacade 가 Redis 락을 잡은 상태에서 호출
     @Transactional
     public void restoreStock(Long storeId, Long menuId, int amount) {
-        stockRepository.findWithLock(storeId, menuId).ifPresent(stock -> {
+        stockRepository.findByStoreAndMenu(storeId, menuId).ifPresent(stock -> {
             int before = stock.getQuantity();
             stock.restore(amount);
             log.info("[재고복구] storeId={} menuId={} {}개 복구 ({}→{})",

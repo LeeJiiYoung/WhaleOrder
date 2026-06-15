@@ -5,6 +5,7 @@ import com.whale.order.domain.stock.service.StockDemoService;
 import com.whale.order.domain.stock.service.StockLockFacade;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Profile("dev")
 @RestController
 @RequestMapping("/demo/stock")
 @RequiredArgsConstructor

@@ -16,6 +16,7 @@ import com.whale.order.domain.order.entity.Orders;
 import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
 import com.whale.order.domain.order.service.OrderKafkaProducer;
+import com.whale.order.domain.order.service.OrderProcessingService;
 import com.whale.order.domain.payment.dto.PaymentInfoResponse;
 import com.whale.order.domain.payment.dto.PaymentRequest;
 import com.whale.order.domain.payment.dto.PaymentResponse;
@@ -51,6 +52,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final java.util.Optional<OrderKafkaProducer> orderKafkaProducer;
+    private final OrderProcessingService orderProcessingService;
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
 
@@ -111,7 +113,10 @@ public class PaymentService {
                     .orders(order).status(OrderStatus.PENDING).changedBy(null).build());
 
             cartService.clearCart(memberId);
-            orderKafkaProducer.ifPresent(p -> p.publish(order.getOrderId()));
+            orderKafkaProducer.ifPresentOrElse(
+                    p -> p.publish(order.getOrderId()),
+                    () -> orderProcessingService.process(order.getOrderId())
+            );
 
             Counter.builder("payment.processed")
                     .tag("result", "success")

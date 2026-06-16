@@ -5,6 +5,7 @@ import {
   addOption, deleteOption,
 } from '../../api/menu'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './MenuDetailPage.module.css'
 
 const CATEGORIES = [
@@ -178,6 +179,7 @@ export default function MenuDetailPage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '메뉴 관리' }, { label: '메뉴 목록', path: '/admin/menus' }, { label: menu.name }]} />
       <div className={styles.titleRow}>
         <div>
           <button className={styles.backBtn} onClick={() => navigate('/admin/menus')}>← 목록</button>

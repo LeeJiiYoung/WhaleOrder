@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createGoods, getAdminGoods } from '../../api/event'
 import { getStores } from '../../api/store'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './EventManagePage.module.css'
 import uploadStyles from './GoodsManagePage.module.css'
 
@@ -88,6 +89,7 @@ export default function GoodsManagePage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '한정 판매' }, { label: '굿즈 관리' }]} />
       <div className={styles.header}>
         <h2 className={styles.title}>🎁 굿즈 관리</h2>
         {msg && <span className={styles.flash}>{msg}</span>}

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStores } from '../../api/store'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './StoreListPage.module.css'
 
 /**
@@ -36,6 +37,7 @@ export default function StoreListPage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '매장 관리' }, { label: '매장 목록' }]} />
       <h1 className={styles.pageTitle}>매장 목록</h1>
 
       {/* 검색/필터 영역 — 항상 표시 */}

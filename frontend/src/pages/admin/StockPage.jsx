@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getStocks, setStock } from '../../api/stock'
+import { getMyStores, getStore } from '../../api/store'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './StockPage.module.css'
 
 const CATEGORY_LABEL = {
@@ -21,6 +23,8 @@ const CATEGORY_LABEL = {
 export default function StockPage() {
   const { storeId } = useParams()
   const navigate = useNavigate()
+  const isOwner = localStorage.getItem('role') === 'OWNER'
+  const [storeName, setStoreName] = useState('')
   const [stocks, setStocks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -44,6 +48,19 @@ export default function StockPage() {
   }, [storeId])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (isOwner) {
+      getMyStores().then((res) => {
+        const found = res.data.data.find((s) => String(s.storeId) === String(storeId))
+        if (found) setStoreName(found.name)
+      }).catch(() => {})
+    } else {
+      getStore(storeId).then((res) => {
+        setStoreName(res.data.data.name)
+      }).catch(() => {})
+    }
+  }, [storeId, isOwner])
 
   const handleSave = async (menuId) => {
     setSaving((prev) => ({ ...prev, [menuId]: true }))
@@ -69,12 +86,16 @@ export default function StockPage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={isOwner
+        ? [{ label: '매장 관리' }, { label: '내 매장', path: '/admin/my-stores' }, { label: storeName || '...' }, { label: '재고 관리' }]
+        : [{ label: '매장 관리' }, { label: '매장 목록', path: '/admin/stores' }, { label: storeName || '...', path: storeName ? `/admin/stores/${storeId}` : undefined }, { label: '재고 관리' }]
+      } />
       <div className={styles.header}>
-        <button className={styles.backBtn} onClick={() => navigate(`/admin/stores/${storeId}`)}>← 매장으로</button>
+        <button className={styles.backBtn} onClick={() => navigate(isOwner ? '/admin/my-stores' : `/admin/stores/${storeId}`)}>← 매장으로</button>
         <h1 className={styles.title}>재고 관리</h1>
       </div>
       <p className={styles.desc}>
-        수량을 비워두면 <strong>무제한</strong>으로 처리됩니다. 0을 입력하면 <strong>품절</strong>로 표시됩니다.
+        수량을 비워두거나 <strong>-1</strong>을 입력하면 <strong>무제한</strong>으로 처리됩니다. 0을 입력하면 <strong>품절</strong>로 표시됩니다.
       </p>
 
       {loading && <div className={styles.empty}>불러오는 중...</div>}

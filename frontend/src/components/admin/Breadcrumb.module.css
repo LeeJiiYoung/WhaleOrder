@@ -1,0 +1,42 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sep {
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.link:hover {
+  color: #4f46e5;
+  text-decoration: underline;
+}
+
+.current {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}

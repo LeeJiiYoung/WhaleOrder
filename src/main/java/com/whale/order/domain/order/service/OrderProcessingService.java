@@ -103,21 +103,7 @@ public class OrderProcessingService {
             stockShortageCounter.increment();
 
             for (OrderItem item : deducted) {
-                try {
-                    stockLockFacade.restoreStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
-                } catch (Exception restoreEx) {
-                    Long menuId = item.getMenu().getMenuId();
-                    int quantity = item.getQuantity();
-                    log.error("재고 복구 실패 menuId={} quantity={}", menuId, quantity, restoreEx);
-                    stockRestoreFailureRepository.save(StockRestoreFailure.builder()
-                            .orderId(orderId)
-                            .storeId(storeId)
-                            .menuId(menuId)
-                            .quantity(quantity)
-                            .reason(restoreEx.getMessage())
-                            .build());
-                    orderSseService.broadcastStockRestoreFailure(orderId, menuId, quantity);
-                }
+                restoreWithRetry(orderId, storeId, item);
             }
             orderCancelService.cancelOrder(orderId);
             log.info("재고 부족으로 주문 취소 orderId={} reason={}", orderId, e.getMessage());
@@ -127,6 +113,44 @@ public class OrderProcessingService {
                     "message", e.getMessage()
             ));
         }
+    }
+
+    private static final int RESTORE_MAX_ATTEMPTS = 3;
+    private static final long RESTORE_RETRY_DELAY_MS = 200;
+
+    private void restoreWithRetry(Long orderId, Long storeId, OrderItem item) {
+        Long menuId = item.getMenu().getMenuId();
+        int quantity = item.getQuantity();
+        Exception lastEx = null;
+
+        for (int attempt = 1; attempt <= RESTORE_MAX_ATTEMPTS; attempt++) {
+            try {
+                stockLockFacade.restoreStock(storeId, menuId, quantity);
+                log.info("재고 복구 성공 orderId={} menuId={} attempt={}", orderId, menuId, attempt);
+                return;
+            } catch (Exception e) {
+                lastEx = e;
+                log.warn("재고 복구 시도 실패 orderId={} menuId={} attempt={}/{} error={}",
+                        orderId, menuId, attempt, RESTORE_MAX_ATTEMPTS, e.getMessage());
+                if (attempt < RESTORE_MAX_ATTEMPTS) {
+                    try { Thread.sleep(RESTORE_RETRY_DELAY_MS); } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 재시도 모두 소진 — 수동 처리 대상으로 기록
+        log.error("재고 복구 최종 실패 orderId={} menuId={} quantity={}", orderId, menuId, quantity, lastEx);
+        stockRestoreFailureRepository.save(StockRestoreFailure.builder()
+                .orderId(orderId)
+                .storeId(storeId)
+                .menuId(menuId)
+                .quantity(quantity)
+                .reason(lastEx != null ? lastEx.getMessage() : "unknown")
+                .build());
+        orderSseService.broadcastStockRestoreFailure(orderId, menuId, quantity);
     }
 
     // DLQ Consumer에서 호출 — 3회 재시도 후에도 실패한 주문의 보상 트랜잭션 진입점

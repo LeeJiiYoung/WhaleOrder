@@ -25,6 +25,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 재고 동시성 제어 데모 컨트롤러 (개발 환경 전용).
+ *
+ * <p>{@code @Profile("dev")}로 제한되며 운영 환경에는 등록되지 않는다.
+ * Redisson 분산 락 기반의 동시 재고 차감 동작을 SSE 스트림으로 실시간 시각화한다.</p>
+ *
+ * <pre>
+ * /demo/stock/stream       — N개 스레드가 동시에 재고 차감 시도 (경쟁 조건 재현)
+ * /demo/stock/queue-stream — 대기열 순번 확정 후 순차 처리 시뮬레이션
+ * </pre>
+ */
 @Profile("dev")
 @RestController
 @RequestMapping("/demo/stock")
@@ -37,6 +48,17 @@ public class StockConcurrencyDemoController {
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
+    /**
+     * N개 스레드가 동시에 재고를 차감하는 경쟁 조건을 SSE로 시각화한다.
+     *
+     * <p>모든 스레드가 준비 완료된 시점에 {@code CountDownLatch}로 동시에 출발시켜
+     * 분산 락 없이는 재고가 음수로 떨어지는 현상을 재현할 수 있다.
+     * {@code init} → {@code result}(각 스레드별) → {@code complete} 순으로 이벤트가 전송된다.</p>
+     *
+     * @param initialStock 초기 재고 수량 (기본값 10)
+     * @param threadCount  동시 시도 스레드 수 (기본값 30)
+     * @return SSE 스트림 — 각 스레드의 차감 성공/실패 및 잔여 재고 실시간 전송
+     */
     @Hidden
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(
@@ -117,10 +139,15 @@ public class StockConcurrencyDemoController {
     }
 
     /**
-     * 주문 대기열 데모
-     * @param stock 재고
-     * @param customers 고객
-     * @return
+     * 대기열 확정 후 순차 처리 흐름을 SSE로 시각화한다.
+     *
+     * <p>고객 스레드들이 동시 출발 후 도착 시각({@code System.nanoTime()}) 기준으로
+     * 순번이 결정되며, 확정된 순서대로 300ms 간격 워커가 재고를 차감한다.
+     * {@code init} → {@code queued}(순번 배정) → {@code result}(처리 결과) → {@code complete} 순으로 이벤트가 전송된다.</p>
+     *
+     * @param stock     초기 재고 수량 (기본값 10)
+     * @param customers 동시 요청 고객 수 (기본값 20)
+     * @return SSE 스트림 — 순번 배정 및 처리 결과 실시간 전송
      */
     @Hidden
     @GetMapping(value = "/queue-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

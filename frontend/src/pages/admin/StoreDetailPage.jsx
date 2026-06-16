@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getStore, updateStore, openStore, closeStore } from '../../api/store'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './StoreDetailPage.module.css'
 
 const KAKAO_MAP_KEY = import.meta.env.VITE_KAKAO_MAP_KEY
@@ -198,6 +199,7 @@ export default function StoreDetailPage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '매장 관리' }, { label: '매장 목록', path: '/admin/stores' }, { label: store?.name ?? '매장 상세' }]} />
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={() => navigate('/admin/stores')}>← 목록으로</button>
         <h1 className={styles.pageTitle}>{store?.name ?? '매장 상세'}</h1>

@@ -22,15 +22,15 @@ import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
 import com.whale.order.domain.stock.service.StockLockFacade;
 import com.whale.order.domain.store.entity.Store;
 import com.whale.order.domain.store.repository.StoreRepository;
+import com.whale.order.domain.order.event.OrderCreatedEvent;
 import com.whale.order.global.exception.DuplicateRequestException;
-import com.whale.order.domain.order.service.OrderKafkaProducer;
-import com.whale.order.domain.order.service.OrderProcessingService;
 import com.whale.order.global.idempotency.IdempotencyService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,8 +56,7 @@ public class OrderService {
     private final CartService cartService;
     private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
-    private final java.util.Optional<OrderKafkaProducer> orderKafkaProducer;
-    private final OrderProcessingService orderProcessingService;
+    private final ApplicationEventPublisher eventPublisher;
     private final OrderSseService orderSseService;
     private final MeterRegistry meterRegistry;
 
@@ -133,12 +132,8 @@ public class OrderService {
                     order.getOrderId(), memberId, request.storeId(),
                     cart.totalPrice(), cart.items().size());
 
-            // Kafka 발행 성공 확인 후 장바구니 삭제 — 발행 실패 시 롤백돼도 장바구니 보존
-            orderKafkaProducer.ifPresentOrElse(
-                    p -> p.publish(order.getOrderId()),
-                    () -> orderProcessingService.process(order.getOrderId())
-            );
-            cartService.clearCart(memberId);
+            // DB 커밋 이후 Kafka 발행 및 장바구니 삭제 — OrderEventListener에서 처리
+            eventPublisher.publishEvent(new OrderCreatedEvent(order.getOrderId(), memberId));
             QueuedOrderResponse response = QueuedOrderResponse.of(order.getOrderId(), 0);
 
             orderCreatedCounter.increment();

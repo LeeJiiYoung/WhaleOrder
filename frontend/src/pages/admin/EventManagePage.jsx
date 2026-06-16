@@ -5,6 +5,7 @@ import {
 } from '../../api/event'
 import { getStores } from '../../api/store'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './EventManagePage.module.css'
 
 const STATUS_LABEL = { SCHEDULED: '예정', OPEN: '진행 중', CLOSED: '종료' }
@@ -72,6 +73,7 @@ export default function EventManagePage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '한정 판매' }, { label: '이벤트 관리' }]} />
       <div className={styles.header}>
         <h2 className={styles.title}>🎪 이벤트 관리</h2>
         {msg && <span className={styles.flash}>{msg}</span>}

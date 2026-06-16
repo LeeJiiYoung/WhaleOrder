@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMenus, deactivateMenu, activateMenu } from '../../api/menu'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './MenuListPage.module.css'
 
 const CATEGORIES = [
@@ -70,6 +71,7 @@ export default function MenuListPage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '메뉴 관리' }, { label: '메뉴 목록' }]} />
       <div className={styles.titleRow}>
         <h1 className={styles.pageTitle}>메뉴 목록</h1>
         <button className={styles.createBtn} onClick={() => navigate('/admin/menu-create')}>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getAdminOrders, changeOrderStatus } from '../../api/order'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './AdminOrderPage.module.css'
 
 const STATUS_TABS = [
@@ -201,6 +202,7 @@ export default function AdminOrderPage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '주문 관리' }, { label: '주문 현황' }]} />
       {/* 토스트 알림 */}
       <div className={styles.toastContainer}>
         {toasts.map(({ id, msg, type }) => (

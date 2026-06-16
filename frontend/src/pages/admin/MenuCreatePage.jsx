@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createMenu } from '../../api/menu'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './MenuCreatePage.module.css'
 
 const CATEGORIES = [
@@ -119,6 +120,7 @@ export default function MenuCreatePage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '메뉴 관리' }, { label: '메뉴 등록' }]} />
       <h1 className={styles.pageTitle}>메뉴 등록</h1>
 
       <div className={styles.layout}>

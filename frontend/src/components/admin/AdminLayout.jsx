@@ -6,7 +6,7 @@ const TOP_NAV_ADMIN = [
   { label: '매장 관리', prefixes: ['/admin/store', '/admin/stock'],  path: '/admin/store-create' },
   { label: '메뉴 관리', prefixes: ['/admin/menu'],                   path: '/admin/menus' },
   { label: '주문 관리', prefixes: ['/admin/order'],                  path: '/admin/orders' },
-  { label: '한정판매',  prefixes: ['/admin/events', '/admin/goods'], path: '/admin/events' },
+  { label: '한정 판매',  prefixes: ['/admin/events', '/admin/goods'], path: '/admin/events' },
   { label: '회원 관리', prefixes: ['/admin/member'],                 path: '/admin/members' },
 ]
 
@@ -36,7 +36,7 @@ const SIDEBAR_NAV_ADMIN = [
     ],
   },
   {
-    section: '한정판매',
+    section: '한정 판매',
     prefixes: ['/admin/events', '/admin/goods'],
     items: [
       { label: '이벤트 관리', icon: '🎪', path: '/admin/events' },
@@ -78,7 +78,7 @@ const SIDEBAR_NAV_OWNER = [
 /**
  * 관리자 전용 레이아웃 컴포넌트.
  *
- * - 상단 네비게이션: 매장·메뉴·주문·한정판매·회원 관리 탭 (ADMIN)
+ * - 상단 네비게이션: 매장·메뉴·주문·한정 판매·회원 관리 탭 (ADMIN)
  * - OWNER는 본인 매장(재고)·주문 관리만 접근 가능하므로 해당 탭만 표시
  * - 좌측 사이드바: 현재 경로에 해당하는 섹션 항목만 표시 (다른 섹션은 숨김)
  * - 우측 상단: 로그인한 닉네임 표시 및 로그아웃 버튼

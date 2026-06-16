@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createStore } from '../../api/store'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import OwnerSearchPopup from '../../components/admin/OwnerSearchPopup'
 import styles from './StoreCreatePage.module.css'
 
@@ -223,6 +224,7 @@ export default function StoreCreatePage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '매장 관리' }, { label: '매장 생성' }]} />
       <h1 className={styles.pageTitle}>매장 생성</h1>
 
       <div className={styles.card}>

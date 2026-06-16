@@ -50,6 +50,7 @@
 ```
 
 - 재고 복구 실패는 유실 없이 DB에 기록되고 어드민에 실시간 경고
+- 재고 복구 실패 시 200ms 간격 3회 재시도 → 일시적 Redis 락 경합으로 인한 불필요한 불일치 방지
 - `PaymentHistory`로 모든 결제 시도 이력 추적
 
 ---
@@ -64,6 +65,7 @@
 
 - 처리 실패 시 DLT(Dead Letter Topic)로 이동 → 유실 없는 재처리
 - 멱등성 키(`IdempotencyService`)로 중복 주문 방지
+- DB 커밋 이후 Kafka 발행 (`@TransactionalEventListener AFTER_COMMIT`) → 커밋 실패 시 메시지 유실 없음, 장바구니 보존 보장
 
 ---
 

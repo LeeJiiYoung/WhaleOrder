@@ -23,6 +23,15 @@
   color: #111;
 }
 
+.storeName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
 .desc {
   font-size: 13px;
   color: #888;

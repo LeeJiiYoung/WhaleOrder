@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMyStores, openStore, closeStore } from '../../api/store'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './StoreListPage.module.css'
 
 /**
@@ -42,6 +43,7 @@ export default function MyStoresPage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '매장 관리' }, { label: '내 매장' }]} />
       <h1 className={styles.pageTitle}>내 매장</h1>
 
       <table className={styles.table}>
@@ -85,9 +87,12 @@ export default function MyStoresPage() {
                   </button>
                 </td>
                 <td>
-                  <span className={styles.nameLink} onClick={() => navigate(`/admin/stores/${s.storeId}/stocks`)}>
+                  <button
+                    className={styles.tab}
+                    onClick={() => navigate(`/admin/stores/${s.storeId}/stocks`)}
+                  >
                     재고 관리
-                  </span>
+                  </button>
                 </td>
               </tr>
             ))

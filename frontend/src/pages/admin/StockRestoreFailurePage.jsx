@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getStockRestoreFailures } from '../../api/stock'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './StockRestoreFailurePage.module.css'
 
 /**
@@ -27,6 +28,7 @@ export default function StockRestoreFailurePage() {
 
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '매장 관리' }, { label: '재고 복구 실패' }]} />
       <div className={styles.header}>
         <h1 className={styles.title}>재고 복구 실패 목록</h1>
         <p className={styles.desc}>SSE 알림을 놓쳤을 때 여기서 확인 후 수동 보정하세요.</p>

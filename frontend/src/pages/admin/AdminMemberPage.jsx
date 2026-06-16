@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getMembers, createMember, updateMember, deleteMember, resetPassword } from '../../api/member'
 import AdminLayout from '../../components/admin/AdminLayout'
+import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './AdminMemberPage.module.css'
 
 const ROLES = [
@@ -134,6 +135,7 @@ export default function AdminMemberPage() {
   // ── 렌더 ────────────────────────────────────────────────────────
   return (
     <AdminLayout>
+      <Breadcrumb items={[{ label: '회원 관리' }, { label: '회원 목록' }]} />
       <div className={styles.header}>
         <h1 className={styles.title}>회원 관리</h1>
         <button className={styles.createBtn} onClick={openCreate}>+ 새 회원 등록</button>

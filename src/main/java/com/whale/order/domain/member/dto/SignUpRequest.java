@@ -18,6 +18,9 @@ public record SignUpRequest(
 
         String nickname,
 
-        String phone
+        String phone,
+
+        // 미입력 시 CUSTOMER로 가입됨. CUSTOMER/OWNER만 선택 가능 (그 외 권한은 관리자가 직접 부여)
+        String role
 ) {
 }

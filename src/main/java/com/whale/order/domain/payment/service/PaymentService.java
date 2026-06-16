@@ -112,11 +112,12 @@ public class PaymentService {
             orderHistoryRepository.save(OrderStatusHistory.builder()
                     .orders(order).status(OrderStatus.PENDING).changedBy(null).build());
 
-            cartService.clearCart(memberId);
+            // Kafka 발행 성공 확인 후 장바구니 삭제 — 발행 실패 시 롤백돼도 장바구니 보존
             orderKafkaProducer.ifPresentOrElse(
                     p -> p.publish(order.getOrderId()),
                     () -> orderProcessingService.process(order.getOrderId())
             );
+            cartService.clearCart(memberId);
 
             Counter.builder("payment.processed")
                     .tag("result", "success")

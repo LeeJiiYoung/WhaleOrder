@@ -5,6 +5,7 @@ import OAuth2CallbackPage from './pages/OAuth2CallbackPage'
 import StoreCreatePage from './pages/admin/StoreCreatePage'
 import StoreListPage from './pages/admin/StoreListPage'
 import StoreDetailPage from './pages/admin/StoreDetailPage'
+import MyStoresPage from './pages/admin/MyStoresPage'
 import MenuListPage from './pages/admin/MenuListPage'
 import MenuCreatePage from './pages/admin/MenuCreatePage'
 import MenuDetailPage from './pages/admin/MenuDetailPage'
@@ -52,7 +53,7 @@ function AdminRoute({ children }) {
   const token = localStorage.getItem('accessToken')
   const role = localStorage.getItem('role')
   if (!isTokenValid(token)) return clearAndRedirect()
-  if (role !== 'ADMIN') return <Navigate to="/" replace />
+  if (role !== 'ADMIN' && role !== 'OWNER') return <Navigate to="/" replace />
   return children
 }
 
@@ -61,7 +62,7 @@ function AdminRoute({ children }) {
  *
  * - 공개 경로: /login, /signup, /oauth2/callback
  * - 고객 경로 (PrivateRoute): /stores, /menus, /cart, /payment, /orders/:id, /events 등
- * - 관리자 경로 (AdminRoute): /admin/** (매장·메뉴·주문·재고·한정판매·회원 관리)
+ * - 관리자 경로 (AdminRoute): /admin/** (매장·메뉴·주문·재고·한정판매·회원 관리), ADMIN/OWNER 접근 가능
  */
 export default function App() {
   return (
@@ -88,6 +89,7 @@ export default function App() {
         <Route path="/admin/store-create" element={<AdminRoute><StoreCreatePage /></AdminRoute>} />
         <Route path="/admin/stores" element={<AdminRoute><StoreListPage /></AdminRoute>} />
         <Route path="/admin/stores/:storeId" element={<AdminRoute><StoreDetailPage /></AdminRoute>} />
+        <Route path="/admin/my-stores" element={<AdminRoute><MyStoresPage /></AdminRoute>} />
 
         {/* 메뉴 */}
         <Route path="/admin/menus" element={<AdminRoute><MenuListPage /></AdminRoute>} />

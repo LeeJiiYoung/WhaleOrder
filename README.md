@@ -96,6 +96,22 @@
 
 ---
 
+## DB 엔티티 ERD
+
+![ERD](docs/erd.png)
+
+> **주요 테이블**
+> - `members` — 회원 (LOCAL / KAKAO OAuth2)
+> - `stores` / `store_members` — 매장 및 매장 소속 직원
+> - `menus` / `menu_options` / `menu_discounts` — 메뉴 및 옵션·할인
+> - `orders` / `order_items` / `order_status_history` — 주문 및 상태 이력
+> - `payments` / `payment_history` — 결제 및 결제 시도 이력
+> - `stocks` / `stock_restore_failures` — 재고 및 복구 실패 기록
+> - `idempotency_records` — 중복 주문 방지 멱등성 키
+> - `events` / `goods` / `event_purchases` — 한정판매 이벤트
+
+---
+
 ## 기술 스택
 
 | 분류 | 기술 |

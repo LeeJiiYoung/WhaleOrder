@@ -20,7 +20,12 @@ public class OrderKafkaProducer {
     private final KafkaTemplate<String, Long> kafkaTemplate;
 
     public void publish(Long orderId) {
-        kafkaTemplate.send(TOPIC, orderId.toString(), orderId);
-        log.info("Kafka 발행 topic={} orderId={}", TOPIC, orderId);
+        try {
+            kafkaTemplate.send(TOPIC, String.valueOf(orderId), orderId).get();
+            log.info("Kafka 발행 성공 topic={} orderId={}", TOPIC, orderId);
+        } catch (Exception e) {
+            log.error("Kafka 발행 실패 topic={} orderId={}", TOPIC, orderId, e);
+            throw new RuntimeException("Kafka 발행 실패 orderId=" + orderId, e);
+        }
     }
 }

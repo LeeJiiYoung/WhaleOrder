@@ -10,7 +10,7 @@ const initialForm = { userId: 'admin', password: 'adminadmin' }
  *
  * - 아이디/비밀번호 자체 로그인
  * - 카카오 OAuth2 로그인 (외부 리다이렉트)
- * - 관리자 계정으로 로그인 시 /admin/store-create, 고객은 / 로 이동
+ * - 로그인 후 ADMIN은 /admin/store-create, OWNER는 /admin/my-stores, 고객은 / 로 이동
  * - 빠른 테스트를 위한 테스트 계정 버튼(관리자·고객) 제공
  */
 export default function LoginPage() {
@@ -53,6 +53,8 @@ export default function LoginPage() {
 
       if (role === 'ADMIN') {
         navigate('/admin/store-create')
+      } else if (role === 'OWNER') {
+        navigate('/admin/my-stores')
       } else {
         navigate('/')
       }
@@ -123,7 +125,13 @@ export default function LoginPage() {
             </button>
             <button
               className={styles.testBtn}
-              onClick={() => setForm({ userId: 'customer', password: 'customercustomer' })}
+              onClick={() => setForm({ userId: 'owner', password: 'adminadmin' })}
+            >
+              점주
+            </button>
+            <button
+              className={styles.testBtn}
+              onClick={() => setForm({ userId: 'customer', password: 'adminadmin' })}
             >
               고객
             </button>

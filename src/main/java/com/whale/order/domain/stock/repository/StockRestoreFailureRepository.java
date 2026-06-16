@@ -8,4 +8,6 @@ import java.util.List;
 public interface StockRestoreFailureRepository extends JpaRepository<StockRestoreFailure, Long> {
 
     List<StockRestoreFailure> findAllByOrderByFailedAtDesc();
+
+    List<StockRestoreFailure> findAllByStoreIdOrderByFailedAtDesc(Long storeId);
 }

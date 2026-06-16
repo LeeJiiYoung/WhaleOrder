@@ -1,7 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import styles from './AdminLayout.module.css'
 
-const TOP_NAV = [
+// ADMIN: 전체 관리 기능
+const TOP_NAV_ADMIN = [
   { label: '매장 관리', prefixes: ['/admin/store', '/admin/stock'],  path: '/admin/store-create' },
   { label: '메뉴 관리', prefixes: ['/admin/menu'],                   path: '/admin/menus' },
   { label: '주문 관리', prefixes: ['/admin/order'],                  path: '/admin/orders' },
@@ -9,7 +10,7 @@ const TOP_NAV = [
   { label: '회원 관리', prefixes: ['/admin/member'],                 path: '/admin/members' },
 ]
 
-const SIDEBAR_NAV = [
+const SIDEBAR_NAV_ADMIN = [
   {
     section: '매장',
     prefixes: ['/admin/store', '/admin/stock'],
@@ -51,10 +52,34 @@ const SIDEBAR_NAV = [
   },
 ]
 
+// OWNER: 본인 매장의 재고 · 주문 관리만 허용 (다른 메뉴는 접근 권한이 없어 숨김)
+const TOP_NAV_OWNER = [
+  { label: '매장 관리', prefixes: ['/admin/my-stores', '/admin/stores'], path: '/admin/my-stores' },
+  { label: '주문 관리', prefixes: ['/admin/order'],                      path: '/admin/orders' },
+]
+
+const SIDEBAR_NAV_OWNER = [
+  {
+    section: '매장',
+    prefixes: ['/admin/my-stores', '/admin/stores'],
+    items: [
+      { label: '내 매장', icon: '🏪', path: '/admin/my-stores' },
+    ],
+  },
+  {
+    section: '주문',
+    prefixes: ['/admin/order'],
+    items: [
+      { label: '주문 현황', icon: '📦', path: '/admin/orders' },
+    ],
+  },
+]
+
 /**
  * 관리자 전용 레이아웃 컴포넌트.
  *
- * - 상단 네비게이션: 매장·메뉴·주문·한정판매·회원 관리 탭
+ * - 상단 네비게이션: 매장·메뉴·주문·한정판매·회원 관리 탭 (ADMIN)
+ * - OWNER는 본인 매장(재고)·주문 관리만 접근 가능하므로 해당 탭만 표시
  * - 좌측 사이드바: 현재 경로에 해당하는 섹션 항목만 표시 (다른 섹션은 숨김)
  * - 우측 상단: 로그인한 닉네임 표시 및 로그아웃 버튼
  * @param {{ children: React.ReactNode }} props
@@ -63,6 +88,10 @@ export default function AdminLayout({ children }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const nickname = localStorage.getItem('nickname') || '관리자'
+  const isOwner = localStorage.getItem('role') === 'OWNER'
+
+  const TOP_NAV = isOwner ? TOP_NAV_OWNER : TOP_NAV_ADMIN
+  const SIDEBAR_NAV = isOwner ? SIDEBAR_NAV_OWNER : SIDEBAR_NAV_ADMIN
 
   const handleLogout = () => {
     localStorage.clear()

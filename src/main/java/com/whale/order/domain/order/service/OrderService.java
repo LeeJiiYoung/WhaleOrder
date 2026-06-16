@@ -6,6 +6,7 @@ import com.whale.order.domain.cart.dto.CartItem;
 import com.whale.order.domain.cart.dto.CartResponse;
 import com.whale.order.domain.cart.service.CartService;
 import com.whale.order.domain.member.entity.Member;
+import com.whale.order.domain.member.entity.MemberRole;
 import com.whale.order.domain.member.repository.MemberRepository;
 import com.whale.order.domain.menu.entity.Menu;
 import com.whale.order.domain.menu.repository.MenuRepository;
@@ -128,16 +129,16 @@ public class OrderService {
                     .changedBy(null)
                     .build());
 
-            cartService.clearCart(memberId);
-
             log.info("[주문생성] orderId={} memberId={} storeId={} totalPrice={} itemCount={}",
                     order.getOrderId(), memberId, request.storeId(),
                     cart.totalPrice(), cart.items().size());
 
+            // Kafka 발행 성공 확인 후 장바구니 삭제 — 발행 실패 시 롤백돼도 장바구니 보존
             orderKafkaProducer.ifPresentOrElse(
                     p -> p.publish(order.getOrderId()),
                     () -> orderProcessingService.process(order.getOrderId())
             );
+            cartService.clearCart(memberId);
             QueuedOrderResponse response = QueuedOrderResponse.of(order.getOrderId(), 0);
 
             orderCreatedCounter.increment();
@@ -230,9 +231,12 @@ public class OrderService {
         return OrderResponse.from(order);
     }
 
-    // 전체 주문 목록 (어드민)
+    // 전체 주문 목록 (어드민) — OWNER는 본인 매장 주문만 조회
     @Transactional(readOnly = true)
-    public List<OrderResponse> getAllOrders(List<OrderStatus> statuses) {
+    public List<OrderResponse> getAllOrders(List<OrderStatus> statuses, Long callerId) {
+        Member caller = memberRepository.findById(callerId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다"));
+
         List<Orders> orders;
         if (statuses == null || statuses.isEmpty()) {
             orders = orderRepository.findAllWithDetails();
@@ -241,15 +245,27 @@ public class OrderService {
         } else {
             orders = orderRepository.findByStatusesWithDetails(statuses);
         }
+
+        if (caller.getRole() == MemberRole.OWNER) {
+            orders = orders.stream()
+                    .filter(order -> order.getStore().getOwner().getMemberId().equals(callerId))
+                    .toList();
+        }
+
         return orders.stream().map(OrderResponse::from).toList();
     }
 
-    // 주문 상태 변경 (어드민)
+    // 주문 상태 변경 (어드민) — OWNER는 본인 매장 주문만 처리 가능
     @Transactional
     public OrderResponse changeStatus(Long orderId, String action, Long adminMemberId) {
         Orders order = orderRepository.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다"));
         Member admin = memberRepository.findById(adminMemberId).orElseThrow();
+
+        if (admin.getRole() == MemberRole.OWNER
+                && !order.getStore().getOwner().getMemberId().equals(adminMemberId)) {
+            throw new IllegalArgumentException("본인 매장의 주문만 처리할 수 있습니다");
+        }
 
         OrderStatus before = order.getStatus();
         switch (action) {

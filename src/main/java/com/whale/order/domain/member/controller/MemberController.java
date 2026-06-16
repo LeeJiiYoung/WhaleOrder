@@ -14,6 +14,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 로그인한 회원 본인의 프로필을 조회·수정하는 컨트롤러. memberId는 JWT subject에서 추출한다.
+ */
 @Tag(name = "내 정보", description = "로그인한 회원의 프로필 조회 · 수정 · 비밀번호 변경")
 @RestController
 @RequestMapping("/api/members/me")
@@ -22,6 +25,9 @@ public class MemberController {
 
     private final MemberService memberService;
 
+    /**
+     * 내 프로필 정보를 조회한다.
+     */
     @Operation(summary = "내 정보 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<MemberResponse>> getMyProfile(
@@ -30,6 +36,9 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", memberService.getMyProfile(memberId)));
     }
 
+    /**
+     * 내 닉네임, 전화번호를 수정한다.
+     */
     @Operation(summary = "내 정보 수정", description = "닉네임, 전화번호 수정 가능")
     @PutMapping
     public ResponseEntity<ApiResponse<MemberResponse>> updateMyProfile(
@@ -39,6 +48,9 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.ok("정보가 수정됐습니다", memberService.updateMyProfile(memberId, request)));
     }
 
+    /**
+     * 현재 비밀번호를 확인한 뒤 새 비밀번호로 변경한다.
+     */
     @Operation(summary = "비밀번호 변경", description = "현재 비밀번호 확인 후 변경")
     @PutMapping("/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(

@@ -17,7 +17,7 @@
 - 응답: 한국어
 
 ## 기술 스택
-# Language/Framework: Java 21 (Virtual Threads 활용 추천), Spring Boot 3.x
+# Language/Framework: Java 21, Spring Boot 3.x
 
 # Data Access: PostgreSQL (JSONB 활용 가능성), Querydsl (동적 쿼리 처리)
 
@@ -31,4 +31,3 @@
 # 주문, 결제, 회원 정보	PostgreSQL (RDBMS)	데이터 무결성이 중요하며, 엄격한 트랜잭션(ACID) 보장이 필요함.
 # 장바구니, 세션 데이터	Redis (NoSQL)	데이터 수명이 짧고, 초당 수만 건의 읽기/쓰기 성능이 필요함.
 # 실시간 주문 현황 (제조 중 등)	Redis / MongoDB	빠른 상태 업데이트와 정합성보다는 응답 속도가 중요함.
-# 메뉴 검색, 대량 로그	Elasticsearch / NoSQL	전문(Full-text) 검색 성능 및 쓰기 중심의 대량 데이터 처리.

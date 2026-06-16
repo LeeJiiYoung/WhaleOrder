@@ -64,7 +64,8 @@ public class OrderProcessingService {
     }
 
     private void processOrder(Long orderId, Orders order) {
-        if (order.getStatus() == OrderStatus.CANCELLED) return;
+        // Kafka at-least-once 재전달 방어 — 이미 차감된 주문은 무시
+        if (order.isStockDeducted() || order.getStatus() == OrderStatus.CANCELLED) return;
 
         Long storeId = order.getStore().getStoreId();
         List<OrderItem> deducted = new ArrayList<>();

@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +31,14 @@ public class AdminStoreController {
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", storeService.getStores()));
     }
 
+    @Operation(summary = "내 매장 목록 조회", description = "점주(OWNER) 본인 소유 매장만 조회 — 재고/주문 관리 진입점")
+    @GetMapping("/my-stores")
+    public ResponseEntity<ApiResponse<List<StoreResponse>>> getMyStores(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long callerId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", storeService.getMyStores(callerId)));
+    }
+
     @Operation(summary = "매장 단건 조회")
     @GetMapping("/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> getStore(@PathVariable Long storeId) {
@@ -37,14 +47,20 @@ public class AdminStoreController {
 
     @Operation(summary = "영업 시작", description = "매장 상태를 OPEN으로 변경")
     @PatchMapping("/{storeId}/open")
-    public ResponseEntity<ApiResponse<StoreResponse>> openStore(@PathVariable Long storeId) {
-        return ResponseEntity.ok(ApiResponse.ok("영업을 시작합니다", storeService.openStore(storeId)));
+    public ResponseEntity<ApiResponse<StoreResponse>> openStore(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long callerId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("영업을 시작합니다", storeService.openStore(storeId, callerId)));
     }
 
     @Operation(summary = "영업 종료", description = "매장 상태를 CLOSED로 변경")
     @PatchMapping("/{storeId}/close")
-    public ResponseEntity<ApiResponse<StoreResponse>> closeStore(@PathVariable Long storeId) {
-        return ResponseEntity.ok(ApiResponse.ok("영업을 종료합니다", storeService.closeStore(storeId)));
+    public ResponseEntity<ApiResponse<StoreResponse>> closeStore(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long callerId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("영업을 종료합니다", storeService.closeStore(storeId, callerId)));
     }
 
     @Operation(summary = "매장 수정")

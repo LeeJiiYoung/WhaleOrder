@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 /**
  * 회원 Entity.
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
         columnNames = {"provider", "provider_id"}
     )
 )
+@SQLRestriction("is_deleted = false")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseEntity {
@@ -56,6 +58,9 @@ public class Member extends BaseEntity {
     @Column(nullable = false, length = 20)
     private MemberRole role;
 
+    @Column(nullable = false)
+    private boolean isDeleted = false;
+
     @Builder
     public Member(String userId, String password, String name, String nickname,
                   String phone, AuthProvider provider, String providerId, MemberRole role) {
@@ -89,5 +94,9 @@ public class Member extends BaseEntity {
 
     public void updateRole(MemberRole role) {
         this.role = role;
+    }
+
+    public void softDelete() {
+        this.isDeleted = true;
     }
 }

@@ -54,13 +54,13 @@ public class EventPurchaseService {
             throw new IllegalStateException("구매 권한이 없거나 시간이 만료되었습니다 (5분 초과)");
         }
 
+        // 비관락 획득 후 중복 구매 체크 — 락 없이 먼저 조회하면 race condition 발생
+        Event event = eventRepository.findWithLock(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("이벤트를 찾을 수 없습니다"));
+
         if (eventPurchaseRepository.existsByEvent_EventIdAndMember_MemberId(eventId, memberId)) {
             throw new IllegalStateException("이미 구매한 이벤트입니다");
         }
-
-        // 비관락으로 동시 구매 직렬화
-        Event event = eventRepository.findWithLock(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("이벤트를 찾을 수 없습니다"));
 
         event.deductStock(1);
 

@@ -60,7 +60,13 @@ public class SecurityConfig {
                         // 정적 어드민 페이지 (역할 체크는 클라이언트에서)
                         .requestMatchers("/admin/**").permitAll()
 
-                        // 관리자 API - ADMIN 역할만 허용
+                        // 점주(OWNER) - 본인 매장 목록 조회 + 영업상태 변경 + 재고/주문 관리만 허용. 본인 매장 한정 여부는 서비스 레이어에서 검증
+                        .requestMatchers("/api/admin/stores/my-stores").hasAnyRole("ADMIN", "OWNER")
+                        .requestMatchers("/api/admin/stores/*/open", "/api/admin/stores/*/close").hasAnyRole("ADMIN", "OWNER")
+                        .requestMatchers("/api/admin/stores/*/stocks/**").hasAnyRole("ADMIN", "OWNER")
+                        .requestMatchers("/api/admin/orders/**").hasAnyRole("ADMIN", "OWNER")
+
+                        // 나머지 관리자 API(메뉴, 매장, 이벤트, 회원관리 등) - ADMIN 전용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
@@ -71,7 +77,7 @@ public class SecurityConfig {
                         .failureHandler((req, res, ex) -> {
                             org.slf4j.LoggerFactory.getLogger(SecurityConfig.class)
                                 .error("OAuth2 로그인 실패: {}", ex.getMessage(), ex);
-                            res.sendRedirect("/login?error=" + ex.getMessage());
+                            res.sendRedirect("/login?error=oauth2_failed");
                         }))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 

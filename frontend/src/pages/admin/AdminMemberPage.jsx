@@ -4,20 +4,16 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import styles from './AdminMemberPage.module.css'
 
 const ROLES = [
-  { value: '',            label: '전체' },
+  { value: '',           label: '전체' },
   { value: 'CUSTOMER',   label: '고객' },
-  { value: 'BARISTA',    label: '바리스타' },
-  { value: 'STORE_ADMIN',label: '매장 관리자' },
   { value: 'OWNER',      label: '점주' },
   { value: 'ADMIN',      label: '관리자' },
 ]
 
 const ROLE_BADGE = {
-  CUSTOMER:    { text: '고객',      color: '#6b7280', bg: '#f3f4f6' },
-  BARISTA:     { text: '바리스타',  color: '#0891b2', bg: '#ecfeff' },
-  STORE_ADMIN: { text: '매장관리자',color: '#7c3aed', bg: '#f5f3ff' },
-  OWNER:       { text: '점주',      color: '#d97706', bg: '#fffbeb' },
-  ADMIN:       { text: '관리자',    color: '#dc2626', bg: '#fef2f2' },
+  CUSTOMER: { text: '고객',   color: '#6b7280', bg: '#f3f4f6' },
+  OWNER:    { text: '점주',   color: '#d97706', bg: '#fffbeb' },
+  ADMIN:    { text: '관리자', color: '#dc2626', bg: '#fef2f2' },
 }
 
 const EMPTY_FORM = { userId: '', password: '', name: '', nickname: '', phone: '', role: 'CUSTOMER' }

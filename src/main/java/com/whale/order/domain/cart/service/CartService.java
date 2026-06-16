@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 장바구니 서비스.
+ * Redis Hash(cart:{memberId})에 itemKey → CartItem(JSON) 형태로 저장하며 TTL 24시간이 지나면 자동 만료된다.
+ */
 @Service
 @RequiredArgsConstructor
 public class CartService {
@@ -28,6 +32,10 @@ public class CartService {
     private final MenuRepository menuRepository;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 장바구니에 메뉴를 담는다. 동일한 메뉴+옵션 조합이 이미 있으면 수량을 합산하고,
+     * 가격은 담는 시점의 메뉴 가격으로 스냅샷한다.
+     */
     public CartResponse addItem(Long memberId, CartAddRequest request) {
         Menu menu = menuRepository.findById(request.menuId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메뉴입니다: " + request.menuId()));
@@ -76,9 +84,7 @@ public class CartService {
     }
 
     /**
-     * 장바구니 조회
-     * @param memberId 고객id
-     * @return
+     * 장바구니를 조회한다. 항목은 메뉴명 기준으로 정렬되며 총 수량/총 금액을 함께 계산한다.
      */
     public CartResponse getCart(Long memberId) {
         String cartKey = cartKey(memberId);
@@ -95,6 +101,9 @@ public class CartService {
         return new CartResponse(items, totalPrice, totalCount);
     }
 
+    /**
+     * 장바구니 항목의 수량을 변경한다. quantity가 0 이하이면 항목을 삭제한다.
+     */
     public CartResponse updateQuantity(Long memberId, String itemKey, int quantity) {
         if (quantity <= 0) {
             return removeItem(memberId, itemKey);
@@ -124,11 +133,17 @@ public class CartService {
         return getCart(memberId);
     }
 
+    /**
+     * 장바구니에서 항목 하나를 삭제한다.
+     */
     public CartResponse removeItem(Long memberId, String itemKey) {
         redisTemplate.opsForHash().delete(cartKey(memberId), itemKey);
         return getCart(memberId);
     }
 
+    /**
+     * 장바구니 전체를 삭제한다 (cart:{memberId} 키 자체를 제거).
+     */
     public void clearCart(Long memberId) {
         redisTemplate.delete(cartKey(memberId));
     }

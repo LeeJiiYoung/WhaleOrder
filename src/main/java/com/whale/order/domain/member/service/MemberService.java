@@ -38,12 +38,36 @@ public class MemberService {
                 .nickname(request.nickname())
                 .phone(request.phone())
                 .provider(AuthProvider.LOCAL)
-                .role(MemberRole.CUSTOMER)
+                .role(resolveSignUpRole(request.role()))
                 .build();
 
         memberRepository.save(member);
 
         return issueTokens(member);
+    }
+
+    /**
+     * 회원가입 시 선택한 권한 문자열을 검증한다.
+     * 미입력 시 CUSTOMER로 기본값 처리하며, MemberRole에 없는 값이거나
+     * CUSTOMER/OWNER가 아닌 권한(ADMIN)은 가입 단계에서 허용하지 않는다.
+     */
+    private MemberRole resolveSignUpRole(String role) {
+        if (role == null || role.isBlank()) {
+            return MemberRole.CUSTOMER;
+        }
+
+        MemberRole parsed;
+        try {
+            parsed = MemberRole.valueOf(role.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("존재하지 않는 권한입니다: " + role);
+        }
+
+        if (parsed != MemberRole.CUSTOMER && parsed != MemberRole.OWNER) {
+            throw new IllegalArgumentException("회원가입 시 선택할 수 없는 권한입니다: " + role);
+        }
+
+        return parsed;
     }
 
     @Transactional(readOnly = true)
@@ -111,10 +135,7 @@ public class MemberService {
 
     @Transactional
     public void deleteMember(Long memberId) {
-        if (!memberRepository.existsById(memberId)) {
-            throw new IllegalArgumentException("존재하지 않는 회원입니다");
-        }
-        memberRepository.deleteById(memberId);
+        findById(memberId).softDelete();
     }
 
     @Transactional

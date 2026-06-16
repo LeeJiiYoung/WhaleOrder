@@ -31,8 +31,10 @@ public class AdminOrderController {
     @Operation(summary = "주문 목록 조회", description = "상태 필터 복수 가능 (PENDING, PREPARING, COMPLETED, CANCELLED)")
     @GetMapping
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrders(
-            @RequestParam(required = false) List<OrderStatus> statuses) {
-        return ResponseEntity.ok(ApiResponse.ok("조회 성공", orderService.getAllOrders(statuses)));
+            @RequestParam(required = false) List<OrderStatus> statuses,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long callerId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", orderService.getAllOrders(statuses, callerId)));
     }
 
     @Hidden

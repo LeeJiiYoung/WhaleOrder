@@ -35,6 +35,24 @@ import java.time.LocalTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 주문 Kafka E2E 통합 테스트.
+ *
+ * <p>실제 Kafka 메시지 발행 → Consumer 처리 → DB 반영까지 전체 흐름을 검증한다.
+ * 비즈니스 로직 단위 검증은 {@link SagaCompensationTest}에서 수행하며,
+ * 이 테스트는 Kafka 경유 흐름의 정합성에 집중한다.
+ *
+ * <p>검증 항목
+ * <ul>
+ *   <li>재고 있는 주문 — Consumer가 재고를 차감하고 {@code stockDeducted=true}로 설정</li>
+ *   <li>재고 부족 주문 — 보상 트랜잭션으로 주문·결제 모두 CANCELLED 처리</li>
+ *   <li>다건 동시 처리 — 3건 동시 발행 시 재고가 정확히 3 차감</li>
+ * </ul>
+ *
+ * <p>Consumer는 비동기로 동작하므로 결과를 폴링(최대 10초)해 확인한다.
+ *
+ * <p>인프라: Testcontainers(PostgreSQL·Redis) + EmbeddedKafka.
+ */
 @SpringBootTest
 @ActiveProfiles("test")
 @EmbeddedKafka(partitions = 1, topics = {"order-created", "order-created.DLT"})

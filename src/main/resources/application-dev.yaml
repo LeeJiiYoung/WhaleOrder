@@ -14,6 +14,11 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+  # 호스트(로컬 bootRun)에서는 PLAINTEXT_HOST 리스너(29092)로 접속해야 함
+  # PLAINTEXT(9092)는 advertised listener가 "kafka:9092"라 컨테이너 밖에서 호스트명 resolve 불가
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+
   # SQL 초기화 — DataInitializer.java 가 member 테이블 확인 후 조건부 실행
   sql:
     init:

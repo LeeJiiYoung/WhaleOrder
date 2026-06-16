@@ -20,4 +20,8 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     // 고객용: 영업 중인 매장만 조회 (owner 불필요)
     @Query("SELECT s FROM Store s WHERE s.status = com.whale.order.domain.store.entity.StoreStatus.OPEN ORDER BY s.name ASC")
     List<Store> findAllOpenStores();
+
+    // 점주(OWNER) 본인 소유 매장 목록
+    @Query("SELECT s FROM Store s JOIN FETCH s.owner WHERE s.owner.memberId = :ownerId ORDER BY s.storeId ASC")
+    List<Store> findByOwnerMemberId(@Param("ownerId") Long ownerId);
 }

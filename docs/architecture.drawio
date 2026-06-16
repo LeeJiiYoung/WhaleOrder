@@ -41,7 +41,7 @@
           value="Spring Boot 3.x  ·  Java 21"
           style="swimlane;startSize=35;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1;"
           vertex="1" parent="1">
-          <mxGeometry x="80" y="220" width="1270" height="190" as="geometry" />
+          <mxGeometry x="80" y="220" width="1370" height="190" as="geometry" />
         </mxCell>
 
         <!-- Order Service -->
@@ -54,7 +54,7 @@
 
         <!-- Payment Service -->
         <mxCell id="payment_svc"
-          value="&lt;b&gt;Payment Service&lt;/b&gt;&lt;br&gt;결제 처리&lt;br&gt;Saga 보상 트랜잭션"
+          value="&lt;b&gt;Payment Service&lt;/b&gt;&lt;br&gt;결제 처리 (Mock)&lt;br&gt;Saga 보상 트랜잭션"
           style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=11;"
           vertex="1" parent="sb_container">
           <mxGeometry x="210" y="50" width="170" height="100" as="geometry" />
@@ -84,12 +84,20 @@
           <mxGeometry x="780" y="50" width="170" height="100" as="geometry" />
         </mxCell>
 
+        <!-- Cart Service -->
+        <mxCell id="cart_svc"
+          value="&lt;b&gt;Cart Service&lt;/b&gt;&lt;br&gt;장바구니 관리&lt;br&gt;Redis 저장"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=11;"
+          vertex="1" parent="sb_container">
+          <mxGeometry x="970" y="50" width="170" height="100" as="geometry" />
+        </mxCell>
+
         <!-- Member / Auth -->
         <mxCell id="member_svc"
           value="&lt;b&gt;Member / Auth&lt;/b&gt;&lt;br&gt;JWT + OAuth2&lt;br&gt;카카오 로그인"
           style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE812;strokeColor=#3C1E1E;fontSize=11;fontColor=#3C1E1E;"
           vertex="1" parent="sb_container">
-          <mxGeometry x="1060" y="50" width="170" height="100" as="geometry" />
+          <mxGeometry x="1160" y="50" width="170" height="100" as="geometry" />
         </mxCell>
 
         <!-- ═══════════════════════════════════════════════
@@ -160,6 +168,14 @@
           <mxGeometry x="15" y="108" width="190" height="55" as="geometry" />
         </mxCell>
 
+        <!-- k6 부하 테스트 -->
+        <mxCell id="k6"
+          value="&lt;b&gt;k6&lt;/b&gt;&lt;br&gt;주문 / 재고 동시성 부하 테스트"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;"
+          vertex="1" parent="1">
+          <mxGeometry x="1340" y="515" width="190" height="55" as="geometry" />
+        </mxCell>
+
         <!-- ═══════════════════════════════════════════════
              CI/CD
         ═══════════════════════════════════════════════ -->
@@ -207,7 +223,7 @@
           value="범례"
           style="swimlane;startSize=28;fillColor=#ffffff;strokeColor=#aaaaaa;fontSize=12;fontStyle=1;"
           vertex="1" parent="1">
-          <mxGeometry x="1080" y="700" width="220" height="175" as="geometry" />
+          <mxGeometry x="1080" y="700" width="220" height="225" as="geometry" />
         </mxCell>
 
         <mxCell id="leg1" value="─── HTTP / REST"
@@ -234,6 +250,16 @@
           style="text;html=1;fillColor=none;align=left;fontSize=11;fontColor=#d6b656;strokeColor=none;"
           vertex="1" parent="legend_container">
           <mxGeometry x="15" y="135" width="190" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6" value="- - - 카카오 외부 API 호출"
+          style="text;html=1;fillColor=none;align=left;fontSize=11;fontColor=#3C1E1E;strokeColor=none;"
+          vertex="1" parent="legend_container">
+          <mxGeometry x="15" y="160" width="190" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="leg7" value="─── 로컬 로그인/회원가입"
+          style="text;html=1;fillColor=none;align=left;fontSize=11;fontColor=#0050ef;strokeColor=none;"
+          vertex="1" parent="legend_container">
+          <mxGeometry x="15" y="185" width="190" height="22" as="geometry" />
         </mxCell>
 
         <!-- ═══════════════════════════════════════════════
@@ -266,9 +292,16 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
-        <!-- Spring Boot → Redis -->
+        <!-- Spring Boot → Redis (분산 락) -->
         <mxCell id="e4" value="Redisson 분산 락"
           style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;fontColor=#b85450;fontSize=10;exitX=0.27;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" source="sb_container" target="redis" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Cart Service → Redis (장바구니 저장) -->
+        <mxCell id="e_cart" value="장바구니 저장"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;fontColor=#b85450;fontSize=10;exitX=0.73;exitY=1;exitDx=0;exitDy=0;entryX=0.8;entryY=0;entryDx=0;entryDy=0;"
           edge="1" source="sb_container" target="redis" parent="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
@@ -319,12 +352,53 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
+        <!-- k6 → Spring Boot (부하 발생) -->
+        <mxCell id="e_k6_1" value="HTTP 부하 발생"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=10;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.95;entryY=1;entryDx=0;entryDy=0;"
+          edge="1" source="k6" target="sb_container" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1435" y="450" />
+              <mxPoint x="1380" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- k6 → Prometheus (remote write) -->
+        <mxCell id="e_k6_2" value="remote write 메트릭 푸시"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=10;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.3;entryDx=0;entryDy=0;"
+          edge="1" source="k6" target="prometheus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
         <!-- ═══════════════════════════════════════════════
-             카카오 OAuth2 흐름
+             로그인 흐름 (로컬 1-x  /  카카오 2-x)
+             같은 자리수는 같은 단계, 로컬은 -1, 카카오는 -2
         ═══════════════════════════════════════════════ -->
 
-        <!-- ① 클라이언트 → Spring Boot (로그인 요청) -->
-        <mxCell id="e_k1" value="① 카카오 로그인 클릭"
+        <!-- 1-1 클라이언트 → Spring Boot (로컬 로그인 클릭) -->
+        <mxCell id="e_l1" value="1-1 로그인 클릭 (id+password)"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0050ef;fontColor=#0050ef;fontSize=10;exitX=0.2;exitY=1;exitDx=0;exitDy=0;entryX=0.15;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" source="client" target="sb_container" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 2-1 Spring Boot → PostgreSQL (비밀번호 검증) -->
+        <mxCell id="e_l2" value="2-1 비밀번호 검증 (BCrypt)"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0050ef;fontColor=#0050ef;fontSize=10;exitX=0.04;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;"
+          edge="1" source="sb_container" target="postgres" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 3-1 Spring Boot → 클라이언트 (JWT 발급) -->
+        <mxCell id="e_l3" value="3-1 JWT 발급 + 응답"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0050ef;fontColor=#0050ef;fontSize=10;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.2;entryY=1;entryDx=0;entryDy=0;"
+          edge="1" source="sb_container" target="client" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 1-2 클라이언트 → Spring Boot (카카오 로그인 요청) -->
+        <mxCell id="e_k1" value="1-2 카카오 로그인 클릭"
           style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3C1E1E;fontColor=#3C1E1E;fontSize=10;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0.92;entryY=0;entryDx=0;entryDy=0;"
           edge="1" source="client" target="sb_container" parent="1">
           <mxGeometry relative="1" as="geometry">
@@ -337,7 +411,7 @@
         </mxCell>
 
         <!-- ② Spring Boot → 카카오 서버 (redirect) -->
-        <mxCell id="e_k2" value="② 인증 redirect"
+        <mxCell id="e_k2" value="2-2 인증 redirect"
           style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3C1E1E;fontColor=#3C1E1E;fontSize=10;dashed=1;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;"
           edge="1" source="sb_container" target="kakao_server" parent="1">
           <mxGeometry relative="1" as="geometry">
@@ -349,7 +423,7 @@
         </mxCell>
 
         <!-- ③ 카카오 서버 → Spring Boot (사용자 정보) -->
-        <mxCell id="e_k3" value="③ 사용자 정보 반환 (id, nickname)"
+        <mxCell id="e_k3" value="3-2 사용자 정보 반환 (id, nickname)"
           style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3C1E1E;fontColor=#3C1E1E;fontSize=10;dashed=1;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.15;entryDx=0;entryDy=0;"
           edge="1" source="kakao_server" target="sb_container" parent="1">
           <mxGeometry relative="1" as="geometry">
@@ -361,7 +435,7 @@
         </mxCell>
 
         <!-- ④ Member Service → PostgreSQL (신규 회원 저장) -->
-        <mxCell id="e_k4" value="④ 신규 가입 or 닉네임 동기화"
+        <mxCell id="e_k4" value="4-2 신규 가입 or 닉네임 동기화"
           style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3C1E1E;fontColor=#3C1E1E;fontSize=10;exitX=0.92;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.3;entryDx=0;entryDy=0;"
           edge="1" source="sb_container" target="postgres" parent="1">
           <mxGeometry relative="1" as="geometry">
@@ -374,13 +448,47 @@
         </mxCell>
 
         <!-- ⑤ Spring Boot → 클라이언트 (JWT + redirect) -->
-        <mxCell id="e_k5" value="⑤ JWT 발급 + redirect"
+        <mxCell id="e_k5" value="5-2 JWT 발급 + redirect"
           style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3C1E1E;fontColor=#3C1E1E;fontSize=10;exitX=0.6;exitY=0;exitDx=0;exitDy=0;entryX=0.6;entryY=1;entryDx=0;entryDy=0;"
           edge="1" source="sb_container" target="client" parent="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="836" y="185" />
               <mxPoint x="836" y="145" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════
+             카카오 지도 API (외부)
+        ═══════════════════════════════════════════════ -->
+        <mxCell id="kakao_map"
+          value="&lt;b&gt;Kakao Map API&lt;/b&gt;&lt;br&gt;(외부 API)"
+          style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE812;strokeColor=#3C1E1E;fontSize=12;fontColor=#3C1E1E;fontStyle=1;arcSize=10;"
+          vertex="1" parent="1">
+          <mxGeometry x="1400" y="185" width="200" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- 클라이언트 → 카카오 지도 (JS SDK, 매장 위치 렌더링) -->
+        <mxCell id="e_m1" value="JS SDK · 매장 위치 표시"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3C1E1E;fontColor=#3C1E1E;fontSize=10;dashed=1;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;"
+          edge="1" source="client" target="kakao_map" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900" y="128" />
+              <mxPoint x="900" y="204" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Spring Boot → 카카오 지도 (주소 → 좌표 변환, 매장 등록 시) -->
+        <mxCell id="e_m2" value="주소 → 좌표 변환 (geocoding)"
+          style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3C1E1E;fontColor=#3C1E1E;fontSize=10;dashed=1;exitX=1;exitY=0.6;exitDx=0;exitDy=0;entryX=0;entryY=0.7;entryDx=0;entryDy=0;"
+          edge="1" source="sb_container" target="kakao_map" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1500" y="333" />
+              <mxPoint x="1500" y="230" />
             </Array>
           </mxGeometry>
         </mxCell>

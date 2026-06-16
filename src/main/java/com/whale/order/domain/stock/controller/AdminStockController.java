@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,14 +25,20 @@ public class AdminStockController {
 
     @Operation(summary = "매장 재고 목록 조회")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<StockResponse>>> getStocks(@PathVariable Long storeId) {
-        return ResponseEntity.ok(ApiResponse.ok("조회 성공", stockService.getStocks(storeId)));
+    public ResponseEntity<ApiResponse<List<StockResponse>>> getStocks(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long callerId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", stockService.getStocks(storeId, callerId)));
     }
 
     @Operation(summary = "재고 복구 실패 목록 조회", description = "Kafka DLT 처리 중 재고 복구에 실패한 건. SSE를 놓쳤을 때 관리자가 직접 확인")
     @GetMapping("/restore-failures")
-    public ResponseEntity<ApiResponse<List<StockRestoreFailureResponse>>> getRestoreFailures() {
-        return ResponseEntity.ok(ApiResponse.ok("조회 성공", stockService.getRestoreFailures()));
+    public ResponseEntity<ApiResponse<List<StockRestoreFailureResponse>>> getRestoreFailures(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long callerId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공", stockService.getRestoreFailures(storeId, callerId)));
     }
 
     @Operation(summary = "재고 설정", description = "특정 메뉴의 재고를 설정(upsert). 없으면 생성, 있으면 갱신")
@@ -38,7 +46,9 @@ public class AdminStockController {
     public ResponseEntity<ApiResponse<StockResponse>> setStock(
             @PathVariable Long storeId,
             @PathVariable Long menuId,
-            @RequestBody StockUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("재고가 설정됐습니다", stockService.setStock(storeId, menuId, request)));
+            @RequestBody StockUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long callerId = Long.parseLong(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok("재고가 설정됐습니다", stockService.setStock(storeId, menuId, request, callerId)));
     }
 }

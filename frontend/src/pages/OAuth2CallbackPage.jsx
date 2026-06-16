@@ -8,7 +8,7 @@ import { getMyProfile } from '../api/member'
  * - URL 쿼리 파라미터에서 accessToken·refreshToken·role을 추출해 localStorage에 저장
  * - 카카오 닉네임은 URL에 포함되지 않으므로 /api/members/me로 별도 조회
  * - React StrictMode의 이중 실행을 useRef로 방지
- * - 처리 완료 후 ADMIN은 /admin/store-create, 고객은 /stores로 이동
+ * - 처리 완료 후 ADMIN은 /admin/store-create, OWNER는 /admin/my-stores, 고객은 /stores로 이동
  */
 export default function OAuth2CallbackPage() {
   const navigate = useNavigate()
@@ -44,6 +44,8 @@ export default function OAuth2CallbackPage() {
       .finally(() => {
         if (role === 'ADMIN') {
           navigate('/admin/store-create', { replace: true })
+        } else if (role === 'OWNER') {
+          navigate('/admin/my-stores', { replace: true })
         } else {
           navigate('/stores', { replace: true })
         }

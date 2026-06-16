@@ -36,6 +36,9 @@ public class EventScheduler {
     // 한 번에 구매 권한을 부여할 최대 인원
     private static final int BATCH_SIZE = 10;
 
+    /**
+     * openAt 시각이 도래한 SCHEDULED 이벤트를 자동으로 OPEN 상태로 전환하고 RateLimiter를 초기화한다.
+     */
     @Scheduled(fixedDelay = 10_000)
     @Transactional
     public void openPendingEvents() {
@@ -47,6 +50,10 @@ public class EventScheduler {
         }
     }
 
+    /**
+     * OPEN 상태인 이벤트의 대기열에서 남은 재고만큼(최대 BATCH_SIZE) 다음 순번을 꺼내
+     * 구매 권한을 부여하고 SSE로 구매 가능 알림을 보낸다.
+     */
     @Scheduled(fixedDelay = 3_000)
     @Transactional
     public void processQueues() {
@@ -63,6 +70,10 @@ public class EventScheduler {
         }
     }
 
+    /**
+     * OPEN 상태인 이벤트의 대기 중인 사용자 전원에게 현재 순번을 SSE로 푸시한다.
+     * 전송 실패(연결 끊김) 시 해당 emitter를 레지스트리에서 제거한다.
+     */
     @Scheduled(fixedDelay = 5_000)
     @Transactional(readOnly = true)
     public void pushPositionUpdates() {

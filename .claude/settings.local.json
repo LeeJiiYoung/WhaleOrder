@@ -23,7 +23,9 @@
       "Bash(git *)",
       "PowerShell(Get-Process | Where-Object { $_.MainWindowTitle -ne \"\" -or $_.Name -match \"node|npm|vite|java\" } | Select-Object Id, Name, MainWindowTitle)",
       "Bash(./gradlew compileJava)",
-      "Bash(./gradlew test *)"
+      "Bash(./gradlew test *)",
+      "Bash(grep -E \"src/main.*\\\\.java$\")",
+      "Bash(grep -E \"\\\\.java$\")"
     ]
   }
 }

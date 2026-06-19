@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="WhaleOrder Architecture" id="AcZi5HFmITmmSAJXOSGj">
-    <mxGraphModel dx="667" dy="406" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="0" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1092" dy="664" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="0" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -354,7 +354,7 @@
         <mxCell id="LIUpFxwcL3vg76uLq3Xt-153" parent="1" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://icons.diagrams.net/icon-cache1/Ionicons_Fill_Vol_2-2187/logo-npm-524.svg" value="" vertex="1">
           <mxGeometry height="40" width="40" x="790" y="76" as="geometry" />
         </mxCell>
-        <mxCell id="LIUpFxwcL3vg76uLq3Xt-154" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#660066;fontColor=#660066;fontSize=10;dashed=1;" value="재고 차감 요청 (동기 내부 호출)">
+        <mxCell id="LIUpFxwcL3vg76uLq3Xt-154" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;fontColor=#660066;fontSize=10;dashed=1;" value="재고 차감 요청 (동기 내부 호출)">
           <mxGeometry relative="1" x="-0.7692" as="geometry">
             <mxPoint as="offset" />
             <Array as="points">
@@ -397,7 +397,7 @@
             <mxPoint x="300" y="410" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="LIUpFxwcL3vg76uLq3Xt-93" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d79b00;fontColor=#660066;fontSize=10;dashed=1;" value="[보상①] (실결제 연동 시) PG 환불 호출 + 이력 보존 → Saga 보상">
+        <mxCell id="LIUpFxwcL3vg76uLq3Xt-93" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d79b00;fontColor=light-dark(#D79B00,#FFBBFF);fontSize=10;dashed=1;" value="[보상①] (실결제 연동 시) PG 환불 호출 + 이력 보존 → Saga 보상">
           <mxGeometry relative="1" x="-0.7687" y="10" as="geometry">
             <mxPoint as="offset" />
             <Array as="points">

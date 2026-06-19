@@ -71,6 +71,7 @@ CREATE TABLE menu_option (
     option_group    VARCHAR(50)     NOT NULL,   -- SIZE, SHOT, SYRUP, TEMPERATURE
     option_name     VARCHAR(50)     NOT NULL,
     additional_price INTEGER        NOT NULL DEFAULT 0,
+    is_required     BOOLEAN         NOT NULL DEFAULT false,
     created_by      BIGINT,
     created_at      TIMESTAMP,
     updated_by      BIGINT,
@@ -365,6 +366,7 @@ COMMENT ON COLUMN menu_option.menu_id          IS '소속 메뉴 ID (FK → menu
 COMMENT ON COLUMN menu_option.option_group     IS '옵션 그룹 (SIZE | SHOT | SYRUP | TEMPERATURE)';
 COMMENT ON COLUMN menu_option.option_name      IS '옵션 이름 (예: TALL, GRANDE, VENTI, HOT, ICED)';
 COMMENT ON COLUMN menu_option.additional_price IS '해당 옵션 선택 시 추가 요금 (원). 기본값 0';
+COMMENT ON COLUMN menu_option.is_required      IS '필수 선택 여부. 같은 menu_id+option_group 의 모든 행은 동일한 값을 유지해야 함. true 면 주문 시 해당 그룹에서 반드시 1개를 골라야 함';
 
 -- ====================================
 -- 컬럼 코멘트 - menu_discount

@@ -264,3 +264,11 @@
 }
 .actionBtn:hover:not(:disabled) { background: #4338ca; }
 .actionBtn:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+.actionBtnDanger {
+  background: #fff;
+  border: 1.5px solid #fecaca;
+  color: #dc2626;
+}
+.actionBtnDanger:hover:not(:disabled) { background: #fef2f2; border-color: #f87171; }
+.actionBtnDanger:disabled { background: #fff; color: #fca5a5; border-color: #fee2e2; }

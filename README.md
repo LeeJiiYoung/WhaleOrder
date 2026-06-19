@@ -67,17 +67,19 @@
 - 멱등성 키(`IdempotencyService`)로 중복 주문 방지
 - DB 커밋 이후 Kafka 발행 (`@TransactionalEventListener AFTER_COMMIT`) → 커밋 실패 시 메시지 유실 없음, 장바구니 보존 보장
 
+> 🗂️ **각 항목의 세부 설계·코드 위치·트레이드오프**는 [wiki](docs/wiki/Home.md) 참조
+
 ---
 
 ## 시스템 아키텍처
 
-![architecture](docs/architecture1.drawio.png)
+![architecture](docs/wiki/assets/architecture.png)
 
 ---
 
 ## DB 엔티티 ERD
 
-![ERD](docs/erd.png)
+![ERD](docs/wiki/assets/erd.png)
 
 > **주요 테이블**
 > - `members` — 회원 (LOCAL / KAKAO OAuth2)
@@ -233,5 +235,22 @@ WhaleOrder/
 ├── frontend/               # React 18 (Vite)
 ├── k6/                     # 부하 테스트 스크립트
 ├── monitoring/             # Prometheus + Grafana 설정
+├── docs/wiki/              # 📚 설계 · 도메인 · 운영 문서
 └── docker-compose.prod.yml
 ```
+
+---
+
+## 📚 문서 (Wiki)
+
+토큰 절감과 코드와 함께 유지보수되는 설계/운영 문서를 `docs/wiki/` 에 정리했습니다. 진입점은 [docs/wiki/Home.md](docs/wiki/Home.md).
+
+| 섹션 | 내용 |
+|------|------|
+| [아키텍처](docs/wiki/architecture/overview.md) | 동시성 제어 · 실시간 SSE · Saga 보상 · Kafka · Redis 활용처 |
+| [도메인](docs/wiki/domains/order.md) | Member · Store · Menu · Cart · Order · Payment · Stock · Event |
+| [API · ERD](docs/wiki/api/rest-api.md) | REST 엔드포인트 일람 + DB 테이블 관계도 |
+| [운영](docs/wiki/operations/local-setup.md) | 로컬 실행 · Docker · EC2 배포 · Prometheus · k6 · 트러블슈팅 |
+| [학습 노트](docs/wiki/notes/개념정리_20260612.md) | 날짜별 개념 정리 (2026-05-20 ~ 06-12) |
+
+각 도메인·아키텍처 문서는 **관련 코드 경로**(파일:라인)와 함께 작성되어 문서↔코드 추적이 가능합니다.

@@ -38,16 +38,22 @@ public class MenuOption extends BaseEntity {
     @Column(nullable = false)
     private Integer additionalPrice;
 
+    // 필수 선택 여부. 같은 menu_id + option_group 의 모든 행은 동일한 값을 유지한다.
+    @Column(nullable = false)
+    private Boolean isRequired;
+
     @Builder
-    public MenuOption(Menu menu, String optionGroup, String optionName, Integer additionalPrice) {
+    public MenuOption(Menu menu, String optionGroup, String optionName, Integer additionalPrice, Boolean isRequired) {
         this.menu = menu;
         this.optionGroup = optionGroup;
         this.optionName = optionName;
         this.additionalPrice = additionalPrice;
+        this.isRequired = isRequired != null ? isRequired : false;
     }
 
-    public void updateOption(String optionName, Integer additionalPrice) {
+    public void updateOption(String optionName, Integer additionalPrice, Boolean isRequired) {
         this.optionName = optionName;
         this.additionalPrice = additionalPrice;
+        this.isRequired = isRequired != null ? isRequired : false;
     }
 }

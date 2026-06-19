@@ -30,4 +30,14 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
             ORDER BY m.createdAt DESC
             """)
     List<Object[]> findActiveMenusWithStock(@Param("storeId") Long storeId);
+
+    // 카테고리 필터를 포함한 매장별 메뉴 + 재고 조회
+    @Query("""
+            SELECT m, s FROM Menu m
+            LEFT JOIN Stock s ON s.menu = m AND s.store.storeId = :storeId
+            WHERE m.isActive = true AND m.category = :category
+            ORDER BY m.createdAt DESC
+            """)
+    List<Object[]> findActiveMenusWithStockByCategory(@Param("storeId") Long storeId,
+                                                     @Param("category") MenuCategory category);
 }

@@ -16,6 +16,7 @@ import java.util.List;
 public class CartItem {
 
     private String itemKey;   // Redis field (menuId:optionId1,optionId2,...)
+    private Long storeId;     // 담을 당시 매장 ID — 수량 변경 시 재고 검증용
     private Long menuId;
     private String menuName;
     private String imageUrl;

@@ -1,0 +1,235 @@
+{
+  "main": {
+    "id": "35ea29bf7af917b6",
+    "type": "split",
+    "children": [
+      {
+        "id": "b56c347e373e6a81",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "18861dec35e9c457",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/wiki/architecture/concurrency-control.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "concurrency-control"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "cf3b8337d4bc6de1",
+    "type": "split",
+    "children": [
+      {
+        "id": "d5f5024918b23d25",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1a05328bd184aac7",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "파일 탐색기"
+            }
+          },
+          {
+            "id": "db2454e302312281",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "검색"
+            }
+          },
+          {
+            "id": "565ddcefee533204",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "북마크"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 278.5
+  },
+  "right": {
+    "id": "4a8cbaeeae8d27ca",
+    "type": "split",
+    "children": [
+      {
+        "id": "25614debe9f5d7c7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0b2c6fdc1572651f",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "docs/wiki/architecture/concurrency-control.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "concurrency-control 의 백링크"
+            }
+          },
+          {
+            "id": "f0dcff52d3efe429",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "docs/wiki/architecture/concurrency-control.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "concurrency-control 의 나가는 링크"
+            }
+          },
+          {
+            "id": "6db6014060aae817",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "태그"
+            }
+          },
+          {
+            "id": "fd6e2effe8fa4f91",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "모든 속성"
+            }
+          },
+          {
+            "id": "7077f94c019213f2",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "docs/wiki/architecture/concurrency-control.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "concurrency-control 의 개요"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:빠른 전환기 열기": false,
+      "graph:그래프 뷰 열기": false,
+      "canvas:새 캔버스 만들기": false,
+      "daily-notes:오늘의 일일 노트 열기": false,
+      "templates:템플릿 삽입": false,
+      "command-palette:명령어 팔레트 열기": false,
+      "bases:새 베이스 생성하기": false
+    }
+  },
+  "active": "18861dec35e9c457",
+  "lastOpenFiles": [
+    "docs/wiki/domains/menu.md.tmp.18200.1781856098793",
+    "docs/wiki/assets/architecture.png.crdownload",
+    "docs/wiki/assets/architecture.drawio.crswap",
+    "frontend/dist/assets/index-m_Bxx7wG.css",
+    "frontend/dist/assets/index-CinNV0zW.js",
+    "frontend/vite.config.js.timestamp-1781849043826-c75a70fc30e1e8.mjs",
+    "frontend/src/pages/admin/AdminOrderPage.module.css.tmp.18200.1781848889341",
+    "frontend/src/pages/admin/AdminOrderPage.jsx.tmp.18200.1781848848494",
+    "frontend/src/pages/admin/AdminOrderPage.jsx.tmp.18200.1781848840103",
+    "build/classes/java/main/com/whale/order/domain/order/entity/QOrderStatusHistory.class",
+    "build/classes/java/main/com/whale/order/domain/order/service/OrderCancelService.class",
+    "uploads/menus/be35cbe3-d899-465f-a2fe-a7bbfd7755f2.jpg",
+    "uploads/menus/sandwich.jpg",
+    "uploads/menus/30e61f49-31d6-4ed7-97ff-0c0269ed67e5.jpg",
+    "uploads/menus/newyorkcake.jpg",
+    "uploads/menus/2a0a1b53-97b7-4c68-8aac-4ac8602d7315.jpg",
+    "uploads/menus/vanillalatte.jpg",
+    "uploads/menus/9efdf42c-61da-4beb-9e30-f10495e8e32e.jpg",
+    "uploads/menus/greentealatte.jpg",
+    "uploads/menus/dcb3b692-59a1-4ddd-9ec4-220dd956e2e8.jpg",
+    "uploads/menus/cappuccino.jpg",
+    "docs/wiki/api/rest-api.md",
+    "docs/wiki/api/erd.md",
+    "docs/wiki/architecture/realtime-sse.md",
+    "docs/wiki/notes/개념정리_20260520.md",
+    "docs/wiki/conversations/2026-06-19.md",
+    "docs/wiki/operations/load-testing.md",
+    "docs/wiki/operations/monitoring.md",
+    "docs/wiki/operations/deployment.md",
+    "docs/wiki/operations/local-setup.md",
+    "docs/wiki/domains/event.md",
+    "docs/wiki/domains/stock.md",
+    "docs/wiki/domains/payment.md",
+    "docs/wiki/domains/order.md",
+    "docs/wiki/domains/cart.md",
+    "docs/wiki/domains/menu.md",
+    "docs/wiki/domains/store.md",
+    "docs/wiki/domains/member.md",
+    "docs/wiki/architecture/redis-usage.md",
+    "docs/wiki/architecture/kafka-event-stream.md",
+    "docs/wiki/architecture/saga-compensation.md",
+    "docs/wiki/architecture/concurrency-control.md",
+    "docs/wiki/architecture/overview.md",
+    "docs/wiki/Home.md",
+    "docs/wiki/notes/개념정리_20260612.md",
+    "docs/wiki/notes/개념정리_20260609.md"
+  ]
+}

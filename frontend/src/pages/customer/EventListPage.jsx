@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getEvents } from '../../api/event'
 import CustomerLayout from '../../components/customer/CustomerLayout'
+import CategoryTabs from '../../components/customer/CategoryTabs'
 import styles from './EventListPage.module.css'
 
 function StatusBadge({ status }) {
@@ -38,6 +39,9 @@ export default function EventListPage() {
 
   return (
     <CustomerLayout>
+      <div className={styles.tabBar}>
+        <CategoryTabs current="EVENT" />
+      </div>
       <div className={styles.header}>
         <h2 className={styles.title}>🎁 한정판매</h2>
         <p className={styles.subtitle}>선착순 특가 굿즈를 지금 만나보세요</p>

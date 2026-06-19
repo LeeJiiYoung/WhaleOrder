@@ -6,7 +6,11 @@ import com.whale.order.domain.cart.dto.CartAddRequest;
 import com.whale.order.domain.cart.dto.CartItem;
 import com.whale.order.domain.cart.dto.CartResponse;
 import com.whale.order.domain.menu.entity.Menu;
+import com.whale.order.domain.menu.entity.MenuOption;
+import com.whale.order.domain.menu.repository.MenuOptionRepository;
 import com.whale.order.domain.menu.repository.MenuRepository;
+import com.whale.order.domain.stock.entity.Stock;
+import com.whale.order.domain.stock.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -15,6 +19,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +35,8 @@ public class CartService {
 
     private final StringRedisTemplate redisTemplate;
     private final MenuRepository menuRepository;
+    private final MenuOptionRepository menuOptionRepository;
+    private final StockRepository stockRepository;
     private final ObjectMapper objectMapper;
 
     /**
@@ -39,6 +46,8 @@ public class CartService {
     public CartResponse addItem(Long memberId, CartAddRequest request) {
         Menu menu = menuRepository.findById(request.menuId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 메뉴입니다: " + request.menuId()));
+
+        validateRequiredOptionGroups(request);
 
         String cartKey = cartKey(memberId);
         String itemKey = buildItemKey(request);
@@ -59,6 +68,9 @@ public class CartService {
             finalQuantity += prev.getQuantity();
         }
 
+        // 재고 검증 — 합산 후 최종 수량 기준
+        validateStock(request.storeId(), request.menuId(), menu.getName(), finalQuantity);
+
         List<CartItem.SelectedOption> selectedOptions = request.selectedOptions() == null ? List.of() :
                 request.selectedOptions().stream()
                         .map(o -> new CartItem.SelectedOption(
@@ -67,6 +79,7 @@ public class CartService {
 
         CartItem item = CartItem.builder()
                 .itemKey(itemKey)
+                .storeId(request.storeId())
                 .menuId(menu.getMenuId())
                 .menuName(menu.getName())
                 .imageUrl(menu.getImageUrl())
@@ -103,6 +116,7 @@ public class CartService {
 
     /**
      * 장바구니 항목의 수량을 변경한다. quantity가 0 이하이면 항목을 삭제한다.
+     * 증가 방향일 때만 재고 검증 — 감소는 항상 허용.
      */
     public CartResponse updateQuantity(Long memberId, String itemKey, int quantity) {
         if (quantity <= 0) {
@@ -116,8 +130,15 @@ public class CartService {
         }
 
         CartItem prev = deserialize(existing);
+
+        // 수량 증가 시 재고 검증. storeId 가 없는 구버전 카트 항목은 스킵
+        if (quantity > prev.getQuantity() && prev.getStoreId() != null) {
+            validateStock(prev.getStoreId(), prev.getMenuId(), prev.getMenuName(), quantity);
+        }
+
         CartItem updated = CartItem.builder()
                 .itemKey(prev.getItemKey())
+                .storeId(prev.getStoreId())
                 .menuId(prev.getMenuId())
                 .menuName(prev.getMenuName())
                 .imageUrl(prev.getImageUrl())
@@ -146,6 +167,45 @@ public class CartService {
      */
     public void clearCart(Long memberId) {
         redisTemplate.delete(cartKey(memberId));
+    }
+
+    // 해당 매장에 재고가 있는지(수량 > 0, 요청 수량 충족) 검증. quantity = -1 이면 무제한이라 패스
+    private void validateStock(Long storeId, Long menuId, String menuName, int requestedQuantity) {
+        Stock stock = stockRepository.findByStoreAndMenu(storeId, menuId)
+                .orElseThrow(() -> new IllegalStateException("해당 매장에서 판매하지 않는 메뉴입니다: " + menuName));
+
+        if (stock.getQuantity() < 0) return; // 무제한
+        if (stock.getQuantity() == 0) {
+            throw new IllegalStateException("품절된 메뉴입니다: " + menuName);
+        }
+        if (stock.getQuantity() < requestedQuantity) {
+            throw new IllegalStateException(
+                    menuName + " 재고가 부족합니다 (남은 재고: " + stock.getQuantity() + "개, 요청: " + requestedQuantity + "개)");
+        }
+    }
+
+    // 메뉴의 필수 옵션 그룹이 모두 선택되었는지 검증
+    private void validateRequiredOptionGroups(CartAddRequest request) {
+        Set<String> requiredGroups = menuOptionRepository
+                .findByMenu_MenuIdOrderByOptionGroup(request.menuId()).stream()
+                .filter(o -> Boolean.TRUE.equals(o.getIsRequired()))
+                .map(MenuOption::getOptionGroup)
+                .collect(Collectors.toSet());
+
+        if (requiredGroups.isEmpty()) return;
+
+        Set<String> selectedGroups = request.selectedOptions() == null ? Set.of() :
+                request.selectedOptions().stream()
+                        .map(CartAddRequest.SelectedOptionRequest::optionGroup)
+                        .collect(Collectors.toSet());
+
+        Set<String> missing = requiredGroups.stream()
+                .filter(g -> !selectedGroups.contains(g))
+                .collect(Collectors.toSet());
+
+        if (!missing.isEmpty()) {
+            throw new IllegalArgumentException("다음 옵션은 필수로 선택해야 합니다: " + String.join(", ", missing));
+        }
     }
 
     // menuId + 옵션ID 조합으로 고유 키 생성 (같은 메뉴 다른 옵션 구분)

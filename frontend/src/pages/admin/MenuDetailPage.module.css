@@ -287,6 +287,32 @@
   font-weight: 700;
 }
 
+.requiredBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.optionalText {
+  font-size: 12px;
+  color: #999;
+}
+
+.requiredCheckLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #333;
+  height: 38px;
+  cursor: pointer;
+}
+.requiredCheckLabel input { cursor: pointer; }
+
 .deleteOptionBtn {
   padding: 4px 12px;
   background: transparent;
@@ -298,7 +324,69 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.deleteOptionBtn:hover { background: #fef2f2; }
+.deleteOptionBtn:hover:not(:disabled) { background: #fef2f2; }
+.deleteOptionBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.editOptionBtn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1.5px solid #c4b5fd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.editOptionBtn:hover:not(:disabled) { background: #ede9fe; }
+.editOptionBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.saveOptionBtn {
+  padding: 4px 12px;
+  background: #4f46e5;
+  border: 1.5px solid #4f46e5;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.saveOptionBtn:hover:not(:disabled) { background: #4338ca; }
+.saveOptionBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cancelOptionBtn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1.5px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cancelOptionBtn:hover:not(:disabled) { background: #f5f5f5; }
+.cancelOptionBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.editActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.editInput {
+  padding: 6px 10px;
+  border: 1.5px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  color: #222;
+  width: 100%;
+  max-width: 160px;
+  transition: border-color 0.2s;
+}
+.editInput:focus { border-color: #4f46e5; }
 
 /* 옵션 추가 폼 */
 .addOptionRow {

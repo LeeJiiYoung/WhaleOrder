@@ -55,9 +55,9 @@ SELECT setval('menu_menu_id_seq', (SELECT MAX(menu_id) FROM menu));
 -- 4. 메뉴 옵션 (음료 1~5번 공통)
 -- ────────────────────────────────────────────────
 
--- SIZE (음료 전체)
-INSERT INTO menu_option (menu_id, option_group, option_name, additional_price, created_by, created_at, updated_by, updated_at)
-SELECT m.menu_id, 'SIZE', v.option_name, v.additional_price, 1, NOW(), 1, NOW()
+-- SIZE (음료 전체) — 필수
+INSERT INTO menu_option (menu_id, option_group, option_name, additional_price, is_required, created_by, created_at, updated_by, updated_at)
+SELECT m.menu_id, 'SIZE', v.option_name, v.additional_price, true, 1, NOW(), 1, NOW()
 FROM   (VALUES (1),(2),(3),(4),(5)) AS m(menu_id)
 CROSS JOIN (VALUES ('TALL', 0),('GRANDE', 500),('VENTI', 1000)) AS v(option_name, additional_price)
 WHERE NOT EXISTS (
@@ -65,9 +65,9 @@ WHERE NOT EXISTS (
     WHERE mo.menu_id = m.menu_id AND mo.option_group = 'SIZE' AND mo.option_name = v.option_name
 );
 
--- TEMPERATURE (음료 전체)
-INSERT INTO menu_option (menu_id, option_group, option_name, additional_price, created_by, created_at, updated_by, updated_at)
-SELECT m.menu_id, 'TEMPERATURE', v.option_name, v.additional_price, 1, NOW(), 1, NOW()
+-- TEMPERATURE (음료 전체) — 필수
+INSERT INTO menu_option (menu_id, option_group, option_name, additional_price, is_required, created_by, created_at, updated_by, updated_at)
+SELECT m.menu_id, 'TEMPERATURE', v.option_name, v.additional_price, true, 1, NOW(), 1, NOW()
 FROM   (VALUES (1),(2),(3),(4),(5)) AS m(menu_id)
 CROSS JOIN (VALUES ('HOT', 0),('ICED', 0)) AS v(option_name, additional_price)
 WHERE NOT EXISTS (

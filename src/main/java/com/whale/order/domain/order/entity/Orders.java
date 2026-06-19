@@ -103,6 +103,14 @@ public class Orders extends BaseEntity {
         this.status = OrderStatus.CANCELLED;
     }
 
+    // 관리자 취소 - 접수 대기 / 제조 중 상태에서 가능 (완료·취소된 주문은 불가)
+    public void cancelByAdmin() {
+        if (this.status != OrderStatus.PENDING && this.status != OrderStatus.PREPARING) {
+            throw new IllegalStateException("완료되었거나 이미 취소된 주문은 취소할 수 없습니다.");
+        }
+        this.status = OrderStatus.CANCELLED;
+    }
+
     private void validateStatus(OrderStatus expected) {
         if (this.status != expected) {
             throw new IllegalStateException(

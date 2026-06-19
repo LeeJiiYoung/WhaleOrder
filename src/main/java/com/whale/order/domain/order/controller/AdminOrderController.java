@@ -75,15 +75,16 @@ public class AdminOrderController {
      * <ul>
      *   <li>{@code prepare} — PENDING → PREPARING (제조 시작)</li>
      *   <li>{@code complete} — PREPARING → COMPLETED (제조 완료)</li>
+     *   <li>{@code cancel} — PENDING/PREPARING → CANCELLED (관리자 취소, 결제 환불 + 재고 복구)</li>
      * </ul>
      * <p>상태 변경 시 고객 SSE 채널로 실시간 알림이 전송된다.</p>
      *
      * @param orderId     상태를 변경할 주문 ID
-     * @param action      {@code prepare} 또는 {@code complete}
+     * @param action      {@code prepare}, {@code complete}, {@code cancel}
      * @param userDetails 인증된 관리자 정보
      * @return 변경된 주문 정보
      */
-    @Operation(summary = "주문 상태 변경", description = "action: prepare(제조 시작) · complete(완료)")
+    @Operation(summary = "주문 상태 변경", description = "action: prepare(제조 시작) · complete(완료) · cancel(관리자 취소)")
     @PatchMapping("/{orderId}/{action}")
     public ResponseEntity<ApiResponse<OrderResponse>> changeStatus(
             @PathVariable Long orderId,

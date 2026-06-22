@@ -15,6 +15,6 @@ public record CartAddRequest(
             Long menuOptionId,
             String optionGroup,
             String optionName,
-            Integer additionalPrice
+            Long additionalPrice
     ) {}
 }

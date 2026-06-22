@@ -17,11 +17,17 @@
 ## 생명주기
 
 ```
-PENDING → ACCEPTED → PREPARING → READY → COMPLETED
-                                              └─ CANCELLED (어디서든 가능)
+PENDING ──► PREPARING ──► COMPLETED
+   │            │
+   └────────────┴──► CANCELLED   (제조 완료 이후는 취소 불가)
 ```
 
-모든 상태 전이는 `OrderStatusHistory` 에 기록.
+- `OrderStatus` enum 은 위 4가지뿐 (`OrderStatus.java`)
+- 취소 허용 범위는 **호출 주체에 따라 다름**:
+  - 고객 `Orders.cancel()` — `PENDING` 만 (`Orders.java`)
+  - 관리자 `Orders.cancelByAdmin()` — `PENDING` · `PREPARING` (`Orders.java`)
+  - **`COMPLETED` 이후는 어느 쪽도 취소 불가**
+- 모든 상태 전이는 `OrderStatusHistory` 에 기록
 
 ## 핵심 플로우
 
@@ -91,6 +97,21 @@ PENDING → ACCEPTED → PREPARING → READY → COMPLETED
 | 진입점 | `DELETE /api/orders/{id}` | `PATCH /api/admin/orders/{id}/cancel` |
 | 권한 | 본인 주문 | OWNER(본인 매장) / ADMIN |
 | 환불 사유 라벨 | "고객 주문 취소" | "관리자 주문 취소" |
+
+## 도메인 invariant (음수 + overflow 차단)
+
+| 위치 | 규칙 | 방어 단계 |
+|------|------|----------|
+| `Orders.totalPrice` · `OrderItem.unitPrice` | `Long` / DB `BIGINT` | 타입 |
+| `Orders` 생성자 | `totalPrice >= 0` | 코드 |
+| `OrderItem` 생성자 | `quantity >= 1`, `unitPrice >= 0` | 코드 |
+| `orders` 테이블 | `CHECK (total_price >= 0)` | DB |
+| `order_item` 테이블 | `CHECK (quantity > 0)`, `CHECK (unit_price >= 0)` | DB |
+| `CartService` 합산 / 곱셈 | `Math.addExact()`, `Math.multiplyExact()` | 코드 |
+
+- Bean Validation 어노테이션(`@Min`, `@Positive`)은 컨트롤러 `@Valid` 에서만 자동 동작하고 JPA persist 시점에는 동작하지 않으므로, 도메인 invariant 는 생성자에서 명시 검증한다.
+- DB CHECK 는 코드 우회(SQL 직접 실행, 외부 도구) 까지 차단하는 마지막 방어선.
+- 모든 금액 필드는 `Long`/`BIGINT` — 단일 결제 한 건의 21억원 한계와 매출 집계 overflow 양쪽을 모두 차단. KRW(원) 는 소수점 없어 정수면 충분.
 
 ## 관련 문서
 

@@ -92,6 +92,8 @@ export default function PaymentPage() {
         method,
         storeId: Number(storeId),
         orderType,
+        // 표시 금액 확인 — 서버가 cart 재계산값과 대조해 가격 변동·동시 카트 수정 차단
+        expectedAmount: totalPrice,
         customerRequest: customerRequest || null,
       })
       navigate(`/orders/${res.data.data.orderId}`, { replace: true })

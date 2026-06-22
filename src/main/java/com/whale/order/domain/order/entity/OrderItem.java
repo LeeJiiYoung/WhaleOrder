@@ -42,7 +42,7 @@ public class OrderItem extends BaseEntity {
 
     // 주문 당시 가격 - 이후 메뉴 가격이 변경되어도 영향받지 않음
     @Column(nullable = false)
-    private Integer unitPrice;
+    private Long unitPrice;
 
     // 선택 옵션 스냅샷 - JSON 배열 형태로 저장
     @JdbcTypeCode(SqlTypes.JSON)
@@ -51,7 +51,14 @@ public class OrderItem extends BaseEntity {
 
     @Builder
     public OrderItem(Orders orders, Menu menu, Integer quantity,
-                     Integer unitPrice, String options) {
+                     Long unitPrice, String options) {
+        // 도메인 invariant — 수량은 양수, 단가는 0 이상
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("주문 수량은 1 이상이어야 합니다: " + quantity);
+        }
+        if (unitPrice == null || unitPrice < 0) {
+            throw new IllegalArgumentException("단가는 0 이상이어야 합니다: " + unitPrice);
+        }
         this.orders = orders;
         this.menu = menu;
         this.quantity = quantity;
@@ -59,8 +66,8 @@ public class OrderItem extends BaseEntity {
         this.options = options;
     }
 
-    // 주문 항목 소계
-    public int getSubTotal() {
-        return this.unitPrice * this.quantity;
+    // 주문 항목 소계 — overflow 명시 차단
+    public long getSubTotal() {
+        return Math.multiplyExact(this.unitPrice, (long) this.quantity);
     }
 }

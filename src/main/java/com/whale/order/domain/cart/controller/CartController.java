@@ -38,14 +38,17 @@ public class CartController {
 
     /**
      * 장바구니에 메뉴를 담는다.
+     * force=true 면 기존 카트가 다른 매장 메뉴를 가지고 있어도 비우고 새 메뉴를 담는다.
+     * force=false (기본) 면 매장 충돌 시 412 Precondition Failed 로 클라이언트에 확인 요구.
      */
     @Operation(summary = "메뉴 담기")
     @PostMapping("/items")
     public ResponseEntity<ApiResponse<CartResponse>> addItem(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody CartAddRequest request) {
+            @Valid @RequestBody CartAddRequest request,
+            @RequestParam(defaultValue = "false") boolean force) {
         Long memberId = memberId(userDetails);
-        return ResponseEntity.ok(ApiResponse.ok("담겼습니다", cartService.addItem(memberId, request)));
+        return ResponseEntity.ok(ApiResponse.ok("담겼습니다", cartService.addItem(memberId, request, force)));
     }
 
     /**

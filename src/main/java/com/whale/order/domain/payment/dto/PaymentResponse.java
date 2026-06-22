@@ -6,7 +6,7 @@ import com.whale.order.domain.payment.entity.Payment;
 public record PaymentResponse(
         Long paymentId,
         Long orderId,
-        Integer amount,
+        Long amount,
         String method,
         String status,
         String externalTxId,

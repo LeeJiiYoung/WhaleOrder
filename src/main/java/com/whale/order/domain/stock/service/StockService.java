@@ -86,8 +86,10 @@ public class StockService {
         }
     }
 
-    // 재고 차감 — StockLockFacade 가 Redis 락을 잡은 상태에서 호출
-    @Transactional
+    // 재고 차감 — StockLockFacade 가 Redis 락을 잡은 상태에서 호출.
+    // timeout=10 으로 트랜잭션이 hang 되어도 10초 안에 강제 종료 → finally unlock 까지 빠르게 도달.
+    // watchdog 자동 갱신 모드와 결합해 락이 무한정 보유되는 상황도 방지.
+    @Transactional(timeout = 10)
     public void deductStock(Long storeId, Long menuId, int amount) {
         try {
             Stock stock = stockRepository.findByStoreAndMenu(storeId, menuId)
@@ -109,7 +111,7 @@ public class StockService {
     }
 
     // 주문 취소 시 재고 복구 — StockLockFacade 가 Redis 락을 잡은 상태에서 호출
-    @Transactional
+    @Transactional(timeout = 10)
     public void restoreStock(Long storeId, Long menuId, int amount) {
         stockRepository.findByStoreAndMenu(storeId, menuId).ifPresent(stock -> {
             int before = stock.getQuantity();

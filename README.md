@@ -88,8 +88,9 @@
 > - `orders` / `order_items` / `order_status_history` — 주문 및 상태 이력
 > - `payments` / `payment_history` — 결제 및 결제 시도 이력
 > - `stocks` / `stock_restore_failures` — 재고 및 복구 실패 기록
-> - `idempotency_records` — 중복 주문 방지 멱등성 키
 > - `events` / `goods` / `event_purchases` — 한정판매 이벤트
+
+> 멱등성 키는 Redis(`idem:{sha256}`, SET NX EX) 로 관리 — DB 테이블 없음. 자세한 내용은 [Redis 활용처](docs/wiki/architecture/redis-usage.md) 참조.
 
 ---
 

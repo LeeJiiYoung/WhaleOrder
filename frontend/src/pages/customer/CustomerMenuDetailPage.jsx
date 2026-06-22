@@ -159,21 +159,35 @@ export default function CustomerMenuDetailPage() {
                   return
                 }
                 setAdding(true)
+                const payload = {
+                  storeId: Number(storeId),
+                  menuId: menu.menuId,
+                  quantity,
+                  selectedOptions: Object.values(selectedOptions).map((o) => ({
+                    menuOptionId: o.menuOptionId,
+                    optionGroup: o.optionGroup,
+                    optionName: o.optionName,
+                    additionalPrice: o.additionalPrice,
+                  })),
+                }
                 try {
-                  await addToCart({
-                    storeId: Number(storeId),
-                    menuId: menu.menuId,
-                    quantity,
-                    selectedOptions: Object.values(selectedOptions).map((o) => ({
-                      menuOptionId: o.menuOptionId,
-                      optionGroup: o.optionGroup,
-                      optionName: o.optionName,
-                      additionalPrice: o.additionalPrice,
-                    })),
-                  })
+                  await addToCart(payload)
                   navigate('/cart')
                 } catch (err) {
-                  alert(err.response?.data?.message || '장바구니 담기에 실패했습니다')
+                  // 412 = 카트에 다른 매장 메뉴가 있음 → 사용자 확인 후 force=true 로 재시도
+                  if (err.response?.status === 412) {
+                    const confirmed = window.confirm(err.response.data.message)
+                    if (confirmed) {
+                      try {
+                        await addToCart(payload, { force: true })
+                        navigate('/cart')
+                      } catch (retryErr) {
+                        alert(retryErr.response?.data?.message || '장바구니 담기에 실패했습니다')
+                      }
+                    }
+                  } else {
+                    alert(err.response?.data?.message || '장바구니 담기에 실패했습니다')
+                  }
                 } finally {
                   setAdding(false)
                 }

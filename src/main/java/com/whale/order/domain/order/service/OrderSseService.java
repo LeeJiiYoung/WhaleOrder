@@ -59,6 +59,7 @@ public class OrderSseService {
         emitters.put(orderId, emitter);
         emitter.onCompletion(() -> emitters.remove(orderId));
         emitter.onTimeout(() -> emitters.remove(orderId));
+        emitter.onError((e)     -> emitters.remove(orderId));
         return emitter;
     }
 
@@ -89,6 +90,7 @@ public class OrderSseService {
         statusEmitters.put(orderId, emitter);
         emitter.onCompletion(() -> statusEmitters.remove(orderId));
         emitter.onTimeout(() -> statusEmitters.remove(orderId));
+        emitter.onError((e)     -> statusEmitters.remove(orderId));
         return emitter;
     }
 

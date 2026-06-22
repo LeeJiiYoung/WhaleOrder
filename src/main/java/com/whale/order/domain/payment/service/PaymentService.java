@@ -80,7 +80,22 @@ public class PaymentService {
     public PaymentResponse pay(Long memberId, PaymentRequest request) {
         CartResponse cart = cartService.getCart(memberId);
         if (cart.items().isEmpty()) {
-            throw new IllegalStateException("장바구니가 비어있습니다");
+            // 두 가지 케이스를 모두 포괄:
+            //  1) 사용자가 진짜 빈 카트로 결제 버튼을 누른 경우
+            //  2) 동시 결제 중 다른 브라우저/탭에서 먼저 결제 성공 → AFTER_COMMIT clearCart 로 카트 비워진 경우
+            throw new IllegalStateException(
+                    "장바구니가 비어있습니다. 이미 주문이 처리되었을 수 있으니 주문 내역을 확인해주세요.");
+        }
+
+        // 표시 금액 확인 — 클라가 본 화면 금액과 서버 재계산 금액 불일치 시 차단.
+        // 메뉴 가격 변동·다른 탭 카트 수정·중간자 변조 모두 여기서 거름. 실제 청구는 서버 계산값만 사용.
+        // expectedAmount 가 null 이면 (구버전 프런트) 검증을 건너뛰고 통과 — 프런트 배포 후 NotNull 격상.
+        if (request.expectedAmount() != null
+                && !Objects.equals(cart.totalPrice(), request.expectedAmount())) {
+            log.warn("[결제] 표시 금액 불일치 memberId={} expected={} actual={}",
+                    memberId, request.expectedAmount(), cart.totalPrice());
+            throw new IllegalStateException(
+                    "표시된 금액과 실제 금액이 다릅니다. 장바구니를 새로고침해주세요.");
         }
 
         // 같은 장바구니·매장·결제 수단으로 들어온 중복 요청을 1회만 처리

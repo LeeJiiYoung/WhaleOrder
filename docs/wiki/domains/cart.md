@@ -6,11 +6,11 @@
 
 ## 구성
 
-| 분류 | 파일 |
-|------|------|
-| Controller | `CartController` |
-| Service | `CartService` |
-| DTO | `CartAddRequest`, `CartItem`, `CartResponse` |
+| 분류         | 파일                                           |
+| ---------- | -------------------------------------------- |
+| Controller | `CartController`                             |
+| Service    | `CartService`                                |
+| DTO        | `CartAddRequest`, `CartItem`, `CartResponse` |
 
 ## 저장 구조
 
@@ -28,10 +28,19 @@
 
 | 시점 | 검증 항목 |
 |---|---|
-| `addItem` | (1) 메뉴 존재 (2) **필수 옵션 그룹 모두 선택** (3) **Stock 존재 + (quantity >= 요청수량) 충족** |
+| `addItem` | (1) 메뉴 존재 (2) **필수 옵션 그룹 모두 선택** (3) **단일 매장 정책** (4) **Stock 존재 + (quantity >= 요청수량) 충족** |
 | `updateQuantity (+)` | Stock 수량 ≥ 새 수량 — 증가 방향만 검증 |
 | `updateQuantity (-)` | 검증 없음 — 감소는 항상 허용 |
 | `updateQuantity (=0)` | 항목 삭제로 위임 |
+
+### 단일 매장 정책
+
+카트 키가 `cart:{memberId}` 한 가지로 매장별 분리가 없으므로, 한 카트는 동시에 한 매장의 메뉴만 담을 수 있다.
+
+- 카트에 이미 다른 매장의 메뉴가 있는 상태에서 새 매장 메뉴 담기 시도 → `DifferentStoreCartException` → **HTTP 412 Precondition Failed**
+- 응답 메시지: `"장바구니에 이미 다른 매장의 메뉴가 담겨있습니다. 담으면 이전 매장의 메뉴는 삭제됩니다."`
+- 프런트는 412 응답을 받으면 `window.confirm` 으로 사용자 동의를 받고 `POST /api/cart/items?force=true` 로 재요청 → 백엔드는 `clearCart` 후 새 매장 메뉴를 담는다
+- 구버전 `CartItem` 에 `storeId` 가 null 인 항목(이전 배포 데이터)은 매장 비교에서 제외
 
 - **`quantity = -1`** (무제한 재고) 은 모든 검증 통과
 - 같은 메뉴+옵션 조합이 이미 카트에 있으면 **합산 수량** 으로 검증 (예: 카트 3 + 추가 5 = 8 vs 재고 6 → 차단)

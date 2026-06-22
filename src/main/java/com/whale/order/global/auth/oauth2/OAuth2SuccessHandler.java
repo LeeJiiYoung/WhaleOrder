@@ -49,7 +49,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .build()
                 .toUriString();
 
-        log.info("리다이렉트 URL: {}", targetUrl);
+        // targetUrl 에 accessToken/refreshToken 이 query 로 박혀 있어 평문 로깅 금지 —
+        // 로그 수집 시스템(Loki/CloudWatch/ELK) 에 토큰 노출되면 사실상 계정 인수 가능.
+        // 호스트·경로 만 남기고 식별자(memberId/role) 로 흐름 추적.
+        log.info("OAuth2 콜백 리다이렉트 memberId={} role={} → {}",
+                member.getMemberId(), member.getRole(), redirectUri);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

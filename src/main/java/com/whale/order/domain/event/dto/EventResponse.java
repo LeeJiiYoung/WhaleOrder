@@ -9,7 +9,7 @@ public record EventResponse(
         String name,
         String goodsName,
         String goodsDescription,
-        Integer goodsPrice,
+        Long goodsPrice,
         String goodsImageUrl,
         LocalDateTime openAt,
         Integer capacity,

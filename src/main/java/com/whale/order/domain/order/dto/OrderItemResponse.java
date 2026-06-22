@@ -7,8 +7,8 @@ public record OrderItemResponse(
         Long menuId,
         String menuName,
         Integer quantity,
-        Integer unitPrice,
-        Integer subTotal,
+        Long unitPrice,
+        Long subTotal,
         String options   // JSON 스냅샷 그대로 전달
 ) {
     public static OrderItemResponse from(OrderItem item) {

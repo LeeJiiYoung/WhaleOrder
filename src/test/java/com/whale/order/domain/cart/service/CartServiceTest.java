@@ -52,6 +52,7 @@ class CartServiceTest extends TestContainerBase {
     @Autowired private StringRedisTemplate  redisTemplate;
 
     private static final Long MEMBER_ID = 999L;
+    private static final Long STORE_ID  = 1L;   // 테스트 전체에서 단일 매장 가정 (CartAddRequest.storeId 용)
 
     private Menu menu;
     private Menu menu2;
@@ -61,9 +62,9 @@ class CartServiceTest extends TestContainerBase {
         menuRepository.deleteAll();
 
         menu = menuRepository.save(Menu.builder()
-                .name("아메리카노").basePrice(4500).category(MenuCategory.BEVERAGE).build());
+                .name("아메리카노").basePrice(4500L).category(MenuCategory.BEVERAGE).build());
         menu2 = menuRepository.save(Menu.builder()
-                .name("카페라테").basePrice(5500).category(MenuCategory.BEVERAGE).build());
+                .name("카페라테").basePrice(5500L).category(MenuCategory.BEVERAGE).build());
     }
 
     @AfterEach
@@ -103,8 +104,8 @@ class CartServiceTest extends TestContainerBase {
     @DisplayName("같은 메뉴라도 옵션이 다르면 별도 항목으로 저장된다")
     void 같은_메뉴_다른_옵션_별도_항목() {
         // when: 동일 메뉴, 다른 옵션ID
-        var optionA = new CartAddRequest.SelectedOptionRequest(1L, "SIZE", "TALL",   0);
-        var optionB = new CartAddRequest.SelectedOptionRequest(2L, "SIZE", "GRANDE", 500);
+        var optionA = new CartAddRequest.SelectedOptionRequest(1L, "SIZE", "TALL",   0L);
+        var optionB = new CartAddRequest.SelectedOptionRequest(2L, "SIZE", "GRANDE", 500L);
 
         cartService.addItem(MEMBER_ID, 추가요청(menu.getMenuId(), 1, List.of(optionA)));
         cartService.addItem(MEMBER_ID, 추가요청(menu.getMenuId(), 1, List.of(optionB)));
@@ -191,6 +192,6 @@ class CartServiceTest extends TestContainerBase {
 
     private CartAddRequest 추가요청(Long menuId, int quantity,
                                   List<CartAddRequest.SelectedOptionRequest> options) {
-        return new CartAddRequest(menuId, quantity, options);
+        return new CartAddRequest(STORE_ID, menuId, quantity, options);
     }
 }

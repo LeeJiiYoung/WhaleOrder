@@ -36,14 +36,14 @@ public class MenuOption extends BaseEntity {
 
     // 기본 가격 대비 추가 금액 (0원이면 무료 옵션)
     @Column(nullable = false)
-    private Integer additionalPrice;
+    private Long additionalPrice;
 
     // 필수 선택 여부. 같은 menu_id + option_group 의 모든 행은 동일한 값을 유지한다.
     @Column(nullable = false)
     private Boolean isRequired;
 
     @Builder
-    public MenuOption(Menu menu, String optionGroup, String optionName, Integer additionalPrice, Boolean isRequired) {
+    public MenuOption(Menu menu, String optionGroup, String optionName, Long additionalPrice, Boolean isRequired) {
         this.menu = menu;
         this.optionGroup = optionGroup;
         this.optionName = optionName;
@@ -51,7 +51,7 @@ public class MenuOption extends BaseEntity {
         this.isRequired = isRequired != null ? isRequired : false;
     }
 
-    public void updateOption(String optionName, Integer additionalPrice, Boolean isRequired) {
+    public void updateOption(String optionName, Long additionalPrice, Boolean isRequired) {
         this.optionName = optionName;
         this.additionalPrice = additionalPrice;
         this.isRequired = isRequired != null ? isRequired : false;

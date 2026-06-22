@@ -32,12 +32,12 @@ public class Goods extends BaseEntity {
     private String description;
 
     @Column(nullable = false)
-    private Integer price;
+    private Long price;
 
     private String imageUrl;
 
     @Builder
-    public Goods(Store store, String name, String description, Integer price, String imageUrl) {
+    public Goods(Store store, String name, String description, Long price, String imageUrl) {
         this.store = store;
         this.name = name;
         this.description = description;

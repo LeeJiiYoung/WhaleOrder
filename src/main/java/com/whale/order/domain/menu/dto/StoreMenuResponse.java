@@ -9,7 +9,7 @@ public record StoreMenuResponse(
         Long menuId,
         String name,
         String description,
-        Integer basePrice,
+        Long basePrice,
         String category,
         String imageUrl,
         boolean soldOut,

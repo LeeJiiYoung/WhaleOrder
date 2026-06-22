@@ -6,7 +6,7 @@ public record PaymentInfoResponse(
         Long paymentId,
         String method,
         String methodLabel,
-        Integer amount,
+        Long amount,
         String status,
         String statusLabel,
         String externalTxId

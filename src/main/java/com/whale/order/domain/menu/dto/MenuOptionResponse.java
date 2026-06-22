@@ -6,7 +6,7 @@ public record MenuOptionResponse(
         Long menuOptionId,
         String optionGroup,
         String optionName,
-        Integer additionalPrice,
+        Long additionalPrice,
         Boolean isRequired
 ) {
     public static MenuOptionResponse from(MenuOption option) {

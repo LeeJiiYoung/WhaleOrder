@@ -11,7 +11,7 @@ public record OrderResponse(
         String memberNickname,
         String status,
         String orderType,
-        Integer totalPrice,
+        Long totalPrice,
         String customerRequest,
         List<OrderItemResponse> items,
         LocalDateTime orderedAt

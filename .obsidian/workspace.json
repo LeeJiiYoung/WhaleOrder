@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/wiki/conversations/2026-06-22.md",
+                "file": "docs/wiki/architecture/saga-compensation.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2026-06-22"
+              "title": "saga-compensation"
             }
           }
         ]
@@ -185,21 +185,25 @@
   },
   "active": "7188862d89d2440b",
   "lastOpenFiles": [
-    "build/resources/main/data-loadtest.sql",
-    "build/classes/java/main/com/whale/order/global/config/LoadTestDataInitializer.class",
-    "src/main/java/com/whale/order/global/config/LoadTestDataInitializer.java",
-    "src/main/resources/data-loadtest.sql",
-    "src/main/resources/data.sql.tmp.11132.1782112241998",
-    "src/main/resources/data.sql.tmp.11132.1782112235592",
-    "src/main/resources/data.sql.tmp.11132.1782111952859",
-    "src/main/resources/data.sql.tmp.11132.1782111946028",
+    "build/reports/tests/test/classes/com.whale.order.domain.cart.service.CartServiceTest.html",
+    "build/reports/tests/test/classes/com.whale.order.domain.order.service.SagaCompensationTest.html",
+    "build/reports/tests/test/classes/com.whale.order.domain.order.service.OrderIntegrationTest.html",
+    "build/reports/tests/test/classes/com.whale.order.domain.order.service.OrderCancelTest.html",
+    "build/reports/tests/test/classes/com.whale.order.domain.store.scheduler.StoreStatusSchedulerTest.html",
+    "build/reports/tests/test/classes/com.whale.order.domain.event.service.EventQueueFacadeTest.html",
+    "build/reports/tests/test/classes/com.whale.order.OrderApplicationTests.html",
+    "build/reports/tests/test/packages/com.whale.order.html",
+    "build/test-results/test/TEST-com.whale.order.OrderApplicationTests.xml",
     "build/test-results/test/binary/results.bin",
     "build/test-results/test/binary/output.bin.idx",
-    "build/classes/java/test/com/whale/order/domain/order/service/SagaCompensationTest.class",
-    "docs/wiki/domains/cart.md",
     "docs/wiki/architecture/overview.md",
-    "docs/wiki/architecture/concurrency-control.md",
+    "docs/wiki/notes/ai-collaboration.md",
+    "docs/wiki/operations/troubleshooting.md",
+    "docs/wiki/operations/monitoring.md",
+    "docs/wiki/operations/local-setup.md",
     "docs/wiki/conversations/2026-06-22.md",
+    "docs/wiki/domains/cart.md",
+    "docs/wiki/architecture/concurrency-control.md",
     "docs/wiki/conversations/2026-06-19.md",
     "uploads/menus/be35cbe3-d899-465f-a2fe-a7bbfd7755f2.jpg",
     "uploads/menus/sandwich.jpg",
@@ -216,9 +220,7 @@
     "docs/wiki/architecture/realtime-sse.md",
     "docs/wiki/notes/개념정리_20260520.md",
     "docs/wiki/operations/load-testing.md",
-    "docs/wiki/operations/monitoring.md",
     "docs/wiki/operations/deployment.md",
-    "docs/wiki/operations/local-setup.md",
     "docs/wiki/domains/event.md",
     "docs/wiki/domains/stock.md",
     "docs/wiki/domains/payment.md",
@@ -228,8 +230,6 @@
     "docs/wiki/domains/member.md",
     "docs/wiki/architecture/redis-usage.md",
     "docs/wiki/architecture/kafka-event-stream.md",
-    "docs/wiki/architecture/saga-compensation.md",
-    "docs/wiki/Home.md",
-    "docs/wiki/notes/개념정리_20260612.md"
+    "docs/wiki/architecture/saga-compensation.md"
   ]
 }

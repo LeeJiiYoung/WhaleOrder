@@ -102,7 +102,7 @@ CREATE TABLE stock (
     store_id        BIGINT          NOT NULL,
     menu_id         BIGINT          NOT NULL,
     quantity        INTEGER         NOT NULL DEFAULT 0,
-    version         BIGINT,
+    version         BIGINT          NOT NULL DEFAULT 0,  -- JPA 낙관 락용. NULL이면 UPDATE의 WHERE version=? 가 매칭 실패 → StaleObjectStateException
     created_by      BIGINT,
     created_at      TIMESTAMP,
     updated_by      BIGINT,

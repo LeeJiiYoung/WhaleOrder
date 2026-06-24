@@ -148,12 +148,6 @@ export default function StoreSelectPage() {
     })
   }, [mapReady, stores, userLocation])
 
-  const handleSelect = (store) => {
-    localStorage.setItem('selectedStoreId', store.storeId)
-    localStorage.setItem('selectedStoreName', store.name)
-    navigate('/menus')
-  }
-
   // 거리 기준 정렬: 좌표 있는 매장은 가까운 순, 좌표 없는 매장은 맨 뒤
   const sortedStores = [...stores].sort((a, b) => {
     const hasA = a.latitude && a.longitude
@@ -166,6 +160,24 @@ export default function StoreSelectPage() {
     const distB = haversineDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude)
     return distA - distB
   })
+
+  // 현재 위치 기준 가장 가까운 매장 (좌표 있는 매장 중 첫 번째). 위치/좌표 정보 없으면 null
+  const nearestStore = userLocation
+    ? sortedStores.find((s) => s.latitude && s.longitude) ?? null
+    : null
+
+  const handleSelect = (store) => {
+    if (nearestStore && nearestStore.storeId !== store.storeId) {
+      const ok = window.confirm(
+        `가장 가까운 매장은 "${nearestStore.name}" 입니다.\n` +
+        `"${store.name}" 매장에서 주문하시겠습니까?`
+      )
+      if (!ok) return
+    }
+    localStorage.setItem('selectedStoreId', store.storeId)
+    localStorage.setItem('selectedStoreName', store.name)
+    navigate('/menus')
+  }
 
   const storesWithCoords = stores.filter((s) => s.latitude && s.longitude)
   const storesWithoutCoords = stores.filter((s) => !s.latitude || !s.longitude)

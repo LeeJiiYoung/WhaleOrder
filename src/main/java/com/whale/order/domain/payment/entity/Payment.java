@@ -34,7 +34,7 @@ public class Payment extends BaseEntity {
     private Member member;
 
     @Column(nullable = false)
-    private Integer amount;
+    private Long amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -52,7 +52,11 @@ public class Payment extends BaseEntity {
     private String failedReason;
 
     @Builder
-    public Payment(Orders orders, Member member, Integer amount, PaymentMethod method) {
+    public Payment(Orders orders, Member member, Long amount, PaymentMethod method) {
+        // 도메인 invariant — 음수 결제 금액 차단
+        if (amount == null || amount < 0) {
+            throw new IllegalArgumentException("결제 금액은 0 이상이어야 합니다: " + amount);
+        }
         this.orders = orders;
         this.member = member;
         this.amount = amount;

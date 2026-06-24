@@ -50,7 +50,7 @@ CREATE TABLE menu (
     menu_id         BIGSERIAL       PRIMARY KEY,
     name            VARCHAR(100)    NOT NULL,
     description     TEXT,
-    base_price      INTEGER         NOT NULL,
+    base_price      BIGINT          NOT NULL,
     category        VARCHAR(20)     NOT NULL,   -- BEVERAGE, FOOD, DESSERT
     image_url       VARCHAR(500),
     sale_start_date DATE,
@@ -70,7 +70,8 @@ CREATE TABLE menu_option (
     menu_id         BIGINT          NOT NULL,
     option_group    VARCHAR(50)     NOT NULL,   -- SIZE, SHOT, SYRUP, TEMPERATURE
     option_name     VARCHAR(50)     NOT NULL,
-    additional_price INTEGER        NOT NULL DEFAULT 0,
+    additional_price BIGINT         NOT NULL DEFAULT 0,
+    is_required     BOOLEAN         NOT NULL DEFAULT false,
     created_by      BIGINT,
     created_at      TIMESTAMP,
     updated_by      BIGINT,
@@ -101,6 +102,7 @@ CREATE TABLE stock (
     store_id        BIGINT          NOT NULL,
     menu_id         BIGINT          NOT NULL,
     quantity        INTEGER         NOT NULL DEFAULT 0,
+    version         BIGINT          NOT NULL DEFAULT 0,  -- JPA 낙관 락용. NULL이면 UPDATE의 WHERE version=? 가 매칭 실패 → StaleObjectStateException
     created_by      BIGINT,
     created_at      TIMESTAMP,
     updated_by      BIGINT,
@@ -119,7 +121,7 @@ CREATE TABLE orders (
     member_id           BIGINT          NOT NULL,
     store_id            BIGINT          NOT NULL,
     status              VARCHAR(20)     NOT NULL,   -- PENDING, PREPARING, COMPLETED, CANCELLED
-    total_price         INTEGER         NOT NULL,
+    total_price         BIGINT          NOT NULL,
     order_type          VARCHAR(20)     NOT NULL,   -- TAKEOUT, DINE_IN
     customer_request    VARCHAR(500),
     stock_deducted      BOOLEAN         NOT NULL DEFAULT false,
@@ -128,6 +130,7 @@ CREATE TABLE orders (
     updated_by          BIGINT,
     updated_at          TIMESTAMP,
 
+    CONSTRAINT chk_orders_total_price CHECK (total_price >= 0),
     CONSTRAINT fk_orders_member FOREIGN KEY (member_id) REFERENCES member (member_id),
     CONSTRAINT fk_orders_store  FOREIGN KEY (store_id)  REFERENCES store  (store_id)
 );
@@ -138,16 +141,17 @@ CREATE TABLE order_item (
     order_id        BIGINT          NOT NULL,
     menu_id         BIGINT          NOT NULL,
     quantity        INTEGER         NOT NULL,
-    unit_price      INTEGER         NOT NULL,
+    unit_price      BIGINT          NOT NULL,
     options         JSONB,
     created_by      BIGINT,
     created_at      TIMESTAMP,
     updated_by      BIGINT,
     updated_at      TIMESTAMP,
 
-    CONSTRAINT fk_order_item_order FOREIGN KEY (order_id) REFERENCES orders (order_id),
-    CONSTRAINT fk_order_item_menu  FOREIGN KEY (menu_id)  REFERENCES menu   (menu_id),
-    CONSTRAINT chk_order_item_qty  CHECK (quantity > 0)
+    CONSTRAINT fk_order_item_order  FOREIGN KEY (order_id) REFERENCES orders (order_id),
+    CONSTRAINT fk_order_item_menu   FOREIGN KEY (menu_id)  REFERENCES menu   (menu_id),
+    CONSTRAINT chk_order_item_qty   CHECK (quantity > 0),
+    CONSTRAINT chk_order_item_price CHECK (unit_price >= 0)
 );
 
 -- 주문 상태 변경 이력
@@ -167,7 +171,7 @@ CREATE TABLE payment (
     payment_id      BIGSERIAL       PRIMARY KEY,
     order_id        BIGINT          NOT NULL UNIQUE,
     member_id       BIGINT          NOT NULL,
-    amount          INTEGER         NOT NULL,
+    amount          BIGINT          NOT NULL,
     method          VARCHAR(30)     NOT NULL,   -- CREDIT_CARD, KAKAO_PAY, NAVER_PAY
     status          VARCHAR(20)     NOT NULL,   -- PENDING, SUCCESS, FAILED, CANCELLED
     external_tx_id  VARCHAR(255),
@@ -177,8 +181,9 @@ CREATE TABLE payment (
     updated_by      BIGINT,
     updated_at      TIMESTAMP,
 
-    CONSTRAINT fk_payment_order  FOREIGN KEY (order_id)  REFERENCES orders  (order_id),
-    CONSTRAINT fk_payment_member FOREIGN KEY (member_id) REFERENCES member (member_id)
+    CONSTRAINT chk_payment_amount CHECK (amount >= 0),
+    CONSTRAINT fk_payment_order   FOREIGN KEY (order_id)  REFERENCES orders (order_id),
+    CONSTRAINT fk_payment_member  FOREIGN KEY (member_id) REFERENCES member (member_id)
 );
 
 -- 결제 이력
@@ -190,15 +195,6 @@ CREATE TABLE payment_history (
     changed_at          TIMESTAMP   NOT NULL,
 
     CONSTRAINT fk_payment_history FOREIGN KEY (payment_id) REFERENCES payment (payment_id)
-);
-
--- 멱등성 키 (중복 요청 방지)
-CREATE TABLE idempotency_key (
-    idempotency_key VARCHAR(255)     PRIMARY KEY,
-    status          VARCHAR(20)      NOT NULL,   -- PROCESSING, COMPLETED
-    response_body   TEXT,
-    created_at      TIMESTAMP        NOT NULL,
-    expires_at      TIMESTAMP        NOT NULL
 );
 
 -- ====================================
@@ -216,7 +212,6 @@ CREATE INDEX idx_payment_order       ON payment            (order_id);
 CREATE INDEX idx_payment_history     ON payment_history    (payment_id);
 CREATE INDEX idx_menu_discount_menu  ON menu_discount      (menu_id);
 CREATE INDEX idx_menu_discount_date  ON menu_discount      (start_date, end_date);
-CREATE INDEX idx_idempotency_expires ON idempotency_key    (expires_at);
 
 -- ====================================
 -- 이벤트 / 굿즈 테이블
@@ -228,7 +223,7 @@ CREATE TABLE goods (
     store_id        BIGINT          NOT NULL,
     name            VARCHAR(100)    NOT NULL,
     description     TEXT,
-    price           INTEGER         NOT NULL,
+    price           BIGINT          NOT NULL,
     image_url       VARCHAR(500),
     created_by      BIGINT,
     created_at      TIMESTAMP,
@@ -304,7 +299,6 @@ COMMENT ON TABLE order_item            IS '주문 항목 테이블. options 컬�
 COMMENT ON TABLE order_status_history  IS '주문 상태 변경 이력 테이블. 상태 전이 감사 로그로 append-only 로 운영한다.';
 COMMENT ON TABLE payment               IS '결제 테이블. 주문 1건에 결제 1건이 대응된다. Saga 보상 트랜잭션 지원.';
 COMMENT ON TABLE payment_history       IS '결제 상태 변경 이력 테이블. 결제 상태 전이 감사 로그로 append-only 로 운영한다.';
-COMMENT ON TABLE idempotency_key       IS '멱등성 키 테이블. 동일 요청 중복 처리를 방지한다. expires_at 기준으로 만료된 레코드를 정리한다.';
 COMMENT ON TABLE goods                 IS '굿즈(한정판 상품) 테이블. 매장별로 판매하는 텀블러·머그 등 굿즈 정보를 관리한다.';
 COMMENT ON TABLE event                 IS '한정 판매 이벤트 테이블. 굿즈를 일정 수량만큼 특정 시각에 오픈하는 선착순 이벤트를 정의한다.';
 COMMENT ON TABLE event_purchase        IS '이벤트 구매 이력 테이블. 회원 1인당 이벤트 1건 구매 제한을 UNIQUE 제약으로 보장한다.';
@@ -365,6 +359,7 @@ COMMENT ON COLUMN menu_option.menu_id          IS '소속 메뉴 ID (FK → menu
 COMMENT ON COLUMN menu_option.option_group     IS '옵션 그룹 (SIZE | SHOT | SYRUP | TEMPERATURE)';
 COMMENT ON COLUMN menu_option.option_name      IS '옵션 이름 (예: TALL, GRANDE, VENTI, HOT, ICED)';
 COMMENT ON COLUMN menu_option.additional_price IS '해당 옵션 선택 시 추가 요금 (원). 기본값 0';
+COMMENT ON COLUMN menu_option.is_required      IS '필수 선택 여부. 같은 menu_id+option_group 의 모든 행은 동일한 값을 유지해야 함. true 면 주문 시 해당 그룹에서 반드시 1개를 골라야 함';
 
 -- ====================================
 -- 컬럼 코멘트 - menu_discount
@@ -442,16 +437,6 @@ COMMENT ON COLUMN payment_history.payment_id         IS '대상 결제 ID (FK �
 COMMENT ON COLUMN payment_history.status             IS '전이된 결제 상태 (PENDING | SUCCESS | FAILED | CANCELLED)';
 COMMENT ON COLUMN payment_history.reason             IS '상태 전이 사유. 실패 메시지 또는 취소 사유';
 COMMENT ON COLUMN payment_history.changed_at         IS '결제 상태 변경 일시';
-
--- ====================================
--- 컬럼 코멘트 - idempotency_key
--- ====================================
-
-COMMENT ON COLUMN idempotency_key.idempotency_key IS '클라이언트가 발급한 멱등성 키 (PK). UUID 형식 권장';
-COMMENT ON COLUMN idempotency_key.status          IS '처리 상태 (PROCESSING | COMPLETED). PROCESSING 중 동일 키 재요청은 409 반환';
-COMMENT ON COLUMN idempotency_key.response_body   IS '최초 요청의 응답 본문 캐시. COMPLETED 이후 동일 키 재요청 시 재사용';
-COMMENT ON COLUMN idempotency_key.created_at      IS '키 최초 생성 일시';
-COMMENT ON COLUMN idempotency_key.expires_at      IS '키 만료 일시. 완료 후 10분, 미완료 시 24시간 뒤 만료';
 
 -- ====================================
 -- 컬럼 코멘트 - goods

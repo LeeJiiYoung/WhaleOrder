@@ -50,9 +50,11 @@ public class MenuService {
     // ─── 고객용 조회 (메뉴 + 재고 통합, 캐시 없음) ───────────────
 
     @Transactional(readOnly = true)
-    public List<StoreMenuResponse> getStoreMenus(Long storeId) {
-        // 쿼리 1: 메뉴 + 재고 LEFT JOIN으로 한 번에 조회
-        List<Object[]> rows = menuRepository.findActiveMenusWithStock(storeId);
+    public List<StoreMenuResponse> getStoreMenus(Long storeId, MenuCategory category) {
+        // 쿼리 1: 메뉴 + 재고 LEFT JOIN으로 한 번에 조회 (카테고리 필터 옵션)
+        List<Object[]> rows = (category == null)
+                ? menuRepository.findActiveMenusWithStock(storeId)
+                : menuRepository.findActiveMenusWithStockByCategory(storeId, category);
 
         List<Menu> menus = rows.stream()
                 .map(r -> (Menu) r[0])
@@ -160,6 +162,7 @@ public class MenuService {
                 .optionGroup(request.optionGroup())
                 .optionName(request.optionName())
                 .additionalPrice(request.additionalPrice())
+                .isRequired(request.isRequired())
                 .build();
 
         menuOptionRepository.save(option);
@@ -170,7 +173,7 @@ public class MenuService {
     @Transactional
     public MenuOptionResponse updateOption(Long menuId, Long optionId, MenuOptionRequest request) {
         MenuOption option = findOptionOrThrow(menuId, optionId);
-        option.updateOption(request.optionName(), request.additionalPrice());
+        option.updateOption(request.optionName(), request.additionalPrice(), request.isRequired());
         return MenuOptionResponse.from(option);
     }
 

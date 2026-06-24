@@ -53,6 +53,14 @@ export default function CustomerMenuDetailPage() {
     return acc
   }, {})
 
+  // 그룹별 필수 여부 (그룹 내 한 행이라도 isRequired=true 면 필수)
+  const requiredGroups = Object.entries(optionGroups)
+    .filter(([, opts]) => opts.some((o) => o.isRequired))
+    .map(([group]) => group)
+
+  const missingRequired = requiredGroups.filter((group) => !selectedOptions[group])
+  const canOrder = missingRequired.length === 0
+
   const handleSelectOption = (group, option) => {
     setSelectedOptions((prev) => {
       // 이미 선택된 옵션을 다시 누르면 선택 해제
@@ -98,7 +106,10 @@ export default function CustomerMenuDetailPage() {
           {/* 옵션 그룹 */}
           {Object.entries(optionGroups).map(([group, options]) => (
             <div key={group} className={styles.optionGroup}>
-              <p className={styles.groupLabel}>{group}</p>
+              <p className={styles.groupLabel}>
+                {group}
+                {requiredGroups.includes(group) && <span className={styles.requiredMark}> *</span>}
+              </p>
               <div className={styles.optionList}>
                 {options.map((opt) => {
                   const isSelected = selectedOptions[group]?.menuOptionId === opt.menuOptionId
@@ -139,29 +150,54 @@ export default function CustomerMenuDetailPage() {
             </div>
             <button
               className={styles.orderBtn}
-              disabled={adding}
+              disabled={adding || !canOrder}
               onClick={async () => {
+                const storeId = localStorage.getItem('selectedStoreId')
+                if (!storeId) {
+                  alert('매장이 선택되지 않았습니다')
+                  navigate('/stores')
+                  return
+                }
                 setAdding(true)
+                const payload = {
+                  storeId: Number(storeId),
+                  menuId: menu.menuId,
+                  quantity,
+                  selectedOptions: Object.values(selectedOptions).map((o) => ({
+                    menuOptionId: o.menuOptionId,
+                    optionGroup: o.optionGroup,
+                    optionName: o.optionName,
+                    additionalPrice: o.additionalPrice,
+                  })),
+                }
                 try {
-                  await addToCart({
-                    menuId: menu.menuId,
-                    quantity,
-                    selectedOptions: Object.values(selectedOptions).map((o) => ({
-                      menuOptionId: o.menuOptionId,
-                      optionGroup: o.optionGroup,
-                      optionName: o.optionName,
-                      additionalPrice: o.additionalPrice,
-                    })),
-                  })
+                  await addToCart(payload)
                   navigate('/cart')
-                } catch {
-                  alert('장바구니 담기에 실패했습니다')
+                } catch (err) {
+                  // 412 = 카트에 다른 매장 메뉴가 있음 → 사용자 확인 후 force=true 로 재시도
+                  if (err.response?.status === 412) {
+                    const confirmed = window.confirm(err.response.data.message)
+                    if (confirmed) {
+                      try {
+                        await addToCart(payload, { force: true })
+                        navigate('/cart')
+                      } catch (retryErr) {
+                        alert(retryErr.response?.data?.message || '장바구니 담기에 실패했습니다')
+                      }
+                    }
+                  } else {
+                    alert(err.response?.data?.message || '장바구니 담기에 실패했습니다')
+                  }
                 } finally {
                   setAdding(false)
                 }
               }}
             >
-              {adding ? '담는 중...' : '장바구니 담기'}
+              {adding
+                ? '담는 중...'
+                : !canOrder
+                  ? `필수 선택: ${missingRequired.join(', ')}`
+                  : '장바구니 담기'}
             </button>
           </div>
         </div>

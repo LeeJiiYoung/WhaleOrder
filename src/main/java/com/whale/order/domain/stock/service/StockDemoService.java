@@ -54,7 +54,7 @@ public class StockDemoService {
                 .findFirst()
                 .orElseGet(() -> menuRepository.save(Menu.builder()
                         .name("아메리카노(데모)")
-                        .basePrice(4500)
+                        .basePrice(4500L)
                         .category(MenuCategory.BEVERAGE)
                         .build()));
 

@@ -20,6 +20,10 @@ public class Stock extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long stockId;
 
+    // 낙관적 락 — 분산 락 leaseTime 만료로 락이 새는 극단 케이스에서도 DB 레벨로 lost update 차단
+    @Version
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;

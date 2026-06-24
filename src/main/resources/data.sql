@@ -55,9 +55,9 @@ SELECT setval('menu_menu_id_seq', (SELECT MAX(menu_id) FROM menu));
 -- 4. 메뉴 옵션 (음료 1~5번 공통)
 -- ────────────────────────────────────────────────
 
--- SIZE (음료 전체)
-INSERT INTO menu_option (menu_id, option_group, option_name, additional_price, created_by, created_at, updated_by, updated_at)
-SELECT m.menu_id, 'SIZE', v.option_name, v.additional_price, 1, NOW(), 1, NOW()
+-- SIZE (음료 전체) — 필수
+INSERT INTO menu_option (menu_id, option_group, option_name, additional_price, is_required, created_by, created_at, updated_by, updated_at)
+SELECT m.menu_id, 'SIZE', v.option_name, v.additional_price, true, 1, NOW(), 1, NOW()
 FROM   (VALUES (1),(2),(3),(4),(5)) AS m(menu_id)
 CROSS JOIN (VALUES ('TALL', 0),('GRANDE', 500),('VENTI', 1000)) AS v(option_name, additional_price)
 WHERE NOT EXISTS (
@@ -65,9 +65,9 @@ WHERE NOT EXISTS (
     WHERE mo.menu_id = m.menu_id AND mo.option_group = 'SIZE' AND mo.option_name = v.option_name
 );
 
--- TEMPERATURE (음료 전체)
-INSERT INTO menu_option (menu_id, option_group, option_name, additional_price, created_by, created_at, updated_by, updated_at)
-SELECT m.menu_id, 'TEMPERATURE', v.option_name, v.additional_price, 1, NOW(), 1, NOW()
+-- TEMPERATURE (음료 전체) — 필수
+INSERT INTO menu_option (menu_id, option_group, option_name, additional_price, is_required, created_by, created_at, updated_by, updated_at)
+SELECT m.menu_id, 'TEMPERATURE', v.option_name, v.additional_price, true, 1, NOW(), 1, NOW()
 FROM   (VALUES (1),(2),(3),(4),(5)) AS m(menu_id)
 CROSS JOIN (VALUES ('HOT', 0),('ICED', 0)) AS v(option_name, additional_price)
 WHERE NOT EXISTS (
@@ -114,6 +114,10 @@ SELECT s.store_id, m.menu_id, 100,
 FROM   (VALUES (1),(2),(3)) AS s(store_id)
 CROSS JOIN (VALUES (1),(2),(3),(4),(5),(6),(7)) AS m(menu_id)
 ON CONFLICT (store_id, menu_id) DO NOTHING;
+
+-- @Version(낙관적 락) 백필 — version 이 NULL 이면 모든 재고 UPDATE 가 StaleObjectStateException(500) 으로 깨진다.
+-- 기존에 version 없이 시드된 row 를 0 으로 보정 (재부팅 시 idempotent).
+UPDATE stock SET version = 0 WHERE version IS NULL;
 
 -- ────────────────────────────────────────────────
 -- 7. 샘플 주문 (완료 1건 / 대기 1건)

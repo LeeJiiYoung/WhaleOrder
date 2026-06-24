@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   getMenu, updateMenu,
-  addOption, deleteOption,
+  addOption, updateOption, deleteOption,
 } from '../../api/menu'
 import AdminLayout from '../../components/admin/AdminLayout'
 import Breadcrumb from '../../components/admin/Breadcrumb'
@@ -44,9 +44,14 @@ export default function MenuDetailPage() {
   const [serverError, setServerError] = useState('')
 
   // 옵션 추가 폼 상태
-  const [newOption, setNewOption] = useState({ optionGroup: '', optionName: '', additionalPrice: '' })
+  const [newOption, setNewOption] = useState({ optionGroup: '', optionName: '', additionalPrice: '', isRequired: false })
   const [optionErrors, setOptionErrors] = useState({})
   const [addingOption, setAddingOption] = useState(false)
+
+  // 옵션 수정 폼 상태 (한 번에 한 행만 편집)
+  const [editingOption, setEditingOption] = useState(null) // { menuOptionId, optionGroup, optionName, additionalPrice, isRequired }
+  const [editErrors, setEditErrors] = useState({})
+  const [savingEdit, setSavingEdit] = useState(false)
 
   const load = () => {
     setLoading(true)
@@ -129,8 +134,8 @@ export default function MenuDetailPage() {
   }
 
   const handleOptionChange = (e) => {
-    const { name, value } = e.target
-    setNewOption((prev) => ({ ...prev, [name]: value }))
+    const { name, value, type, checked } = e.target
+    setNewOption((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
     setOptionErrors((prev) => ({ ...prev, [name]: '' }))
   }
 
@@ -153,8 +158,9 @@ export default function MenuDetailPage() {
         optionGroup: newOption.optionGroup.trim(),
         optionName: newOption.optionName.trim(),
         additionalPrice: Number(newOption.additionalPrice),
+        isRequired: newOption.isRequired,
       })
-      setNewOption({ optionGroup: '', optionName: '', additionalPrice: '' })
+      setNewOption({ optionGroup: '', optionName: '', additionalPrice: '', isRequired: false })
       load()
     } catch (err) {
       alert(err.response?.data?.message || '옵션 추가 중 오류가 발생했습니다')
@@ -170,6 +176,57 @@ export default function MenuDetailPage() {
       setOptions((prev) => prev.filter((o) => o.menuOptionId !== optionId))
     } catch {
       alert('옵션 삭제 중 오류가 발생했습니다')
+    }
+  }
+
+  const startEditOption = (opt) => {
+    setEditingOption({
+      menuOptionId: opt.menuOptionId,
+      optionGroup: opt.optionGroup,
+      optionName: opt.optionName,
+      additionalPrice: String(opt.additionalPrice),
+      isRequired: !!opt.isRequired,
+    })
+    setEditErrors({})
+  }
+
+  const cancelEditOption = () => {
+    setEditingOption(null)
+    setEditErrors({})
+  }
+
+  const handleEditChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setEditingOption((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+    setEditErrors((prev) => ({ ...prev, [name]: '' }))
+  }
+
+  const validateEdit = () => {
+    const next = {}
+    if (!editingOption.optionName.trim()) next.optionName = '옵션 값을 입력해주세요'
+    if (editingOption.additionalPrice === '' || editingOption.additionalPrice === null) next.additionalPrice = '추가 금액을 입력해주세요'
+    else if (isNaN(editingOption.additionalPrice) || Number(editingOption.additionalPrice) < 0) next.additionalPrice = '0 이상의 금액을 입력해주세요'
+    return next
+  }
+
+  const handleSaveEdit = async () => {
+    const errs = validateEdit()
+    if (Object.keys(errs).length > 0) { setEditErrors(errs); return }
+
+    setSavingEdit(true)
+    try {
+      await updateOption(menuId, editingOption.menuOptionId, {
+        optionGroup: editingOption.optionGroup,
+        optionName: editingOption.optionName.trim(),
+        additionalPrice: Number(editingOption.additionalPrice),
+        isRequired: editingOption.isRequired,
+      })
+      setEditingOption(null)
+      load()
+    } catch (err) {
+      alert(err.response?.data?.message || '옵션 수정 중 오류가 발생했습니다')
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -296,25 +353,96 @@ export default function MenuDetailPage() {
                 <th>옵션 그룹</th>
                 <th>옵션 값</th>
                 <th>추가 금액</th>
+                <th>필수</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {options.map((opt) => (
-                <tr key={opt.menuOptionId}>
-                  <td><span className={styles.groupBadge}>{opt.optionGroup}</span></td>
-                  <td>{opt.optionName}</td>
-                  <td>{opt.additionalPrice === 0 ? '무료' : `+${opt.additionalPrice.toLocaleString()}원`}</td>
-                  <td>
-                    <button
-                      className={styles.deleteOptionBtn}
-                      onClick={() => handleDeleteOption(opt.menuOptionId)}
-                    >
-                      삭제
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {options.map((opt) => {
+                const isEditing = editingOption?.menuOptionId === opt.menuOptionId
+                if (isEditing) {
+                  return (
+                    <tr key={opt.menuOptionId}>
+                      <td><span className={styles.groupBadge}>{opt.optionGroup}</span></td>
+                      <td>
+                        <input
+                          className={`${styles.editInput} ${editErrors.optionName ? styles.inputError : ''}`}
+                          name="optionName"
+                          value={editingOption.optionName}
+                          onChange={handleEditChange}
+                        />
+                        {editErrors.optionName && <span className={styles.errorMsg}>{editErrors.optionName}</span>}
+                      </td>
+                      <td>
+                        <input
+                          className={`${styles.editInput} ${editErrors.additionalPrice ? styles.inputError : ''}`}
+                          name="additionalPrice"
+                          type="number"
+                          min="0"
+                          value={editingOption.additionalPrice}
+                          onChange={handleEditChange}
+                        />
+                        {editErrors.additionalPrice && <span className={styles.errorMsg}>{editErrors.additionalPrice}</span>}
+                      </td>
+                      <td>
+                        <label className={styles.requiredCheckLabel}>
+                          <input
+                            type="checkbox"
+                            name="isRequired"
+                            checked={editingOption.isRequired}
+                            onChange={handleEditChange}
+                          />
+                          <span>필수</span>
+                        </label>
+                      </td>
+                      <td className={styles.editActions}>
+                        <button
+                          className={styles.saveOptionBtn}
+                          onClick={handleSaveEdit}
+                          disabled={savingEdit}
+                        >
+                          {savingEdit ? '저장 중...' : '저장'}
+                        </button>
+                        <button
+                          className={styles.cancelOptionBtn}
+                          onClick={cancelEditOption}
+                          disabled={savingEdit}
+                        >
+                          취소
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                }
+                return (
+                  <tr key={opt.menuOptionId}>
+                    <td><span className={styles.groupBadge}>{opt.optionGroup}</span></td>
+                    <td>{opt.optionName}</td>
+                    <td>{opt.additionalPrice === 0 ? '무료' : `+${opt.additionalPrice.toLocaleString()}원`}</td>
+                    <td>
+                      {opt.isRequired
+                        ? <span className={styles.requiredBadge}>필수</span>
+                        : <span className={styles.optionalText}>선택</span>}
+                    </td>
+                    <td className={styles.editActions}>
+                      <button
+                        className={styles.editOptionBtn}
+                        onClick={() => startEditOption(opt)}
+                        disabled={!!editingOption}
+                      >
+                        수정
+                      </button>
+                      <button
+                        className={styles.deleteOptionBtn}
+                        onClick={() => handleDeleteOption(opt.menuOptionId)}
+                        disabled={!!editingOption}
+                      >
+                        삭제
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}
@@ -361,6 +489,19 @@ export default function MenuDetailPage() {
               placeholder="0"
             />
             {optionErrors.additionalPrice && <span className={styles.errorMsg}>{optionErrors.additionalPrice}</span>}
+          </div>
+
+          <div className={styles.addOptionField}>
+            <label className={styles.addOptionLabel}>필수 여부</label>
+            <label className={styles.requiredCheckLabel}>
+              <input
+                type="checkbox"
+                name="isRequired"
+                checked={newOption.isRequired}
+                onChange={handleOptionChange}
+              />
+              <span>필수</span>
+            </label>
           </div>
 
           <button

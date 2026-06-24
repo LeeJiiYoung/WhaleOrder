@@ -98,7 +98,7 @@ class OrderCancelTest extends TestContainerBase {
                 .build());
 
         menu = menuRepository.save(Menu.builder()
-                .name("아메리카노").basePrice(4500).category(MenuCategory.BEVERAGE).build());
+                .name("아메리카노").basePrice(4500L).category(MenuCategory.BEVERAGE).build());
     }
 
     @Test

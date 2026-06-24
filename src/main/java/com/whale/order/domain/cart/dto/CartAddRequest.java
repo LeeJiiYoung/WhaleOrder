@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record CartAddRequest(
+        @NotNull Long storeId,
         @NotNull Long menuId,
         @NotNull @Min(1) Integer quantity,
         List<SelectedOptionRequest> selectedOptions
@@ -14,6 +15,6 @@ public record CartAddRequest(
             Long menuOptionId,
             String optionGroup,
             String optionName,
-            Integer additionalPrice
+            Long additionalPrice
     ) {}
 }

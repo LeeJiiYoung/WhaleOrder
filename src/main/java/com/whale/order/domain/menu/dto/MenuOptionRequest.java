@@ -13,5 +13,8 @@ public record MenuOptionRequest(
 
         @NotNull(message = "추가 금액은 필수입니다.")
         @Min(value = 0, message = "추가 금액은 0원 이상이어야 합니다.")
-        Integer additionalPrice
+        Long additionalPrice,
+
+        @NotNull(message = "필수 여부는 필수입니다.")
+        Boolean isRequired
 ) {}

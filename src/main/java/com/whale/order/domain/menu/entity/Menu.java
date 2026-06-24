@@ -32,7 +32,7 @@ public class Menu extends BaseEntity {
 
     // 기본 가격 (옵션 추가금은 별도)
     @Column(nullable = false)
-    private Integer basePrice;
+    private Long basePrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -51,7 +51,7 @@ public class Menu extends BaseEntity {
     private Boolean isActive;
 
     @Builder
-    public Menu(String name, String description, Integer basePrice, MenuCategory category,
+    public Menu(String name, String description, Long basePrice, MenuCategory category,
                 String imageUrl, LocalDate saleStartDate, LocalDate saleEndDate) {
         this.name = name;
         this.description = description;
@@ -63,7 +63,7 @@ public class Menu extends BaseEntity {
         this.isActive = true;
     }
 
-    public void updateInfo(String name, String description, Integer basePrice,
+    public void updateInfo(String name, String description, Long basePrice,
                            String imageUrl, LocalDate saleStartDate, LocalDate saleEndDate) {
         this.name = name;
         this.description = description;

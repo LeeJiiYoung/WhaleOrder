@@ -4,6 +4,7 @@ import com.whale.order.support.TestContainerBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.test.context.EmbeddedKafka;
@@ -19,18 +20,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 멱등성 서비스 통합 테스트.
+ * 멱등성 서비스 통합 테스트 — Redisson 기반 구현.
  *
  * 멱등성 키는 "동일 요청이 여러 번 들어와도 한 번만 처리"를 보장한다.
- * 핵심 메커니즘: PostgreSQL INSERT ... ON CONFLICT DO NOTHING
- *   - DB 레벨 원자성 → 애플리케이션 레벨 동기화(synchronized, Lock) 불필요
+ * 핵심 메커니즘: Redis SET NX EX (RBucket#setIfAbsent)
+ *   - 원자성 보장 → 애플리케이션 레벨 동기화(synchronized, Lock) 불필요
  *   - 여러 인스턴스(수평 확장)에서 동시에 요청이 들어와도 단 하나만 처리권 획득
- *
- * 테스트 흐름:
- *   markProcessing(key) → PROCESSING 레코드 삽입 시도
- *   saveResult(key, result) → COMPLETED 상태로 갱신 + 결과 직렬화 저장
- *   getResult(key, type) → COMPLETED 레코드만 역직렬화해 반환
- *   delete(key) → 실패 시 키 삭제 → 클라이언트 재시도 허용
+ *   - TTL 자동 만료로 죽은 PROCESSING 키가 무한 점유하는 문제 없음
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -38,16 +34,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka(partitions = 1, topics = {"order-created", "order-created.DLT"})
 class IdempotencyServiceTest extends TestContainerBase {
 
-    @Autowired private IdempotencyService    idempotencyService;
-    @Autowired private IdempotencyRepository idempotencyRepository;
+    @Autowired private IdempotencyService idempotencyService;
+    @Autowired private RedissonClient     redissonClient;
 
     @BeforeEach
     void setUp() {
         // 테스트 간 키 충돌 방지 — 각 테스트는 UUID로 새 키를 만들지만 혹시 모를 잔여 데이터 제거
-        idempotencyRepository.deleteAll();
+        redissonClient.getKeys().deleteByPattern("idem:*");
     }
 
-    // ── 동시성: DB 원자성으로 단 하나만 처리권 획득 ──────────────────────
+    // ── 동시성: SET NX 원자성으로 단 하나만 처리권 획득 ───────────────────
 
     @Test
     @DisplayName("동일 키로 50개 스레드 동시 요청 시 단 하나만 처리 권한 획득")
@@ -71,7 +67,7 @@ class IdempotencyServiceTest extends TestContainerBase {
                     // 모든 스레드가 준비되면 start.countDown() 으로 동시 출발
                     start.await();
                     if (idempotencyService.markProcessing(key)) {
-                        // INSERT ON CONFLICT DO NOTHING → 오직 하나만 삽입 성공
+                        // SET NX EX 원자성 → 오직 하나만 PROCESSING 마커 설정 성공
                         acquired.incrementAndGet();
                     }
                 } catch (InterruptedException e) {
@@ -88,7 +84,7 @@ class IdempotencyServiceTest extends TestContainerBase {
         pool.shutdown();
 
         assertThat(acquired.get())
-            .as("ON CONFLICT DO NOTHING 원자성으로 단 하나만 처리 권한 획득")
+            .as("SET NX EX 원자성으로 단 하나만 처리 권한 획득")
             .isEqualTo(1);
     }
 
@@ -104,7 +100,7 @@ class IdempotencyServiceTest extends TestContainerBase {
         idempotencyService.markProcessing(key);
         idempotencyService.saveResult(key, expected);
 
-        // 재요청 시 DB에서 꺼내 역직렬화 → 동일 값
+        // 재요청 시 Redis 에서 꺼내 역직렬화 → 동일 값
         String result = idempotencyService.getResult(key, String.class);
         assertThat(result).isEqualTo(expected);
     }
@@ -159,7 +155,7 @@ class IdempotencyServiceTest extends TestContainerBase {
     @Test
     @DisplayName("존재하지 않는 키 조회 시 null 반환")
     void 존재하지않는_키_조회_null() {
-        // 레코드 자체가 없는 경우 → null (호출자가 새로 처리 시작)
+        // 키 자체가 없는 경우 → null (호출자가 새로 처리 시작)
         String result = idempotencyService.getResult(UUID.randomUUID().toString(), String.class);
         assertThat(result).isNull();
     }

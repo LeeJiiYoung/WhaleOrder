@@ -16,14 +16,15 @@ import java.util.List;
 public class CartItem {
 
     private String itemKey;   // Redis field (menuId:optionId1,optionId2,...)
+    private Long storeId;     // 담을 당시 매장 ID — 수량 변경 시 재고 검증용
     private Long menuId;
     private String menuName;
     private String imageUrl;
-    private Integer basePrice;
+    private Long basePrice;
     private Integer quantity;
     private List<SelectedOption> selectedOptions;
-    private Integer unitPrice;   // basePrice + 옵션 추가금 합산
-    private Integer totalPrice;  // unitPrice * quantity
+    private Long unitPrice;   // basePrice + 옵션 추가금 합산
+    private Long totalPrice;  // unitPrice * quantity
 
     @Getter
     @NoArgsConstructor
@@ -33,6 +34,6 @@ public class CartItem {
         private Long menuOptionId;
         private String optionGroup;
         private String optionName;
-        private Integer additionalPrice;
+        private Long additionalPrice;
     }
 }

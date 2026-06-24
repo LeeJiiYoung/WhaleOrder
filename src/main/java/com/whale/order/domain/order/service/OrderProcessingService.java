@@ -77,6 +77,7 @@ public class OrderProcessingService {
                 stockLockFacade.deductStock(storeId, item.getMenu().getMenuId(), item.getQuantity());
                 deducted.add(item);
             }
+            // 재고차감: O
             order.markStockDeducted();
             orderRepository.save(order);
 

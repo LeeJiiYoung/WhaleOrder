@@ -22,7 +22,7 @@ public class GoodsCreateRequest {
 
     @NotNull(message = "가격을 입력해주세요")
     @Min(value = 0, message = "가격은 0원 이상이어야 합니다")
-    private Integer price;
+    private Long price;
 
     @NotNull(message = "매장을 선택해주세요")
     private Long storeId;

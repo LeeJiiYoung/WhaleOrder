@@ -1,0 +1,8 @@
+claude plugin 안뜰때 (/plugins)
+
+1. /plugin marketplace update claude-plugins-official
+마켓 플레이스 업데이트
+
+2. 1이 안되면 
+/plugin marketplace add anthropics/claude-plugins-official
+마켓 플레이스 추가

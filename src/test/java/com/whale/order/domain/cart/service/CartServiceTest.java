@@ -3,10 +3,20 @@ package com.whale.order.domain.cart.service;
 import com.whale.order.domain.cart.dto.CartAddRequest;
 import com.whale.order.domain.cart.dto.CartItem;
 import com.whale.order.domain.cart.dto.CartResponse;
+import com.whale.order.domain.member.entity.AuthProvider;
+import com.whale.order.domain.member.entity.Member;
+import com.whale.order.domain.member.entity.MemberRole;
+import com.whale.order.domain.member.repository.MemberRepository;
 import com.whale.order.domain.menu.entity.Menu;
 import com.whale.order.domain.menu.entity.MenuCategory;
 import com.whale.order.domain.menu.repository.MenuRepository;
+import com.whale.order.domain.stock.entity.Stock;
+import com.whale.order.domain.stock.repository.StockRepository;
+import com.whale.order.domain.store.entity.Store;
+import com.whale.order.domain.store.repository.StoreRepository;
 import com.whale.order.support.TestContainerBase;
+
+import java.time.LocalTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,21 +59,37 @@ class CartServiceTest extends TestContainerBase {
 
     @Autowired private CartService          cartService;
     @Autowired private MenuRepository       menuRepository;
+    @Autowired private StoreRepository      storeRepository;
+    @Autowired private MemberRepository     memberRepository;
+    @Autowired private StockRepository      stockRepository;
     @Autowired private StringRedisTemplate  redisTemplate;
 
     private static final Long MEMBER_ID = 999L;
 
+    private Long storeId;   // setUp 에서 생성한 테스트 매장 ID (CartAddRequest.storeId 용)
     private Menu menu;
     private Menu menu2;
 
     @BeforeEach
     void setUp() {
-        menuRepository.deleteAll();
+        // 매장(점주 포함) 생성 — 장바구니 담기 시 storeId·재고 검증에 필요
+        Member owner = memberRepository.save(Member.builder()
+                .name("테스트 점주").provider(AuthProvider.LOCAL).role(MemberRole.OWNER).build());
+        Store store = storeRepository.save(Store.builder()
+                .owner(owner).name("테스트 매장")
+                .postalCode("12345").address("서울시 강남구 테스트로 1")
+                .openTime(LocalTime.of(9, 0)).closeTime(LocalTime.of(21, 0))
+                .build());
+        storeId = store.getStoreId();
 
         menu = menuRepository.save(Menu.builder()
-                .name("아메리카노").basePrice(4500).category(MenuCategory.BEVERAGE).build());
+                .name("아메리카노").basePrice(4500L).category(MenuCategory.BEVERAGE).build());
         menu2 = menuRepository.save(Menu.builder()
-                .name("카페라테").basePrice(5500).category(MenuCategory.BEVERAGE).build());
+                .name("카페라테").basePrice(5500L).category(MenuCategory.BEVERAGE).build());
+
+        // 재고 행 생성 — CartService.addItem 의 validateStock 가 (store, menu) 재고 존재를 요구
+        stockRepository.save(Stock.builder().store(store).menu(menu).quantity(100).build());
+        stockRepository.save(Stock.builder().store(store).menu(menu2).quantity(100).build());
     }
 
     @AfterEach
@@ -103,8 +129,8 @@ class CartServiceTest extends TestContainerBase {
     @DisplayName("같은 메뉴라도 옵션이 다르면 별도 항목으로 저장된다")
     void 같은_메뉴_다른_옵션_별도_항목() {
         // when: 동일 메뉴, 다른 옵션ID
-        var optionA = new CartAddRequest.SelectedOptionRequest(1L, "SIZE", "TALL",   0);
-        var optionB = new CartAddRequest.SelectedOptionRequest(2L, "SIZE", "GRANDE", 500);
+        var optionA = new CartAddRequest.SelectedOptionRequest(1L, "SIZE", "TALL",   0L);
+        var optionB = new CartAddRequest.SelectedOptionRequest(2L, "SIZE", "GRANDE", 500L);
 
         cartService.addItem(MEMBER_ID, 추가요청(menu.getMenuId(), 1, List.of(optionA)));
         cartService.addItem(MEMBER_ID, 추가요청(menu.getMenuId(), 1, List.of(optionB)));
@@ -191,6 +217,6 @@ class CartServiceTest extends TestContainerBase {
 
     private CartAddRequest 추가요청(Long menuId, int quantity,
                                   List<CartAddRequest.SelectedOptionRequest> options) {
-        return new CartAddRequest(menuId, quantity, options);
+        return new CartAddRequest(storeId, menuId, quantity, options);
     }
 }

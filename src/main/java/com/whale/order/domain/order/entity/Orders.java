@@ -44,7 +44,7 @@ public class Orders extends BaseEntity {
     private OrderStatus status;
 
     @Column(nullable = false)
-    private Integer totalPrice;
+    private Long totalPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -64,8 +64,12 @@ public class Orders extends BaseEntity {
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @Builder
-    public Orders(Member member, Store store, Integer totalPrice,
+    public Orders(Member member, Store store, Long totalPrice,
                   OrderType orderType, String customerRequest) {
+        // 도메인 invariant — 음수 금액 차단. Bean Validation 어노테이션은 JPA persist 시 자동 동작 안 함.
+        if (totalPrice == null || totalPrice < 0) {
+            throw new IllegalArgumentException("주문 금액은 0 이상이어야 합니다: " + totalPrice);
+        }
         this.member = member;
         this.store = store;
         this.totalPrice = totalPrice;
@@ -95,10 +99,18 @@ public class Orders extends BaseEntity {
         this.stockDeducted = true;
     }
 
-    // 주문 취소 - 접수 대기(PENDING) 상태에서만 가능
+    // 고객 취소 — 접수 대기(PENDING) 상태에서만 가능
     public void cancel() {
         if (this.status != OrderStatus.PENDING) {
             throw new IllegalStateException("접수 대기 중인 주문만 취소할 수 있습니다.");
+        }
+        this.status = OrderStatus.CANCELLED;
+    }
+
+    // 관리자 취소 - 접수 대기 / 제조 중 상태에서 가능 (완료·취소된 주문은 불가)
+    public void cancelByAdmin() {
+        if (this.status != OrderStatus.PENDING && this.status != OrderStatus.PREPARING) {
+            throw new IllegalStateException("완료되었거나 이미 취소된 주문은 취소할 수 없습니다.");
         }
         this.status = OrderStatus.CANCELLED;
     }

@@ -6,14 +6,16 @@ public record MenuOptionResponse(
         Long menuOptionId,
         String optionGroup,
         String optionName,
-        Integer additionalPrice
+        Long additionalPrice,
+        Boolean isRequired
 ) {
     public static MenuOptionResponse from(MenuOption option) {
         return new MenuOptionResponse(
                 option.getMenuOptionId(),
                 option.getOptionGroup(),
                 option.getOptionName(),
-                option.getAdditionalPrice()
+                option.getAdditionalPrice(),
+                option.getIsRequired()
         );
     }
 }

@@ -6,7 +6,7 @@ public record GoodsResponse(
         Long goodsId,
         String name,
         String description,
-        Integer price,
+        Long price,
         String imageUrl,
         Long storeId,
         String storeName

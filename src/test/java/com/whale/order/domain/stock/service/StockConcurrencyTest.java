@@ -72,7 +72,7 @@ class StockConcurrencyTest extends TestContainerBase {
 
         Menu menu = menuRepository.save(Menu.builder()
                 .name("아메리카노")
-                .basePrice(4500)
+                .basePrice(4500L)
                 .category(MenuCategory.BEVERAGE)
                 .build());
 

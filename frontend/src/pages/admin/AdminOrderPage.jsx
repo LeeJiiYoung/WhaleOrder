@@ -21,8 +21,14 @@ const STATUS_LABEL = {
 }
 
 const NEXT_ACTIONS = {
-  PENDING:   [{ action: 'prepare',  label: '제조 시작' }],
-  PREPARING: [{ action: 'complete', label: '완료 처리' }],
+  PENDING:   [
+    { action: 'prepare', label: '제조 시작' },
+    { action: 'cancel',  label: '주문 취소', danger: true },
+  ],
+  PREPARING: [
+    { action: 'complete', label: '완료 처리' },
+    { action: 'cancel',   label: '주문 취소', danger: true },
+  ],
   COMPLETED: [],
   CANCELLED: [],
 }
@@ -184,6 +190,10 @@ export default function AdminOrderPage() {
 
   // ── 주문 상태 변경 ────────────────────────────────────────────────
   const handleAction = async (orderId, action) => {
+    if (action === 'cancel' &&
+        !window.confirm(`주문 #${orderId} 을(를) 취소하시겠습니까?\n결제는 환불되고 차감된 재고는 복구됩니다.`)) {
+      return
+    }
     setActionLoading((prev) => ({ ...prev, [orderId]: true }))
     try {
       const res = await changeOrderStatus(orderId, action)
@@ -302,10 +312,10 @@ export default function AdminOrderPage() {
               <div className={styles.cardBottom}>
                 <span className={styles.totalPrice}>{order.totalPrice.toLocaleString()}원</span>
                 <div className={styles.actionBtns}>
-                  {actions.map(({ action, label }) => (
+                  {actions.map(({ action, label, danger }) => (
                     <button
                       key={action}
-                      className={styles.actionBtn}
+                      className={`${styles.actionBtn} ${danger ? styles.actionBtnDanger : ''}`}
                       onClick={() => handleAction(order.orderId, action)}
                       disabled={isLoading}
                     >

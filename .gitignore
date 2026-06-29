@@ -53,3 +53,5 @@ uploads/
 ### 로그 ###
 logs/
 *.log
+
+./.obsidian

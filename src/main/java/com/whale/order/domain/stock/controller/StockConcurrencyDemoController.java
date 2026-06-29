@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whale.order.domain.stock.service.StockDemoService;
 import com.whale.order.domain.stock.service.StockLockFacade;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * /demo/stock/queue-stream — 대기열 순번 확정 후 순차 처리 시뮬레이션
  * </pre>
  */
+@Tag(name = "재고 동시성 데모 (dev)", description = "Redisson 분산 락 동시성 제어 시각화 — 개발 환경 전용, Swagger UI 비노출")
 @Profile("dev")
 @RestController
 @RequestMapping("/demo/stock")

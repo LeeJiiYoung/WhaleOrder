@@ -6,12 +6,14 @@ import com.whale.order.domain.order.service.OrderQueueService;
 import com.whale.order.domain.order.service.OrderService;
 import com.whale.order.domain.order.service.OrderSseService;
 import com.whale.order.global.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +36,7 @@ import java.util.Map;
  *   └─▶ 대기 순서 폴링: GET /api/orders/{orderId}/queue-position
  * </pre>
  */
+@Tag(name = "주문 대기열", description = "Kafka 처리 결과 수신(SSE) · 실시간 상태 구독(SSE) · 대기 순서 폴링")
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -111,6 +114,7 @@ public class OrderQueueController {
      * @param orderId     조회할 주문 ID
      * @return 대기 순서({@code position})와 안내 메시지({@code message})
      */
+    @Operation(summary = "대기 순서 조회", description = "현재 대기 순서를 반환한다. position이 음수이면 처리 완료.")
     @GetMapping("/{orderId}/queue-position")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getQueuePosition(
             @AuthenticationPrincipal UserDetails userDetails,

@@ -8,6 +8,8 @@ import com.whale.order.domain.event.service.EventService;
 import com.whale.order.domain.event.service.SseEmitterRegistry;
 import com.whale.order.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,6 +27,7 @@ import java.util.Map;
  * 고객용 한정 판매 이벤트 · 선착순 대기열 컨트롤러.
  * 대기열 등록(join) → SSE로 순번 수신 → 구매 가능 알림 → 구매(purchase) 순서로 흐른다.
  */
+@Tag(name = "이벤트 대기열 (고객)", description = "한정 판매 이벤트 조회 · 선착순 대기열 등록 · 구매")
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor
@@ -39,6 +42,7 @@ public class EventQueueController {
     /**
      * 활성 이벤트 목록을 조회한다 (OPEN + SCHEDULED 상태만 포함).
      */
+    @Operation(summary = "활성 이벤트 목록 조회", description = "OPEN 및 SCHEDULED 상태의 이벤트만 반환한다.")
     @GetMapping
     public ResponseEntity<ApiResponse<List<EventResponse>>> getEvents() {
         return ResponseEntity.ok(ApiResponse.ok("이벤트 목록 조회 성공", eventService.getActiveEvents()));
@@ -47,6 +51,7 @@ public class EventQueueController {
     /**
      * 이벤트 상세 정보를 조회한다.
      */
+    @Operation(summary = "이벤트 상세 조회")
     @GetMapping("/{eventId}")
     public ResponseEntity<ApiResponse<EventResponse>> getEvent(@PathVariable Long eventId) {
         return ResponseEntity.ok(ApiResponse.ok("이벤트 조회 성공", eventService.getEvent(eventId)));
@@ -56,6 +61,7 @@ public class EventQueueController {
      * 내 대기열 상태를 조회한다 (대기 순번, 구매 가능 여부, 구매 완료 여부).
      * 페이지 새로고침 시 클라이언트 상태 복원용으로 쓴다.
      */
+    @Operation(summary = "내 대기열 상태 조회", description = "대기 순번·구매 가능 여부·구매 완료 여부를 반환한다. 페이지 새로고침 시 클라이언트 상태 복원용.")
     @GetMapping("/{eventId}/queue/status")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getMyStatus(
             @PathVariable Long eventId,
@@ -74,6 +80,7 @@ public class EventQueueController {
      * 이벤트 대기열에 등록한다. 이미 등록돼 있으면 중복 요청으로 보고 그대로 성공 응답한다.
      * RateLimiter 초과 시 429를 반환하며, 클라이언트는 이를 보고 자동 재시도한다.
      */
+    @Operation(summary = "대기열 등록", description = "선착순 이벤트 대기열에 참가한다. 이미 등록된 경우 중복 허용. RateLimiter 초과 시 429 반환.")
     @PostMapping("/{eventId}/queue/join")
     public ResponseEntity<ApiResponse<Void>> join(
             @PathVariable Long eventId,
@@ -124,6 +131,7 @@ public class EventQueueController {
     /**
      * 이벤트 굿즈를 구매한다. Scheduler가 SSE로 구매 가능(purchaseReady) 알림을 보낸 뒤 사용자가 호출한다.
      */
+    @Operation(summary = "이벤트 굿즈 구매", description = "SSE로 구매 가능(purchaseReady) 알림을 받은 후 호출한다.")
     @PostMapping("/{eventId}/purchase")
     public ResponseEntity<ApiResponse<Void>> purchase(
             @PathVariable Long eventId,

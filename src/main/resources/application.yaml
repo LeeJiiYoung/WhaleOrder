@@ -61,6 +61,12 @@ jwt:
   access-token-expiry: 1800000    # 30분 (ms)
   refresh-token-expiry: 604800000 # 7일 (ms)
 
+# 애플리케이션 공통 설정 (프로필 무관 기본값 — 누락 시 startup 실패를 방지)
+# OAuth2 로그인 성공 후 프론트로 토큰을 전달할 리다이렉트 주소. 운영에서는 OAUTH2_REDIRECT_URI 로 교체
+app:
+  oauth2:
+    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/callback}
+
 # Actuator & Prometheus
 management:
   endpoints:

@@ -19,4 +19,7 @@ COPY --from=builder /app/build/libs/*.jar app.jar
 EXPOSE 8080
 
 # t2.micro(1GB) 기준 JVM 메모리 제한
-ENTRYPOINT ["java", "-Xms128m", "-Xmx256m", "-jar", "app.jar"]
+# - SerialGC: 작은 힙에서 G1보다 메모리/CPU 오버헤드 적음
+# - MaxMetaspaceSize: 오프힙 Metaspace 무한 증가 차단
+# - Xss512k: 스레드당 스택을 절반으로 줄여 RSS 절감
+ENTRYPOINT ["java", "-XX:+UseSerialGC", "-XX:MaxMetaspaceSize=128m", "-Xss512k", "-Xms128m", "-Xmx256m", "-jar", "app.jar"]

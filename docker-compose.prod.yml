@@ -24,6 +24,12 @@ services:
       - postgres
       - redis
     restart: unless-stopped
+    # stdout 로그 로테이션 — 호스트 디스크 무한 증가 방지 (10MB × 3 = 최대 30MB)
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - whale-net
 
@@ -38,6 +44,11 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - whale-net
 

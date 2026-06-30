@@ -11,10 +11,11 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 30
-      minimum-idle: 10
+      # t2.micro(1GB) 기준 — 풀을 작게 유지해 Postgres 연결당 프로세스 메모리를 절약
+      maximum-pool-size: 10
+      minimum-idle: 2
       connection-timeout: 30000
-      idle-timeout: 600000
+      idle-timeout: 300000
       max-lifetime: 1800000
 
   # Redis
@@ -28,6 +29,13 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+
+# Tomcat 스레드 축소 — 스레드당 스택(~1MB) 누적을 줄여 메모리 절감 (기본 max 200 → 50)
+server:
+  tomcat:
+    threads:
+      max: 50
+      min-spare: 5
 
 logging:
   level:

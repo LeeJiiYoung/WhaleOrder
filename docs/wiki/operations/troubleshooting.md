@@ -100,9 +100,9 @@ docker-compose -f docker-compose.prod.yml up -d
 (`.gitignore`에 등록되어 있어 GitHub에 올라가지 않음)
 
 **해결**
-EC2에 직접 `.env` 파일 생성
+EC2에 직접 `.env` 파일 생성 (레포 클론 경로는 `~/whale-order` — 배포 워크플로 기준)
 ```bash
-nano ~/WhaleOrder/.env
+nano ~/whale-order/.env
 ```
 ```
 DB_HOST=siren-postgres

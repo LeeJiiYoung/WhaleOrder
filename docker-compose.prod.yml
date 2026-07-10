@@ -1,3 +1,15 @@
+# ─────────────────────────────────────────────────────────────
+# 프리티어(t3.micro, RAM 1GB) 경량 배포용 — 필수 4개 서비스만.
+# Kafka·모니터링 스택은 제외했다 (아래 설명 참고).
+#
+#  - Kafka 미사용: application-prod.yaml이 KafkaAutoConfiguration을 제외하고
+#    kafka.enabled=false라, 주문 처리는 OrderEventListener의 동기 폴백으로 돈다.
+#    (SSE·재고차감·보상 로직은 그대로 동작. 비동기 이점만 포기)
+#  - 모니터링(prometheus·grafana)은 docker-compose.monitoring.yml로 분리.
+#    필요할 때만 오버레이로 얹는다:
+#      docker compose -f docker-compose.prod.yml -f docker-compose.monitoring.yml up -d
+#  - kafka-ui는 Kafka가 없는 배포 환경에선 무의미 → 로컬 dev(docker-compose.yml)에만 둔다.
+# ─────────────────────────────────────────────────────────────
 services:
 
   # ─────────────────────────────────────────
@@ -10,6 +22,8 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: prod
+      # JVM 힙 상한 — 1GB 환경에서 힙 폭주로 인한 OOM 방지 (Postgres·Redis와 메모리 공유)
+      JAVA_TOOL_OPTIONS: "-Xmx400m -XX:MaxMetaspaceSize=128m"
       DB_HOST: whale-postgres
       DB_PORT: 5432
       DB_NAME: whaleorder
@@ -84,90 +98,9 @@ services:
     networks:
       - whale-net
 
-  # ─────────────────────────────────────────
-  # Kafka (KRaft 모드 - Zookeeper 없음)
-  # ─────────────────────────────────────────
-  kafka:
-    image: confluentinc/cp-kafka:7.6.0
-    container_name: whale-kafka
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://kafka:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-    restart: unless-stopped
-    networks:
-      - whale-net
-
-  # ─────────────────────────────────────────
-  # Kafka UI (GUI 모니터링)
-  # ─────────────────────────────────────────
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: whale-kafka-ui
-    ports:
-      - "8989:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    depends_on:
-      - kafka
-    networks:
-      - whale-net
-
-  # ─────────────────────────────────────────
-  # Prometheus
-  # ─────────────────────────────────────────
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: whale-prometheus
-    ports:
-      - "9090:9090"
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.enable-remote-write-receiver'
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    restart: unless-stopped
-    networks:
-      - whale-net
-
-  # ─────────────────────────────────────────
-  # Grafana
-  # ─────────────────────────────────────────
-  grafana:
-    image: grafana/grafana:10.4.3
-    container_name: whale-grafana
-    ports:
-      - "3001:3000"
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin1234
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - prometheus
-    restart: unless-stopped
-    networks:
-      - whale-net
-
 volumes:
   postgres-data:
   redis-data:
-  prometheus-data:
-  grafana-data:
 
 networks:
   whale-net:

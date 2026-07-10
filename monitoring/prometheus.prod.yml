@@ -1,0 +1,12 @@
+### 배포 환경용 Prometheus 설정.
+### dev(monitoring/prometheus.yml)는 Spring을 호스트에서 띄워 host.docker.internal을 긁지만,
+### 배포에선 backend가 컨테이너라 서비스명(backend)으로 접근한다.
+### docker-compose.monitoring.yml을 prod와 오버레이로 함께 띄울 때만 사용.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'spring-boot'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['backend:8080']   # 같은 whale-net 안의 backend 컨테이너

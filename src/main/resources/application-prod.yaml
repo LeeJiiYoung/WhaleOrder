@@ -1,5 +1,5 @@
 spring:
-  # Kafka 미사용 (프리티어 배포 시 제외)
+  # Kafka 미사용 (프리티어 배포 시 제외) — 자동설정 제외로 KafkaTemplate 빈 미생성
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
@@ -29,6 +29,14 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+
+# Kafka 관련 커스텀 빈(KafkaConfig·OrderKafkaProducer·OrderKafkaConsumer)을 끈다.
+# 이걸 명시하지 않으면 @ConditionalOnProperty(matchIfMissing=true)로 빈이 생성되는데,
+# 위 spring.autoconfigure.exclude로 KafkaTemplate 자동설정을 제외했기 때문에
+# 의존성 주입이 실패해 앱이 뜨지 않는다.
+# false로 두면 OrderEventListener가 Kafka 대신 process()를 동기 호출하는 폴백으로 동작한다.
+kafka:
+  enabled: false
 
 # Tomcat 스레드 축소 — 스레드당 스택(~1MB) 누적을 줄여 메모리 절감 (기본 max 200 → 50)
 server:

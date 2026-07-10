@@ -29,6 +29,7 @@
 
 - [로컬 실행](operations/local-setup.md)
 - [배포 (Docker / EC2)](operations/deployment.md)
+- [EC2 운영 런북](operations/ec2-runbook.md) — 켠 직후 순서 · 느려서 안 켜질 때 응급복구
 - [모니터링 (Prometheus / Grafana)](operations/monitoring.md)
 - [부하 테스트 (k6)](operations/load-testing.md)
 - [EC2 배포 트러블슈팅](operations/troubleshooting.md)

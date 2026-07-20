@@ -1,0 +1,15 @@
+# WhaleOrder 리버스 프록시 설정 (Caddy)
+#
+# ⚠️ 아래 도메인을 본인의 DuckDNS 서브도메인으로 반드시 교체할 것.
+#    예) whaleorder.duckdns.org
+# Caddy가 이 도메인으로 Let's Encrypt 인증서를 자동 발급/갱신한다.
+
+whaleorder.duckdns.org {
+    encode gzip
+
+    # frontend nginx로 프록시. nginx가 다시 /api/ 를 backend:8080 으로 넘긴다.
+    # flush_interval -1: SSE(실시간 주문 상태 푸시) 응답을 버퍼링하지 않고 즉시 흘려보냄.
+    reverse_proxy frontend:80 {
+        flush_interval -1
+    }
+}

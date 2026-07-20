@@ -53,10 +53,42 @@ services:
   frontend:
     image: leejiyoung/whale-order-frontend:latest
     container_name: whale-frontend
-    ports:
-      - "3000:80"
+    # 외부 노출 제거: 이제 Caddy(443/80)가 유일한 진입점. 프론트는 내부 네트워크로만 통신.
+    # (직접 확인이 필요하면 아래 ports 주석을 잠깐 풀어 3000으로 접근 가능)
+    # ports:
+    #   - "3000:80"
+    expose:
+      - "80"
     depends_on:
       - backend
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - whale-net
+
+  # ─────────────────────────────────────────
+  # Caddy (리버스 프록시 + 자동 HTTPS)
+  # ─────────────────────────────────────────
+  # DuckDNS 도메인으로 Let's Encrypt 인증서를 자동 발급/갱신하고,
+  # 들어온 요청을 frontend nginx(:80)로 넘긴다. frontend가 /api/를 backend로 프록시.
+  #   흐름: 브라우저 → Caddy(443) → frontend:80 → (/api) backend:8080
+  # ⚠️ 인증서 발급 성공 조건: DuckDNS A레코드가 이 EC2를 가리키고, 보안그룹 80/443 개방.
+  caddy:
+    image: caddy:2
+    container_name: whale-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data      # 발급받은 인증서 보관 (재기동 시 재발급 방지 — rate limit 주의)
+      - caddy-config:/config
+    depends_on:
+      - frontend
     restart: unless-stopped
     logging:
       driver: json-file
@@ -101,6 +133,8 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  caddy-data:
+  caddy-config:
 
 networks:
   whale-net:

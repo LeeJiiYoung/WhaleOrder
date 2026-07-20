@@ -22,11 +22,9 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      # JVM 힙 상한 — 1GB 환경에서 힙 폭주로 인한 OOM 방지 (Postgres·Redis와 메모리 공유)
-      # Metaspace(클래스 메타데이터)는 256m: Spring Boot+Hibernate+Jackson+프록시가
-      # 정상 상태에서 ~150~200MB를 쓰므로, 128m 캡은 런타임 클래스 로딩 중
-      # OutOfMemoryError: Metaspace 를 유발했다(장바구니 등 요청이 500으로 실패).
-      JAVA_TOOL_OPTIONS: "-Xmx400m -XX:MaxMetaspaceSize=256m"
+      # JVM 메모리 플래그는 Dockerfile ENTRYPOINT 에 있다(단일 소스).
+      # 여기서 JAVA_TOOL_OPTIONS 로 -Xmx/-XX:MaxMetaspaceSize 를 줘도 ENTRYPOINT 의
+      # 명시적 인자가 덮어써서 무효이므로, 튜닝은 Dockerfile 에서 한다.
       DB_HOST: whale-postgres
       DB_PORT: 5432
       DB_NAME: whaleorder
@@ -44,6 +42,10 @@ services:
       - postgres
       - redis
     restart: unless-stopped
+    volumes:
+      # 업로드된 메뉴 이미지 영구 보관. 이게 없으면 컨테이너 재생성(=매 배포)마다
+      # /app/uploads 가 임시 레이어와 함께 삭제돼 이미지가 엑박이 된다.
+      - uploads-data:/app/uploads
     # stdout 로그 로테이션 — 호스트 디스크 무한 증가 방지 (10MB × 3 = 최대 30MB)
     logging:
       driver: json-file
@@ -141,6 +143,7 @@ volumes:
   redis-data:
   caddy-data:
   caddy-config:
+  uploads-data:
 
 networks:
   whale-net:

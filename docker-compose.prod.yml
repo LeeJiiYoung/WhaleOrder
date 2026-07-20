@@ -34,6 +34,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      # 로그인 성공 후 프론트로 토큰을 넘길 리다이렉트 주소. .env 에서 도메인 값으로 주입.
+      # 미지정 시 application.yaml 기본값(localhost:5173)으로 떨어져 운영에서 로그인이 깨진다.
+      OAUTH2_REDIRECT_URI: ${OAUTH2_REDIRECT_URI}
     depends_on:
       - postgres
       - redis

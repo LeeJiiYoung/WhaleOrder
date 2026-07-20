@@ -40,6 +40,11 @@ kafka:
 
 # Tomcat 스레드 축소 — 스레드당 스택(~1MB) 누적을 줄여 메모리 절감 (기본 max 200 → 50)
 server:
+  # Caddy(https) → nginx → backend(http) 프록시 뒤에 있으므로, 프록시가 넘긴
+  # X-Forwarded-Proto/Host 를 신뢰해 요청의 원래 scheme/host 를 복원한다.
+  # 이게 있어야 OAuth2 {baseUrl} 이 https://whaleorder.duckdns.org 로 계산되어
+  # 카카오에 넘기는 redirect_uri 가 콘솔 등록값과 일치한다.
+  forward-headers-strategy: framework
   tomcat:
     threads:
       max: 50

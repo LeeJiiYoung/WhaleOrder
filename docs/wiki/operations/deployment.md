@@ -95,5 +95,5 @@ GitHub Actions 워크플로 (`.github/workflows/`) — README.md § CI/CD 섹션
 
 ## 관련 문서
 
-- [트러블슈팅 (EC2 10가지 사례)](troubleshooting.md)
+- [트러블슈팅 (EC2 사례 모음)](troubleshooting.md)
 - [모니터링](monitoring.md)

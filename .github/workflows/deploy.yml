@@ -30,6 +30,9 @@ jobs:
           context: ./frontend
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/whale-order-frontend:latest
+          # Vite 키를 빌드 시점에 주입 (번들에 박힘). GitHub Secret 에 VITE_KAKAO_MAP_KEY 등록 필요.
+          build-args: |
+            VITE_KAKAO_MAP_KEY=${{ secrets.VITE_KAKAO_MAP_KEY }}
 
   deploy:
     needs: build-and-push

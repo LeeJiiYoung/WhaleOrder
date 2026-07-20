@@ -45,15 +45,19 @@ jobs:
             set -e
             if [ ! -d ~/whale-order ]; then
               git clone https://github.com/LeeJiiYoung/WhaleOrder ~/whale-order
-            else
-              cd ~/whale-order && git pull
             fi
             cd ~/whale-order
+            # git pull 대신 강제 동기화: 서버에 수동 편집(예: JWT_SECRET 하드코딩)이 남아
+            # 있어도 충돌 없이 repo 기준으로 덮어쓴다. .env는 gitignore라 보존됨.
+            git fetch origin main
+            git reset --hard origin/main
             # 새 이미지를 먼저 받아 다운타임을 최소화 (기존 컨테이너는 계속 실행)
             docker-compose -f docker-compose.prod.yml pull backend frontend
             # 이전 배포가 OOM 등으로 중단되며 남은 컨테이너를 명시적으로 제거한다.
             # 정상 컨테이너(whale-backend)뿐 아니라 재생성 중 임시 리네임된
             # <hash>_whale-backend 좀비까지 이름 substring 매칭으로 함께 정리 → Conflict 방지.
             docker ps -aq -f name=whale-backend -f name=whale-frontend | xargs -r docker rm -f
-            # --force-recreate 없이 up: 위에서 이미 제거했으므로 깨끗이 새로 생성된다.
-            docker-compose -f docker-compose.prod.yml up -d --remove-orphans backend frontend
+            # 서비스명 없이 up: backend·frontend·postgres·redis·caddy 전체를 대상으로 한다.
+            # postgres/redis는 설정 변화 없으면 그대로 유지되고, caddy는 새로 기동된다.
+            # (caddy 이미지는 없으면 up 시 자동으로 pull 된다)
+            docker-compose -f docker-compose.prod.yml up -d --remove-orphans

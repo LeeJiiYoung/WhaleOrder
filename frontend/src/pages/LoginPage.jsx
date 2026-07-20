@@ -104,7 +104,7 @@ export default function LoginPage() {
         <button
           type="button"
           className={styles.kakaoBtn}
-          onClick={() => { window.location.href = 'http://localhost:8080/oauth2/authorization/kakao' }}
+          onClick={() => { window.location.href = '/oauth2/authorization/kakao' }}
         >
           <img
             src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png"

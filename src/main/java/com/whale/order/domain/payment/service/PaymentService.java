@@ -66,6 +66,25 @@ public class PaymentService {
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
 
+    /* ★ 결제 요청 시
+    1. 장바구니 조회
+    2. 장바구니 금액 <> 장바구니 담을때 금액 일때 에러 (클라조작)
+    3. 장바구니 가지고 멱등성 키 구함
+    4. 처리중인 멱등성 키 없을때만 레디스에 키 넣음(SET NX)
+    매장이 영업중이고 매장에 메뉴가 판매중일때만
+    5. 주문 아이템들 for문 돌면서 order 에 추가
+    6. order 를 db에 저장
+    7. 결제 pending으로 db에 저장
+    8-1. Mock결제 (90% 만 성공)
+    8-2. 결제 성공 시 이력과 함께 db에 기록
+    8-3. 스프링 애플리케이션 이벤트 발행. 이후 카프ㅎ카
+    8-4. 결제처리횟수 1 올림 (로그분석용)
+    9-1. Mock결제 실패시
+    9-2. 결제이력 db에 기록
+    9-3. 주문취소
+    9-4. 주문이력 db에 기록
+    9-5. 결제실패횟수 1 올림 (로그분석용)*/
+
     /**
      * Mock 결제 처리.
      * 결제 성공(90%) → 주문 생성 → 대기열 등록
@@ -107,6 +126,7 @@ public class PaymentService {
             return cached;
         }
 
+        //이미 redis 에 중복 key가 들어있고 처리중인 경우
         if (!idempotencyService.markProcessing(key)) {
             PaymentResponse completed = idempotencyService.getResult(key, PaymentResponse.class);
             if (completed != null) return completed;

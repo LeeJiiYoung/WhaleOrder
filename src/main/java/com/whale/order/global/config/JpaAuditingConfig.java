@@ -1,5 +1,6 @@
 package com.whale.order.global.config;
 
+import com.whale.order.global.auth.CustomUserDetails;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -27,9 +28,10 @@ public class JpaAuditingConfig {
                 return Optional.empty();
             }
 
+            // principal은 JwtAuthenticationFilter가 넣어준 CustomUserDetails → 여기서 회원 PK를 꺼낸다
             Object principal = authentication.getPrincipal();
-            if (principal instanceof Long memberId) {
-                return Optional.of(memberId);
+            if (principal instanceof CustomUserDetails userDetails) {
+                return Optional.of(userDetails.getMember().getMemberId());
             }
 
             return Optional.empty();

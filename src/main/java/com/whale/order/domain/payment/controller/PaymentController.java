@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
  * <p>결제 성공 시 Kafka 대기열에 주문을 등록하고 재고 차감을 시작한다.
  * 결제 실패 시 Saga 보상 트랜잭션으로 주문을 자동 취소하고 재고를 복구한다.</p>
  */
+@Slf4j
 @Tag(name = "결제", description = "Mock PG 결제 처리 (90% 성공률) · Kafka로 주문 처리 연동")
 @RestController
 @RequestMapping("/api/payments")
@@ -49,7 +51,9 @@ public class PaymentController {
             @Valid @RequestBody PaymentRequest request) {
 
         Long memberId = Long.parseLong(userDetails.getUsername());
+        log.info("[컨트롤러] pay() 호출 시작 memberId={}", memberId);
         PaymentResponse response = paymentService.pay(memberId, request);
+        log.info("[컨트롤러] pay() 리턴 받음 orderId={}", response.orderId());
         return ResponseEntity.ok(ApiResponse.ok("결제가 완료됐습니다", response));
     }
 

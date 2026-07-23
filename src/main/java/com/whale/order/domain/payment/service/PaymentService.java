@@ -83,7 +83,13 @@ public class PaymentService {
     9-2. 결제이력 db에 기록
     9-3. 주문취소
     9-4. 주문이력 db에 기록
-    9-5. 결제실패횟수 1 올림 (로그분석용)*/
+    9-5. 결제실패횟수 1 올림 (로그분석용)
+    10. pay() 커밋 (발행예약) -> orderCreatedEvent -> OrderEventListener가 publish(발행) -> OrderKafkaConsumer가 발행된거 확인(kafkaListener) 후 처리 -> OrderProcessingService
+    11. 재고차감
+    12. 차감 로직 전 차감플래그가 true 이거나 캔슬된 주문인지 검사. 이러면 동작안함
+    13. 메뉴 for문 돌면서 재고 차감. 모두 차감 후 차감플래그=true 저장
+    14. 모두 처리 후 고객, 매장 대시보드에 sse 알림
+    */
 
     /**
      * Mock 결제 처리.

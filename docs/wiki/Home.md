@@ -16,6 +16,7 @@
 - [Redis 활용처](architecture/redis-usage.md)
 - [결제 멱등성 — Redis 단일 방어의 한계](architecture/(추가필요)멱등redis에%20추가할것.md) — 실서비스 이관 시 리스크 분석
 - [Outbox 패턴 도입 계획](architecture/(추가필요)outbox패턴.md) — 미도입, 실서비스 이관 시 적용 지점 정리
+- [SSE 재연결 복구 계획](architecture/(추가필요)sse-재연결.md) — 미도입, 채널별 유실 분석 및 Last-Event-ID / 스냅샷 설계 초안
 
 ## 🎯 도메인
 

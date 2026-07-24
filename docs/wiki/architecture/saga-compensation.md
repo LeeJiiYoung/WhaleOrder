@@ -16,7 +16,7 @@
 | 결제 실패 (사전 차감 전) | `PaymentService.pay()` 에 `noRollbackFor = PaymentFailedException` 적용 → `Payment(FAILED)` + `PaymentHistory(FAILED)` + `Orders(CANCELLED)` + `OrderStatusHistory(CANCELLED)` 모두 commit 보존 → 시도 이력 추적 가능 |
 | 재고 부족 (차감 중) | 차감된 항목만 `restoreWithRetry()` → `OrderCancelService.cancelOrder()` → 주문 CANCELLED + `PaymentService.cancelPayment()` 환불 |
 | 재고 복구 실패 | `StockRestoreFailure` DB 기록 + 어드민 SSE 경고 |
-| Kafka Consumer 3회 재시도 실패 | DLT 진입 → `compensate()` → `OrderCancelService.cancelOrder()` (주문 CANCELLED + 결제 환불) |
+| Kafka Consumer 3회 재시도 실패 | DLT 진입 → `compensate()` → `OrderCancelService.cancelOrder()` (주문 CANCELLED + 결제 환불) + SSE `FAILED` push |
 
 ## 핵심 메커니즘
 

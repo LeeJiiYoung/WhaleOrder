@@ -54,7 +54,7 @@ public class PaymentController {
         log.info("[컨트롤러] pay() 호출 시작 memberId={}", memberId);
         PaymentResponse response = paymentService.pay(memberId, request);
         log.info("[컨트롤러] pay() 리턴 받음 orderId={}", response.orderId());
-        return ResponseEntity.ok(ApiResponse.ok("결제가 완료됐습니다", response));
+        return ResponseEntity.ok(ApiResponse.ok("결제가 완료됐습니다. 주문 처리 중입니다", response));
     }
 
     /**

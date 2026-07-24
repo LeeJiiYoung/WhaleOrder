@@ -9,12 +9,14 @@ import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
 import com.whale.order.domain.stock.entity.StockRestoreFailure;
 import com.whale.order.domain.stock.repository.StockRestoreFailureRepository;
 import com.whale.order.domain.stock.service.StockLockFacade;
+import com.whale.order.global.exception.StockLockException;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -95,25 +97,54 @@ public class OrderProcessingService {
             ));
             orderSseService.broadcastNewOrder(OrderResponse.from(order));
 
-        } catch (Exception e) {
+        } catch (StockLockException e) {
+            // 분산 락 획득 실패 — 일시적 상태. 부분 차감분만 되돌리고 rethrow 하여
+            // Kafka 가 자동 재시도 (offset 미커밋). 3회 소진 시 DLT → compensate() 로 전환.
+            log.warn("주문 처리 지연 orderId={} reason=lock_timeout — Kafka 재시도 위임", orderId);
             sample.stop(Timer.builder("order.processing.time")
-                    .tag("result", "failure")
+                    .tag("result", "retry")
+                    .tag("reason", "lock_timeout")
                     .description("주문 처리 소요 시간")
                     .register(meterRegistry));
-            processedFailureCounter.increment();
-            stockShortageCounter.increment();
-
             for (OrderItem item : deducted) {
                 restoreWithRetry(orderId, storeId, item);
             }
-            orderCancelService.cancelOrder(orderId);
-            log.info("재고 부족으로 주문 취소 orderId={} reason={}", orderId, e.getMessage());
-            orderSseService.notify(orderId, Map.of(
-                    "status", "FAILED",
-                    "orderId", orderId,
-                    "message", e.getMessage()
-            ));
+            throw e;
+        } catch (IllegalStateException e) {
+            // 재고 부족 — Stock.deduct() 가 던지는 사용자 친화적 메시지를 그대로 노출
+            stockShortageCounter.increment();
+            handleFailure(orderId, storeId, deducted, sample, "stock_shortage",
+                    e.getMessage(), e);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            // Redisson 분산 락 유실 + StockLockFacade 재시도까지 소진된 극단 케이스
+            // Hibernate raw 메시지 대신 사용자 친화적 문구로 매핑
+            handleFailure(orderId, storeId, deducted, sample, "lock_conflict",
+                    "주문이 몰려 처리에 실패했습니다. 잠시 후 다시 시도해주세요.", e);
+        } catch (Exception e) {
+            handleFailure(orderId, storeId, deducted, sample, "error",
+                    "주문 처리 중 오류가 발생했습니다.", e);
         }
+    }
+
+    private void handleFailure(Long orderId, Long storeId, List<OrderItem> deducted,
+                               Timer.Sample sample, String reason, String userMessage, Exception e) {
+        sample.stop(Timer.builder("order.processing.time")
+                .tag("result", "failure")
+                .tag("reason", reason)
+                .description("주문 처리 소요 시간")
+                .register(meterRegistry));
+        processedFailureCounter.increment();
+
+        for (OrderItem item : deducted) {
+            restoreWithRetry(orderId, storeId, item);
+        }
+        orderCancelService.cancelOrder(orderId);
+        log.info("주문 취소 orderId={} reason={} cause={}", orderId, reason, e.getMessage());
+        orderSseService.notify(orderId, Map.of(
+                "status", "FAILED",
+                "orderId", orderId,
+                "message", userMessage
+        ));
     }
 
     private static final int RESTORE_MAX_ATTEMPTS = 3;
@@ -158,5 +189,11 @@ public class OrderProcessingService {
     public void compensate(Long orderId) {
         log.warn("DLQ 보상 트랜잭션 시작 orderId={}", orderId);
         orderCancelService.cancelOrder(orderId);
+        // 재시도 소진으로 취소된 경우 사용자에게 최종 결과 통지
+        orderSseService.notify(orderId, Map.of(
+                "status", "FAILED",
+                "orderId", orderId,
+                "message", "주문 처리에 실패했습니다. 잠시 후 다시 시도해주세요."
+        ));
     }
 }

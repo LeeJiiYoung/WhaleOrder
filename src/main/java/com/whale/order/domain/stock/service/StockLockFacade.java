@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -13,6 +14,11 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class StockLockFacade {
+
+    // Redisson 락이 새는 극단 케이스에서 발생하는 @Version 충돌을 짧게 재시도
+    // (같은 분산 락을 잡은 상태에서 재시도하므로 대부분 즉시 성공)
+    private static final int OPTIMISTIC_LOCK_MAX_ATTEMPTS = 3;
+    private static final long OPTIMISTIC_LOCK_RETRY_DELAY_MS = 50;
 
     private final RedissonClient redissonClient;
     private final StockService stockService;
@@ -28,7 +34,7 @@ public class StockLockFacade {
                 log.warn("[분산락] 차감 락 획득 실패 storeId={} menuId={}", storeId, menuId);
                 throw new StockLockException("재고 처리 중입니다. 잠시 후 다시 시도해주세요.");
             }
-            stockService.deductStock(storeId, menuId, amount);
+            deductWithOptimisticRetry(storeId, menuId, amount);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("재고 처리가 중단되었습니다.", e);
@@ -37,6 +43,30 @@ public class StockLockFacade {
                 lock.unlock();
             }
         }
+    }
+
+    private void deductWithOptimisticRetry(Long storeId, Long menuId, int amount) {
+        ObjectOptimisticLockingFailureException lastEx = null;
+        for (int attempt = 1; attempt <= OPTIMISTIC_LOCK_MAX_ATTEMPTS; attempt++) {
+            try {
+                stockService.deductStock(storeId, menuId, amount);
+                return;
+            } catch (ObjectOptimisticLockingFailureException e) {
+                lastEx = e;
+                log.warn("[낙관적락] 차감 충돌 storeId={} menuId={} attempt={}/{}",
+                        storeId, menuId, attempt, OPTIMISTIC_LOCK_MAX_ATTEMPTS);
+                if (attempt < OPTIMISTIC_LOCK_MAX_ATTEMPTS) {
+                    try {
+                        Thread.sleep(OPTIMISTIC_LOCK_RETRY_DELAY_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("재고 처리가 중단되었습니다.", ie);
+                    }
+                }
+            }
+        }
+        log.error("[낙관적락] 차감 재시도 최종 실패 storeId={} menuId={}", storeId, menuId, lastEx);
+        throw lastEx;
     }
 
     // 재고 복구 (분산 락 — Redisson watchdog 자동 갱신 모드)

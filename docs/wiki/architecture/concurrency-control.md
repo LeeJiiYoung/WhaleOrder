@@ -65,7 +65,31 @@ try {
 - 단위: `src/test/java/.../StockLockFacadeTest.java` (있는 경우)
 - 통합/부하: `k6/stock-concurrency-test.js` — 20명 동시 주문 / 재고 10개 → 성공 10건만 통과
 
+## 낙관적 락 충돌 시 사용자 알림 & 재시도
+
+`Stock.@Version` 충돌은 `StockLockFacade.deductStock()` 안에서 **최대 3회 (50ms 간격) 자동 재시도** 됨 (같은 Redisson 락을 잡은 상태이므로 대부분 즉시 성공). 재시도까지 모두 실패하면 `ObjectOptimisticLockingFailureException` 이 `OrderProcessingService.processOrder()` 로 올라오고, 예외 종류별로 분기된 사용자 문구가 SSE 로 push 됨:
+
+| 예외 | 사용자 메시지 (SSE `message` 필드) | 로그 reason 태그 |
+|------|-----------------------------|----------------|
+| `IllegalStateException` (재고 부족) | `Stock.deduct()` 메시지 원문 (`"아메리카노 재고가 부족합니다 (남은 재고: 0개)"`) | `stock_shortage` |
+| `ObjectOptimisticLockingFailureException` | `"주문이 몰려 처리에 실패했습니다. 잠시 후 다시 시도해주세요."` | `lock_conflict` |
+| `StockLockException` (분산 락 획득 실패) | 즉시 알림 없음 — Kafka 재시도 위임. 3회 소진 시 DLT `compensate()` 가 `"주문 처리에 실패했습니다. 잠시 후 다시 시도해주세요."` push | `lock_timeout` (result=retry) |
+| 기타 `Exception` | `"주문 처리 중 오류가 발생했습니다."` | `error` |
+
+Hibernate raw 메시지 (`"Row was updated or deleted by another transaction : [com.whale.order.domain.stock.entity.Stock#57]"`) 는 더 이상 사용자에게 노출되지 않음.
+
+메트릭도 태그가 분리됨: `order.processing.time{result=failure|retry, reason=<사유>}`, `order.stock.shortage` 는 실제 재고 부족일 때만 증가.
+
+### StockLockException 재시도 흐름
+
+분산 락 `tryLock(5s)` 조차 실패하는 것은 다른 스레드가 오래 홀드 중이라는 뜻이므로 **일시적** 상태로 간주 (`StockLockException.java:4` 주석 의도). `OrderProcessingService.processOrder()` 는 이 예외에 대해:
+
+1. 부분 차감된 항목이 있다면 `restoreWithRetry()` 로 먼저 복구 (재전달로 인한 이중 차감 방지)
+2. 예외 rethrow → `OrderKafkaConsumer.consume()` 이 재던짐 → offset 미커밋 → 메시지 재전달
+3. Kafka 3회 재시도 소진 시 `order-created.DLT` 로 이동 → `OrderProcessingService.compensate()` 진입 → 주문 취소 + 결제 환불 + SSE `FAILED` push
+
+`Orders.isStockDeducted` 플래그는 전체 아이템 차감 완료 시점에만 세팅되므로, 재시도가 처음부터 다시 돌아도 안전함.
+
 ## 한계와 다음 단계
 
 - Redis 단일 노드 장애 시 락 유실 가능 → `@Version` 으로 DB 레벨 2차 방어 동작. 추가로 Redisson Red Lock 알고리즘 도입 검토
-- `OptimisticLockException` 발생 시 자동 retry 는 현재 없음 — `OrderProcessingService` 의 Saga 보상이 받아냄. 향후 retry 1–2 회 정도 추가 검토

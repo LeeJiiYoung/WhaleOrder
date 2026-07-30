@@ -18,7 +18,12 @@ import java.util.List;
  * WebSocket/SSE를 통해 클라이언트에 실시간으로 상태를 푸시한다.
  */
 @Entity
-@Table(name = "orders")
+@Table(name = "orders",
+        // 내 주문 목록 커서 페이징 전용 인덱스 — (member_id, created_at, order_id) 순서가 중요하다.
+        // WHERE member_id = ? AND (created_at, order_id) < (?, ?) ORDER BY created_at DESC, order_id DESC
+        // 가 이 인덱스를 range scan 으로 그대로 타서 페이지가 깊어져도 비용이 일정하다.
+        // 정렬이 두 컬럼 모두 DESC 라 오름차순 인덱스를 역방향 스캔하면 되므로 DESC 인덱스는 불필요하다.
+        indexes = @Index(name = "idx_orders_member_created", columnList = "member_id, created_at, order_id"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Orders extends BaseEntity {

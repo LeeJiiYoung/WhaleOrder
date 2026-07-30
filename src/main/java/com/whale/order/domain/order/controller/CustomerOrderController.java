@@ -3,6 +3,7 @@ package com.whale.order.domain.order.controller;
 import com.whale.order.domain.order.dto.OrderResponse;
 import com.whale.order.domain.order.service.OrderService;
 import com.whale.order.global.response.ApiResponse;
+import com.whale.order.global.response.CursorPageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * 고객 주문 API.
@@ -28,16 +27,25 @@ public class CustomerOrderController {
     private final OrderService orderService;
 
     /**
-     * 본인의 주문 목록을 조회한다.
+     * 본인의 주문 목록을 조회한다. (커서 페이징, 최신순)
+     *
+     * <p>주문은 계속 쌓이는 목록이라 offset 페이징을 쓰면 페이지를 넘기는 사이 새 주문이 들어와
+     * 같은 주문이 다음 페이지에 다시 노출된다. 그래서 orderId 기준 커서 방식을 쓴다.</p>
      *
      * @param userDetails 인증된 회원 정보
-     * @return 주문 목록 (최신순)
+     * @param cursor      직전 응답의 {@code nextCursor}(불투명 문자열). 생략하면 첫 페이지
+     * @param size        페이지 크기 (기본 20, 최대 100)
+     * @return 주문 목록 + 다음 커서 + 다음 페이지 존재 여부
      */
-    @Operation(summary = "내 주문 목록 조회")
+    @Operation(summary = "내 주문 목록 조회",
+            description = "커서 페이징 — 응답의 nextCursor 를 다음 요청의 cursor 로 그대로 전달. hasNext=false 면 마지막 페이지")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(ApiResponse.ok("조회 성공", orderService.getMyOrders(memberId(userDetails))));
+    public ResponseEntity<ApiResponse<CursorPageResponse<OrderResponse>>> getMyOrders(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(ApiResponse.ok("조회 성공",
+                orderService.getMyOrders(memberId(userDetails), cursor, size)));
     }
 
     /**

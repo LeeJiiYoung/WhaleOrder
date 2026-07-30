@@ -9,11 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface OrderRepository extends JpaRepository<Orders, Long> {
+public interface OrderRepository extends JpaRepository<Orders, Long>, OrderRepositoryCustom {
 
-    // 고객 - 내 주문 목록 (최신순)
-    @Query("SELECT o FROM Orders o JOIN FETCH o.store WHERE o.member.memberId = :memberId ORDER BY o.createdAt DESC")
-    List<Orders> findByMemberIdWithStore(@Param("memberId") Long memberId);
+    // 고객 - 내 주문 목록은 커서 페이징이라 Querydsl 로 구현 → OrderRepositoryCustomImpl 참조
 
     // 주문 상세 (items + menu 함께 로딩)
     @Query("SELECT DISTINCT o FROM Orders o JOIN FETCH o.orderItems oi JOIN FETCH oi.menu JOIN FETCH o.store JOIN FETCH o.member WHERE o.orderId = :id")

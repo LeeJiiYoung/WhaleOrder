@@ -3,6 +3,7 @@ package com.whale.order.domain.order.service;
 import com.whale.order.domain.member.entity.Member;
 import com.whale.order.domain.member.entity.MemberRole;
 import com.whale.order.domain.member.repository.MemberRepository;
+import com.whale.order.domain.order.dto.OrderCursor;
 import com.whale.order.domain.order.dto.OrderResponse;
 import com.whale.order.domain.order.entity.OrderItem;
 import com.whale.order.domain.order.entity.OrderStatus;
@@ -12,6 +13,7 @@ import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.domain.order.repository.OrderStatusHistoryRepository;
 import com.whale.order.domain.payment.service.PaymentService;
 import com.whale.order.domain.stock.service.StockLockFacade;
+import com.whale.order.global.response.CursorPageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,12 +44,38 @@ public class OrderService {
         return order;
     }
 
-    // 내 주문 목록
+    // 커서 페이징 최대 요청 크기 — default_batch_fetch_size(100)와 맞춰 한 페이지의
+    // 컬렉션 로딩이 IN 절 한 번에 묶이도록 제한한다.
+    private static final int MAX_PAGE_SIZE = 100;
+
+    /**
+     * 내 주문 목록 (커서 페이징, 최신순).
+     *
+     * @param cursor 직전 페이지 응답의 nextCursor. null·빈 문자열이면 첫 페이지
+     * @param size   페이지 크기 (1 ~ {@value #MAX_PAGE_SIZE} 로 보정)
+     */
     @Transactional(readOnly = true)
-    public List<OrderResponse> getMyOrders(Long memberId) {
-        return orderRepository.findByMemberIdWithStore(memberId).stream()
-                .map(OrderResponse::from)
-                .toList();
+    public CursorPageResponse<OrderResponse> getMyOrders(Long memberId, String cursor, int size) {
+        int pageSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        OrderCursor decoded = (cursor == null || cursor.isBlank()) ? null : OrderCursor.decode(cursor);
+
+        // 다음 페이지 존재 여부를 별도 count 쿼리 없이 판단하려고 한 건 더 조회한다.
+        List<Orders> found = orderRepository.findMyOrdersByCursor(memberId, decoded, pageSize + 1);
+
+        boolean hasNext = found.size() > pageSize;
+        List<Orders> page = hasNext ? found.subList(0, pageSize) : found;
+
+        // 다음 커서 = 이번 페이지 마지막 주문의 (생성시각, 주문ID). 마지막 페이지면 내려보내지 않는다.
+        String nextCursor = null;
+        if (hasNext) {
+            Orders last = page.get(page.size() - 1);
+            nextCursor = new OrderCursor(last.getCreatedAt(), last.getOrderId()).encode();
+        }
+
+        return new CursorPageResponse<>(
+                page.stream().map(OrderResponse::from).toList(),
+                nextCursor,
+                hasNext);
     }
 
     // 주문 상세

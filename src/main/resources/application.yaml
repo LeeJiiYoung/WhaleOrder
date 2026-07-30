@@ -19,6 +19,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        # 지연 로딩 컬렉션/프록시를 IN 절로 묶어서 조회 — N+1 방어.
+        # 주문 목록은 컬렉션(orderItems)을 fetch join 하지 않고 ToOne(store·member)만 조인하는데,
+        # 그 대가로 OrderResponse.from() 이 orderItems·menu 를 건드릴 때 주문 건수만큼 쿼리가 나간다.
+        # 이 설정이 있으면 주문 N건을 한 번에 조회해도 컬렉션 로딩이 IN 절 한 방으로 합쳐진다.
+        default_batch_fetch_size: 100
     open-in-view: false
 
   # Kafka

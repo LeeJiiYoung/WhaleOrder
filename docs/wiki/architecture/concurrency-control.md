@@ -22,7 +22,7 @@
 | 항목          | 값                               | 이유                  |
 | ----------- | ------------------------------- | ------------------- |
 | 락 키         | `stock:lock:{storeId}:{menuId}` | 매장·메뉴 단위 분리로 처리량 확보 |
-| `waitTime`  | 5초                              | 사용자 응답 지연 허용 한계     |
+| `waitTime`  | 5초                              | Kafka 모드에선 Consumer 처리 지연 한계 (사용자는 이미 결제 응답을 받은 뒤). 동기 폴백 모드에선 그대로 결제 응답 지연이 된다 |
 | `leaseTime` | 생략 (watchdog)                   | Redisson 자동 갱신 — 트랜잭션 길이에 무관하게 보유. 보유자 사망 시 30초 후 자동 해제 |
 | 해제 가드       | `isHeldByCurrentThread()`       | 타임아웃 후 unlock 예외 방지 |
 | Tx timeout  | `@Transactional(timeout = 10)`  | hang 발생 시 10초 안에 강제 종료 → finally unlock 빠른 도달 |

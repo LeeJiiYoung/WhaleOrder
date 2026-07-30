@@ -19,22 +19,38 @@ const ORDER_TYPE_LABEL = {
 /**
  * 고객 주문 내역 페이지. (@route /my-orders)
  *
- * - 로그인한 회원의 전체 주문을 최신순 카드 목록으로 표시
+ * - 로그인한 회원의 주문을 최신순 카드 목록으로 표시 (커서 페이징 + "더 보기")
  * - 카드: 주문번호·상태 뱃지·매장명·주문 방식·주문 시각·메뉴 요약·합계
  * - 카드 클릭 시 /orders/:orderId 상세 페이지로 이동
  */
 export default function MyOrdersPage() {
   const navigate = useNavigate()
   const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [cursor, setCursor] = useState(null)      // 다음 페이지 요청에 쓸 커서
+  const [hasNext, setHasNext] = useState(false)
+  const [loading, setLoading] = useState(true)    // 첫 로딩
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    getMyOrders()
-      .then((res) => setOrders(res.data.data))
+  // nextCursor 가 null 이면 첫 페이지 → 교체, 있으면 다음 페이지 → 기존 목록 뒤에 append
+  const loadPage = (nextCursor) =>
+    getMyOrders(nextCursor)
+      .then((res) => {
+        const page = res.data.data
+        setOrders((prev) => (nextCursor == null ? page.content : [...prev, ...page.content]))
+        setCursor(page.nextCursor)
+        setHasNext(page.hasNext)
+      })
       .catch(() => setError('주문 내역을 불러오지 못했습니다'))
-      .finally(() => setLoading(false))
+
+  useEffect(() => {
+    loadPage(null).finally(() => setLoading(false))
   }, [])
+
+  const loadMore = () => {
+    setLoadingMore(true)
+    loadPage(cursor).finally(() => setLoadingMore(false))
+  }
 
   return (
     <CustomerLayout>
@@ -82,6 +98,12 @@ export default function MyOrdersPage() {
           )
         })}
       </div>
+
+      {hasNext && (
+        <button className={styles.moreBtn} onClick={loadMore} disabled={loadingMore}>
+          {loadingMore ? '불러오는 중...' : '더 보기'}
+        </button>
+      )}
     </CustomerLayout>
   )
 }

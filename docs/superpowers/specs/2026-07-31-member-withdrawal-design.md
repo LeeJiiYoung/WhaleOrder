@@ -89,8 +89,28 @@ KAKAO 회원은 보낼 값이 없으므로 컨트롤러는 `@RequestBody(require
 ```
 
 6·7 은 DB 트랜잭션 롤백 대상이 아니지만 실패해도 무해하다.
-리프레시 토큰이 남아도 `CustomUserDetailsService` 의 탈퇴 회원 인증 거부에 걸리고,
-장바구니는 TTL 24시간으로 자동 소멸한다. 따라서 별도 보상 처리를 두지 않는다.
+리프레시 토큰이 남아도 아래 두 겹의 차단에 걸리고, 장바구니는 TTL 24시간으로 자동 소멸한다.
+따라서 별도 보상 처리를 두지 않는다.
+
+### 리프레시 경로 차단
+
+`MemberService.refresh()` 는 Redis 토큰 대조 후 `findById(memberId)` 로 회원을 다시 읽는다.
+`@SQLRestriction` 이 사라지면 이 조회가 **탈퇴 회원도 그대로 반환**하므로, 6 번이 실패해 토큰이 남아있으면
+탈퇴 회원이 새 토큰을 재발급받을 수 있다. 발급된 access token 은 `CustomUserDetailsService` 에서
+막히지만, 재발급 자체가 성공하는 것은 옳지 않다.
+
+→ `MemberService` 의 private `findById()` 옆에 탈퇴 여부를 확인하는 경로를 두고 `refresh()` 에서 사용한다.
+`withdraw()`·어드민 관리 메서드는 탈퇴 회원도 읽을 수 있어야 하므로 기존 `findById()` 를 유지한다.
+
+### 어드민 강제 삭제도 익명화로 통일
+
+`MemberService.deleteMember()` 가 `softDelete()` 만 호출하면, 백필로 과거 데이터를 정리해도
+**이후의 어드민 삭제 건마다 결함 1·2 가 되살아난다.** 따라서 어드민 삭제도 `withdraw()` 와 같은
+익명화를 수행한다. `Member.softDelete()` 는 호출자가 없어지므로 제거하고 `withdraw()` 로 일원화한다.
+
+단, 어드민 삭제에는 진행 중 주문 차단·비밀번호 확인·역할 제한을 적용하지 않는다 —
+관리자의 강제 조치이므로 셀프 탈퇴의 사전 조건에 묶이지 않아야 한다.
+공유되는 것은 `Member.withdraw()` 라는 상태 전이 하나뿐이다.
 
 ## 변경 파일
 
@@ -107,8 +127,8 @@ KAKAO 회원은 보낼 값이 없으므로 컨트롤러는 `@RequestBody(require
 
 | 파일 | 변경 |
 |------|------|
-| `member/entity/Member.java` | `@SQLRestriction` 제거, `withdraw()` 추가 (`softDelete()` 는 어드민 삭제가 계속 사용) |
-| `member/service/MemberService.java` | `withdraw()` 추가, `CartService` 의존성 추가 |
+| `member/entity/Member.java` | `@SQLRestriction` 제거, `softDelete()` → `withdraw()` 로 교체 |
+| `member/service/MemberService.java` | `withdraw()` 추가, `deleteMember()` 를 익명화로 변경, `refresh()` 에 탈퇴 회원 차단, `CartService` 의존성 추가 |
 | `member/controller/MemberController.java` | `DELETE /api/members/me` |
 | `member/repository/MemberRepository.java` | `findByUserId` → `findByUserIdAndIsDeletedFalse`, `findByProviderAndProviderId` → `...AndIsDeletedFalse`, JPQL 2개에 `AND m.isDeleted = false` |
 | `global/auth/CustomUserDetailsService.java` | `loadUserByUsername`·`loadUserByMemberId` 에서 탈퇴 회원 거부 |
@@ -183,3 +203,5 @@ WHERE is_deleted = true
 - 탈퇴 후 동일 `userId` 로 재가입 성공 (결함 1)
 - 탈퇴 회원의 과거 주문이 어드민 목록에 `탈퇴한 회원` 으로 조회됨 (결함 2)
 - 탈퇴 후 기존 access token 으로 API 호출 → 401 (결함 3)
+- 탈퇴 후 남아있는 리프레시 토큰으로 `/api/auth/refresh` 호출 → 실패
+- 어드민 강제 삭제 후에도 동일 `userId` 재가입 성공 (익명화 일원화 검증)

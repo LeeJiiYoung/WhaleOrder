@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getMembers, createMember, updateMember, deleteMember, resetPassword } from '../../api/member'
+import { getMembers, createMember, updateMember, resetPassword } from '../../api/member'
 import AdminLayout from '../../components/admin/AdminLayout'
 import Breadcrumb from '../../components/admin/Breadcrumb'
 import styles from './AdminMemberPage.module.css'
@@ -26,7 +26,9 @@ const EMPTY_FORM = { userId: '', password: '', name: '', nickname: '', phone: ''
  * - 회원 등록(모달): 아이디·비밀번호·이름·닉네임·전화번호·역할 입력
  * - 회원 수정(모달): 이름·닉네임·전화번호·역할 변경
  * - 비밀번호 초기화: `{userId}{userId}` 형식으로 리셋 (자체 가입 계정만)
- * - 회원 삭제: 확인 후 영구 삭제
+ *
+ * 회원 삭제는 제공하지 않는다. 탈퇴는 본인만 할 수 있고(DELETE /api/members/me),
+ * 관리자는 제재가 필요하면 역할 변경으로 처리한다.
  */
 export default function AdminMemberPage() {
   const [members, setMembers]       = useState([])
@@ -119,17 +121,6 @@ export default function AdminMemberPage() {
     }
   }
 
-  // ── 삭제 ────────────────────────────────────────────────────────
-  const handleDelete = async (member) => {
-    if (!window.confirm(`"${member.name}" 회원을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) return
-    try {
-      await deleteMember(member.memberId)
-      load()
-    } catch (err) {
-      alert(err.response?.data?.message || '삭제에 실패했습니다')
-    }
-  }
-
   const handleFormChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
 
   // ── 렌더 ────────────────────────────────────────────────────────
@@ -201,7 +192,6 @@ export default function AdminMemberPage() {
                     <td>{new Date(m.createdAt).toLocaleDateString('ko-KR')}</td>
                     <td className={styles.actions}>
                       <button className={styles.editBtn} onClick={() => openEdit(m)}>수정</button>
-                      <button className={styles.deleteBtn} onClick={() => handleDelete(m)}>삭제</button>
                     </td>
                   </tr>
                 )

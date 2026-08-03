@@ -137,3 +137,112 @@
   padding: 8px 12px;
   border-radius: 8px;
 }
+
+/* 회원 탈퇴 */
+.withdrawDesc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.withdrawBtn {
+  padding: 10px 18px;
+  background: transparent;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.withdrawBtn:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
+
+/* 탈퇴 확인 모달 */
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  animation: modalIn 0.16s ease;
+}
+
+.modalTitle {
+  font-size: 17px;
+  font-weight: 800;
+  color: #111;
+}
+
+.warnList {
+  margin: 0;
+  padding: 14px 16px 14px 32px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #92400e;
+}
+
+.optional {
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.modalActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cancelBtn,
+.dangerBtn {
+  flex: 1;
+  padding: 11px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cancelBtn {
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  color: #374151;
+}
+.cancelBtn:hover:not(:disabled) { background: #f9fafb; }
+
+.dangerBtn {
+  background: #dc2626;
+  border: none;
+  color: #fff;
+}
+.dangerBtn:hover:not(:disabled) { background: #b91c1c; }
+
+.cancelBtn:disabled,
+.dangerBtn:disabled { opacity: 0.6; cursor: not-allowed; }

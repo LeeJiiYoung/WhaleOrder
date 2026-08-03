@@ -102,7 +102,7 @@ public class StoreService {
 
     @Transactional
     public StoreResponse createStore(StoreCreateRequest request) {
-        Member owner = memberRepository.findByUserId(request.ownerUserId())
+        Member owner = memberRepository.findByUserIdAndIsDeletedFalse(request.ownerUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다: " + request.ownerUserId()));
 
         Store store = Store.builder()

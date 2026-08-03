@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -68,6 +69,9 @@ public class SecurityConfig {
 
                         // 나머지 관리자 API(메뉴, 매장, 이벤트, 회원관리 등) - ADMIN 전용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // 회원 탈퇴는 고객 본인만 - 점주가 탈퇴하면 매장이 고아가 되므로 셀프 탈퇴 불가
+                        .requestMatchers(HttpMethod.DELETE, "/api/members/me").hasRole("CUSTOMER")
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

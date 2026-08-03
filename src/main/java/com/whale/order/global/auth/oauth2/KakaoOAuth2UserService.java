@@ -36,7 +36,7 @@ public class KakaoOAuth2UserService extends DefaultOAuth2UserService {
         Map<String, Object> profile = kakaoAccount != null ? (Map<String, Object>) kakaoAccount.get("profile") : null;
         final String nickname = (profile != null) ? (String) profile.get("nickname") : null;
 
-        Member member = memberRepository.findByProviderAndProviderId(AuthProvider.KAKAO, providerId)
+        Member member = memberRepository.findByProviderAndProviderIdAndIsDeletedFalse(AuthProvider.KAKAO, providerId)
                 .map(existing -> {
                     // 카카오에서 닉네임이 바뀌었으면 동기화
                     if (nickname != null && !nickname.equals(existing.getNickname())) {

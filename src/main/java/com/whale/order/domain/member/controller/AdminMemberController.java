@@ -14,9 +14,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 관리자(ADMIN)용 회원 관리 컨트롤러. 회원 목록/단건 조회, 생성, 수정, 삭제, 비밀번호 초기화를 제공한다.
+ * 관리자(ADMIN)용 회원 관리 컨트롤러. 회원 목록/단건 조회, 생성, 수정, 비밀번호 초기화를 제공한다.
+ *
+ * <p>회원 삭제는 제공하지 않는다. 역할 검사가 없어 점주·관리자까지 삭제돼 매장이 고아가 되는 문제가 있었고,
+ * 탈퇴는 본인만 할 수 있도록 {@code DELETE /api/members/me} 로 일원화했다.
+ * 제재가 필요하면 역할 변경(PUT)으로 처리한다.
  */
-@Tag(name = "회원 (관리자)", description = "회원 목록 조회 · 생성 · 수정 · 삭제 · 비밀번호 초기화")
+@Tag(name = "회원 (관리자)", description = "회원 목록 조회 · 생성 · 수정 · 비밀번호 초기화")
 @RestController
 @RequestMapping("/api/admin/members")
 @RequiredArgsConstructor
@@ -63,16 +67,6 @@ public class AdminMemberController {
             @PathVariable Long memberId,
             @Valid @RequestBody MemberUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("회원 정보가 수정됐습니다", memberService.updateMember(memberId, request)));
-    }
-
-    /**
-     * 회원을 삭제한다. 실제로는 소프트 삭제(is_deleted=true)로 처리되어 주문·결제 등 FK 참조 데이터는 보존된다.
-     */
-    @Operation(summary = "회원 삭제")
-    @DeleteMapping("/{memberId}")
-    public ResponseEntity<ApiResponse<Void>> deleteMember(@PathVariable Long memberId) {
-        memberService.deleteMember(memberId);
-        return ResponseEntity.ok(ApiResponse.ok("회원이 삭제됐습니다", null));
     }
 
     /**

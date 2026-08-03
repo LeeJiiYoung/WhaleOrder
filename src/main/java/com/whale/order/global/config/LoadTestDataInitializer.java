@@ -33,10 +33,12 @@ public class LoadTestDataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        // member_id 로 판단한다. user_id 는 탈퇴 시 익명화로 deleted_{id} 가 되어 값이 바뀌므로,
+        // user_id 기준으로 보면 이미 존재하는 시드를 "없음"으로 오판해 재삽입을 시도하게 된다.
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM member WHERE user_id = 'testuser1'", Integer.class);
+                "SELECT COUNT(*) FROM member WHERE member_id = 101", Integer.class);
         if (count != null && count > 0) {
-            log.info("부하 테스트 시드 건너뜀 — testuser1 이미 존재");
+            log.info("부하 테스트 시드 건너뜀 — 시드 회원(member_id 101) 이미 존재");
             return;
         }
 

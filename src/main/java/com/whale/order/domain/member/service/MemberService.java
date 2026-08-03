@@ -1,14 +1,19 @@
 package com.whale.order.domain.member.service;
 
+import com.whale.order.domain.cart.service.CartService;
 import com.whale.order.domain.member.dto.*;
 import com.whale.order.domain.member.entity.AuthProvider;
 import com.whale.order.domain.member.entity.Member;
 import com.whale.order.domain.member.entity.MemberRole;
 import com.whale.order.domain.member.repository.MemberRepository;
+import com.whale.order.domain.order.entity.OrderStatus;
+import com.whale.order.domain.order.repository.OrderRepository;
 import com.whale.order.global.auth.RefreshTokenService;
 import com.whale.order.global.auth.jwt.JwtProvider;
+import com.whale.order.global.exception.WithdrawNotAllowedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +29,8 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RefreshTokenService refreshTokenService;
+    private final OrderRepository orderRepository;
+    private final CartService cartService;
 
     @Transactional
     public LoginResponse signUp(SignUpRequest request) {
@@ -72,7 +79,7 @@ public class MemberService {
 
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
-        Member member = memberRepository.findByUserId(request.userId())
+        Member member = memberRepository.findByUserIdAndIsDeletedFalse(request.userId())
                 .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다"));
 
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
@@ -134,11 +141,6 @@ public class MemberService {
     }
 
     @Transactional
-    public void deleteMember(Long memberId) {
-        findById(memberId).softDelete();
-    }
-
-    @Transactional
     public void resetPassword(Long memberId) {
         Member member = findById(memberId);
         if (member.getProvider() != AuthProvider.LOCAL) {
@@ -172,8 +174,62 @@ public class MemberService {
         member.updatePassword(passwordEncoder.encode(req.newPassword()));
     }
 
+    /**
+     * 회원 본인 탈퇴.
+     *
+     * <p>개인정보만 익명화하고 주문·결제 row 와 FK 는 보존해 매장의 매출 집계를 지킨다.
+     * 점주·관리자는 매장이 고아가 되므로 셀프 탈퇴 대상이 아니다.
+     *
+     * @param request KAKAO 회원은 body 를 생략할 수 있어 null 이 들어올 수 있다
+     */
+    @Transactional
+    public void withdraw(Long memberId, WithdrawRequest request) {
+        Member member = findById(memberId);
+
+        // SecurityConfig 의 URL 규칙과 이중 방어 — 규칙이 느슨해져도 여기서 막힌다
+        if (member.getRole() != MemberRole.CUSTOMER) {
+            throw new AccessDeniedException("점주·관리자는 직접 탈퇴할 수 없습니다. 관리자에게 문의해주세요");
+        }
+
+        // LOCAL 회원만 비밀번호 재확인 (KAKAO 는 password 가 null 이라 검증 대상이 아니다)
+        if (member.getProvider() == AuthProvider.LOCAL) {
+            String password = (request == null) ? null : request.password();
+            if (password == null || password.isBlank()
+                    || !passwordEncoder.matches(password, member.getPassword())) {
+                throw new IllegalArgumentException("비밀번호가 맞지 않습니다");
+            }
+        }
+
+        // 진행 중 주문을 남기고 탈퇴하면 SSE 로 상태를 받을 수도 환불받을 수도 없어 원천 차단한다
+        boolean hasOngoingOrder = orderRepository.existsByMember_MemberIdAndStatusIn(
+                memberId, List.of(OrderStatus.PENDING, OrderStatus.PREPARING));
+        if (hasOngoingOrder) {
+            throw new WithdrawNotAllowedException("진행 중인 주문이 있습니다. 주문을 완료하거나 취소한 뒤 다시 시도해주세요");
+        }
+
+        member.withdraw(request == null ? null : request.reason());
+
+        // Redis 정리는 DB 트랜잭션 롤백 대상이 아니지만 실패해도 무해하다.
+        // 토큰이 남아도 CustomUserDetailsService·findActiveById 에서 막히고,
+        // 장바구니는 TTL 24시간으로 자동 소멸한다.
+        refreshTokenService.delete(memberId);
+        cartService.clearCart(memberId);
+    }
+
     private Member findById(Long memberId) {
         return memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다"));
+    }
+
+    /**
+     * 탈퇴하지 않은 회원만 조회한다.
+     *
+     * <p>Member 에서 {@code @SQLRestriction} 을 제거해 findById 가 탈퇴 회원도 반환하므로,
+     * 토큰 재발급처럼 살아있는 회원만 대상이어야 하는 경로에서는 이쪽을 쓴다.
+     */
+    private Member findActiveById(Long memberId) {
+        return memberRepository.findById(memberId)
+                .filter(m -> !m.isDeleted())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다"));
     }
 
@@ -189,7 +245,7 @@ public class MemberService {
             refreshTokenService.delete(memberId);
             throw new IllegalArgumentException("리프레시 토큰이 일치하지 않습니다");
         }
-        Member member = findById(memberId);
+        Member member = findActiveById(memberId);
         refreshTokenService.delete(memberId);
         return issueTokens(member);
     }

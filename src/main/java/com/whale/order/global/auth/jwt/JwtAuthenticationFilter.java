@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -31,11 +32,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtProvider.validateToken(token)) {
             Long memberId = jwtProvider.getMemberId(token);
-            UserDetails userDetails = userDetailsService.loadUserByMemberId(memberId);
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByMemberId(memberId);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (UsernameNotFoundException e) {
+                // 탈퇴한 회원의 잔여 토큰 — 서명은 유효하지만 인증할 회원이 없다.
+                // 필터에서 예외를 던지면 @RestControllerAdvice 가 잡지 못해 500 이 되므로,
+                // 인증하지 않고 통과시켜 SecurityConfig 의 authenticationEntryPoint 가 401 을 내게 한다.
+                SecurityContextHolder.clearContext();
+            }
         }
 
         filterChain.doFilter(request, response);

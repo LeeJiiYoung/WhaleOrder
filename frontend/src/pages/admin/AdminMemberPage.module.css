@@ -153,19 +153,6 @@
 }
 .resetBtn:hover { background: #fffbeb; border-color: #d97706; }
 
-.deleteBtn {
-  padding: 5px 14px;
-  background: transparent;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.deleteBtn:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
-
 .empty {
   text-align: center;
   padding: 60px 0;

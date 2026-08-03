@@ -3,6 +3,7 @@ package com.whale.order.domain.member.controller;
 import com.whale.order.domain.member.dto.MemberResponse;
 import com.whale.order.domain.member.dto.MyProfileUpdateRequest;
 import com.whale.order.domain.member.dto.PasswordChangeRequest;
+import com.whale.order.domain.member.dto.WithdrawRequest;
 import com.whale.order.domain.member.service.MemberService;
 import com.whale.order.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -59,5 +60,20 @@ public class MemberController {
         Long memberId = Long.parseLong(userDetails.getUsername());
         memberService.changePassword(memberId, request);
         return ResponseEntity.ok(ApiResponse.ok("비밀번호가 변경됐습니다", null));
+    }
+
+    /**
+     * 회원 본인이 탈퇴한다. 개인정보는 익명화되고 주문 이력은 보존된다.
+     * KAKAO 회원은 보낼 값이 없어 body 를 생략할 수 있다.
+     */
+    @Operation(summary = "회원 탈퇴",
+               description = "LOCAL 회원은 비밀번호 재확인 필요. 진행 중인 주문이 있으면 탈퇴할 수 없다")
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> withdraw(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody(required = false) WithdrawRequest request) {
+        Long memberId = Long.parseLong(userDetails.getUsername());
+        memberService.withdraw(memberId, request);
+        return ResponseEntity.ok(ApiResponse.ok("탈퇴가 완료됐습니다", null));
     }
 }

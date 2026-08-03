@@ -14,7 +14,8 @@
 | POST | `/api/auth/logout` | 로그아웃 |
 | GET / PUT | `/api/members/me` | 내 정보 조회/수정 |
 | PUT | `/api/members/me/password` | 비밀번호 변경 |
-| GET / POST / PUT / DELETE | `/api/admin/members[/{id}]` | 관리자 회원 CRUD |
+| DELETE | `/api/members/me` | 회원 탈퇴 (CUSTOMER 전용, LOCAL 은 비밀번호 재확인) |
+| GET / POST / PUT | `/api/admin/members[/{id}]` | 관리자 회원 조회·생성·수정 (삭제 없음 — 탈퇴는 본인만) |
 | PATCH | `/api/admin/members/{id}/reset-password` | 비번 초기화 |
 | GET | `/api/admin/members/owners` | 점주 목록 |
 

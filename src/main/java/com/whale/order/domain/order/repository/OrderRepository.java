@@ -31,4 +31,7 @@ public interface OrderRepository extends JpaRepository<Orders, Long>, OrderRepos
 
     // 메트릭용 - 상태별 주문 수 카운트
     long countByStatus(OrderStatus status);
+
+    // 회원 탈퇴 가능 여부 판정 - 접수/제조 중 주문이 하나라도 있으면 탈퇴를 막는다
+    boolean existsByMember_MemberIdAndStatusIn(Long memberId, List<OrderStatus> statuses);
 }

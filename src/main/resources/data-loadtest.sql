@@ -16,7 +16,10 @@ SELECT 100 + gs,
        '010-1000-' || LPAD(gs::text, 4, '0'),
        'LOCAL', 'CUSTOMER', NOW(), NOW()
 FROM generate_series(1, 50) AS gs
-ON CONFLICT (user_id) DO NOTHING;
+-- member_id 는 이 스크립트가 직접 지정하는 값이라 멱등성 기준으로 안전하다.
+-- user_id 를 기준으로 삼으면 안 된다 — 회원이 탈퇴하면 익명화로 user_id 가 deleted_{id} 로 바뀌어
+-- 슬롯이 반납되므로, 충돌이 안 잡히고 member_id PK 위반으로 부팅이 실패한다.
+ON CONFLICT (member_id) DO NOTHING;
 
 SELECT setval('member_member_id_seq', (SELECT MAX(member_id) FROM member));
 

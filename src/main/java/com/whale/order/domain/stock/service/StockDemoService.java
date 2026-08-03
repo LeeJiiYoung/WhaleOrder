@@ -29,7 +29,7 @@ public class StockDemoService {
     // 테스트용 데이터 초기화, 재고를 initialStock으로 리셋
     @Transactional
     public long[] setupTestData(int initialStock) {
-        Member owner = memberRepository.findByUserId("demo-owner")
+        Member owner = memberRepository.findByUserIdAndIsDeletedFalse("demo-owner")
                 .orElseGet(() -> memberRepository.save(Member.builder()
                         .userId("demo-owner")
                         .name("데모 점주")

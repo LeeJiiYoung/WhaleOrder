@@ -8,6 +8,7 @@
 관리자 강제 삭제 `DELETE /api/admin/members/{memberId}`. 없는 것은 **회원 본인이 직접 하는 탈퇴**다.
 
 기능을 붙이는 과정에서 기존 소프트 삭제 구현의 결함 3가지가 드러났고, 이 설계에 함께 포함한다.
+관리자 강제 삭제는 검토 결과 제거하기로 했다(결정 사항 참조).
 
 | # | 결함 | 현재 증상 |
 |---|------|-----------|
@@ -24,6 +25,21 @@
 | OWNER / ADMIN | **셀프 탈퇴 불가** (403). 매장 이관/폐점은 별도 업무 프로세스 |
 | 본인 확인 | LOCAL 은 비밀번호 재입력 필수, KAKAO 는 JWT 인증만 |
 | `@SQLRestriction` | **제거**하고 필요한 지점에만 명시적 필터 |
+| 관리자 회원 삭제 | **기능 자체를 제거** (아래) |
+
+### 관리자 회원 삭제를 제거하는 이유
+
+`DELETE /api/admin/members/{memberId}` 와 `AdminMemberPage` 의 삭제 버튼을 제거한다.
+
+- **역할 검사가 없다.** OWNER 셀프 탈퇴는 매장이 고아가 되는 이유로 403 으로 막기로 했는데,
+  어드민 경로에는 그 검사가 없어 OWNER·ADMIN 이 클릭 한 번에 삭제된다. 방금 막은 구멍이 옆문으로 뚫려 있다.
+- **UI 문구가 사실과 다르다.** "삭제된 데이터는 복구할 수 없습니다" 라고 안내하지만 실제로는 소프트 삭제다.
+- **용도가 없다.** 개인정보 파기 대행·악성 회원 제재는 운영 조직을 전제하고, 테스트 계정 정리는
+  k6 가 계정을 생성만 하고 삭제하지 않으므로 해당이 없다.
+
+유지하려면 역할 차단·UI 문구 수정·익명화 통일이 함께 필요해 안 쓰는 기능에 범위가 붙는다.
+제재가 필요하면 이미 있는 역할 변경(`MemberUpdateRequest`)으로 처리한다.
+조회·생성·수정·비밀번호 초기화는 그대로 유지한다 — k6 부하 테스트가 `POST /api/admin/members` 로 계정을 만든다.
 
 ### `@SQLRestriction` 을 제거하는 이유
 
@@ -102,34 +118,26 @@ KAKAO 회원은 보낼 값이 없으므로 컨트롤러는 `@RequestBody(require
 → `MemberService` 의 private `findById()` 옆에 탈퇴 여부를 확인하는 경로를 두고 `refresh()` 에서 사용한다.
 `withdraw()`·어드민 관리 메서드는 탈퇴 회원도 읽을 수 있어야 하므로 기존 `findById()` 를 유지한다.
 
-### 어드민 강제 삭제도 익명화로 통일
-
-`MemberService.deleteMember()` 가 `softDelete()` 만 호출하면, 백필로 과거 데이터를 정리해도
-**이후의 어드민 삭제 건마다 결함 1·2 가 되살아난다.** 따라서 어드민 삭제도 `withdraw()` 와 같은
-익명화를 수행한다. `Member.softDelete()` 는 호출자가 없어지므로 제거하고 `withdraw()` 로 일원화한다.
-
-단, 어드민 삭제에는 진행 중 주문 차단·비밀번호 확인·역할 제한을 적용하지 않는다 —
-관리자의 강제 조치이므로 셀프 탈퇴의 사전 조건에 묶이지 않아야 한다.
-공유되는 것은 `Member.withdraw()` 라는 상태 전이 하나뿐이다.
-
 ## 변경 파일
 
-### 신규 (4)
+### 신규 (3)
 
 | 파일 | 내용 |
 |------|------|
 | `domain/member/dto/WithdrawRequest.java` | `record WithdrawRequest(String password)` |
 | `global/exception/WithdrawNotAllowedException.java` | `RuntimeException` 상속 |
-| `db/migration/2026-07-31-anonymize-deleted-members.sql` | 기존 삭제 회원 백필 (아래) |
 | `src/test/java/.../member/service/MemberWithdrawTest.java` | `TestContainerBase` 기반 |
 
-### 수정 (11)
+### 수정 (14)
 
 | 파일 | 변경 |
 |------|------|
 | `member/entity/Member.java` | `@SQLRestriction` 제거, `softDelete()` → `withdraw()` 로 교체 |
-| `member/service/MemberService.java` | `withdraw()` 추가, `deleteMember()` 를 익명화로 변경, `refresh()` 에 탈퇴 회원 차단, `CartService` 의존성 추가 |
+| `member/service/MemberService.java` | `withdraw()` 추가, `deleteMember()` 제거, `refresh()` 에 탈퇴 회원 차단, `CartService` 의존성 추가 |
 | `member/controller/MemberController.java` | `DELETE /api/members/me` |
+| `member/controller/AdminMemberController.java` | `DELETE /api/admin/members/{memberId}` 제거 |
+| `frontend/src/api/member.js` | `deleteMember` 제거 |
+| `frontend/src/pages/admin/AdminMemberPage.jsx` | 삭제 버튼·`handleDelete`·import·주석 제거 |
 | `member/repository/MemberRepository.java` | `findByUserId` → `findByUserIdAndIsDeletedFalse`, `findByProviderAndProviderId` → `...AndIsDeletedFalse`, JPQL 2개에 `AND m.isDeleted = false` |
 | `global/auth/CustomUserDetailsService.java` | `loadUserByUsername`·`loadUserByMemberId` 에서 탈퇴 회원 거부 |
 | `global/auth/jwt/JwtAuthenticationFilter.java` | `UsernameNotFoundException` 을 삼키고 인증만 건너뜀 → 500 대신 401 |
@@ -145,43 +153,33 @@ KAKAO 회원은 보낼 값이 없으므로 컨트롤러는 `@RequestBody(require
 ### 문서
 
 - `docs/wiki/domains/member.md` — 탈퇴 플로우, 익명화 규칙
-- `docs/wiki/api/rest-api.md` — `DELETE /api/members/me`
-- `docs/wiki/operations/ec2-runbook.md` — 백필 SQL 1회 실행 절차
+- `docs/wiki/api/rest-api.md` — `DELETE /api/members/me` 추가, 관리자 회원 CRUD 행에서 DELETE 제거
 
-## 기존 삭제 회원 백필
+## 기존 삭제 데이터 — 해당 없음
 
-관리자 강제 삭제로 이미 `is_deleted = true` 인 회원은 실명·전화번호가 그대로 남아있다.
-`@SQLRestriction` 을 제거하면 이들의 과거 주문이 **실명으로** 목록에 되살아나고,
-점유 중인 `user_id` 때문에 결함 1의 500 도 그대로 남는다.
+관리자 삭제 기능으로 이미 `is_deleted = true` 가 된 회원이 있었다면 실명·전화번호가 익명화되지 않은 채
+남아있어, `@SQLRestriction` 제거와 동시에 과거 주문이 **실명으로** 노출되고 점유 중인 `user_id` 때문에
+결함 1 의 500 도 남았을 것이다. 이를 정리하는 백필 SQL 을 검토했으나,
+**해당 데이터가 없음을 확인해 불필요하다.**
 
-Flyway/Liquibase 를 쓰지 않고 `ddl-auto` 가 `update`(dev/prod) / `validate`(default) 이므로,
-**배포 시 1회 수동 실행하는 SQL 스크립트**로 처리한다. 기동 시마다 도는 `ApplicationRunner` 는
-한 번 쓰고 영구히 남기 때문에 채택하지 않았다.
+배포 전 확인용 쿼리 (0 건이어야 한다):
 
 ```sql
-UPDATE member
-SET user_id     = 'deleted_' || member_id,
-    password    = NULL,
-    name        = '탈퇴한 회원',
-    nickname    = NULL,
-    phone       = NULL,
-    provider_id = CASE WHEN provider = 'KAKAO' THEN 'deleted_' || member_id
-                       ELSE provider_id END
-WHERE is_deleted = true
-  AND name <> '탈퇴한 회원';
+SELECT member_id, user_id, name, provider FROM member WHERE is_deleted = true;
 ```
 
-마지막 조건으로 재실행해도 안전하다.
+dev 와 prod 는 별개의 DB 이므로 배포 대상 환경에서 각각 확인한다.
+0 건이 아니면 위 익명화 규칙과 같은 `UPDATE` 를 1 회 수행한 뒤 배포한다.
 
 ## 스키마 변경
 
 **없다.** `is_deleted` 컬럼은 이미 존재하고 인덱스·제약 변경도 없다.
 
-## 부수 효과 (의도된 것)
+## 부수 효과
 
 `StoreRepository` 의 `JOIN FETCH s.owner` 쿼리 3개가 `@SQLRestriction` 제거의 영향을 받아,
-삭제된 OWNER 소유 매장이 어드민 목록에 다시 나타난다. OWNER 셀프 탈퇴는 막았으므로
-관리자 삭제 건에만 해당한다. 매장이 조회에서 사라지던 기존 동작이 결함에 가까우므로 그대로 둔다.
+삭제된 OWNER 소유 매장이 어드민 목록에 다시 나타난다. 다만 현재 삭제된 회원이 없고
+OWNER 셀프 탈퇴를 막으며 관리자 삭제도 제거하므로, **실제로 발생할 경로가 없다.**
 
 ## 테스트
 
@@ -204,4 +202,3 @@ WHERE is_deleted = true
 - 탈퇴 회원의 과거 주문이 어드민 목록에 `탈퇴한 회원` 으로 조회됨 (결함 2)
 - 탈퇴 후 기존 access token 으로 API 호출 → 401 (결함 3)
 - 탈퇴 후 남아있는 리프레시 토큰으로 `/api/auth/refresh` 호출 → 실패
-- 어드민 강제 삭제 후에도 동일 `userId` 재가입 성공 (익명화 일원화 검증)

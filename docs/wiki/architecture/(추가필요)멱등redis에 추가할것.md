@@ -137,7 +137,7 @@ if (redisMarkerExpired) {
 - 시나리오 3(크래시 후 상태 불일치) 복구
 
 ### 층 5: Outbox 패턴
-- 자세한 계획은 [Outbox 도입 계획]((추가필요)outbox패턴.md) 참조
+- 자세한 계획은 [Outbox 도입 계획](outbox.md) 참조
 - DB 커밋과 PG 호출을 원자적으로 묶음
 - JVM 크래시 복구 자동화
 
@@ -184,6 +184,6 @@ if (redisMarkerExpired) {
 - 2026-07-23: Redis 멱등성 안전성 논의, 6가지 시나리오 도출, 7층 방어 정리
 
 ## 참고
-- [Outbox 도입 계획]((추가필요)outbox패턴.md) — JVM 크래시 시나리오 대응
+- [Outbox 도입 계획](outbox.md) — JVM 크래시 시나리오 대응
 - [Redis 활용처](redis-usage.md) — 현재 Redis 사용 지점
 - `PaymentService.pay()` 코드 — 실제 멱등성 처리 흐름

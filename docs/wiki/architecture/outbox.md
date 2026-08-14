@@ -1,6 +1,9 @@
-# Outbox 패턴 도입 계획
+# Outbox 패턴
 
-> **상태: 미도입 (계획 문서)** — 현재 코드에 outbox 테이블/워커 없음. 이 문서는 나중에 실서비스 이관 시 어디에 어떻게 붙일지 정리한 설계 초안.
+> **상태**: **지점 1 (Kafka outbox / `order-created`) 도입 완료** — 구현 코드는 `src/main/java/com/whale/order/global/outbox/`.
+> **미도입**: 지점 2 (`payment_outbox`) — 실 PG 이관 시 별도 스펙 예정.
+> **관련 스펙**: `docs/superpowers/specs/2026-08-11-kafka-outbox-design.md`
+> **관련 계획**: `docs/superpowers/plans/2026-08-11-kafka-outbox.md`
 
 ## 왜 필요한가
 
@@ -71,6 +74,8 @@ PaymentService.pay() 트랜잭션 안에서:
 - 폴링: 단순, JVM 안에 워커 두면 됨. 지연시간 = 폴링 간격
 - CDC (Debezium 등): PostgreSQL WAL 을 실시간으로 읽어 Kafka 로 흘림. 지연 거의 없음. 인프라 복잡도 증가
 - **1차 도입은 폴링**, 트래픽 커지면 CDC 검토
+
+**구현 완료 (2026-08-11):** `KafkaOutbox` 엔티티, `KafkaOutboxService/RowProcessor/Worker/CleanupJob`, `kafka_outbox` 테이블 + partial index 2개, Prometheus 지표 3종(`kafka_outbox_pending_count`, `kafka_outbox_published_total`, `kafka_outbox_failed_total`). 폴링 주기 1초, 재시도 최대 5회, 청소 7일 retention. 워커는 `Optional<OrderKafkaProducer>` 로 dev/prod 분기 (prod 는 `OrderProcessingService.process()` 직접 호출).
 
 ### 지점 2: PG 결제 승인 (`PaymentService.pay` 내 Mock PG 호출부)
 

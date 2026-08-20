@@ -482,3 +482,36 @@ COMMENT ON COLUMN stock_restore_failure.menu_id   IS '재고 복원 대상 메�
 COMMENT ON COLUMN stock_restore_failure.quantity  IS '복원 시도한 수량';
 COMMENT ON COLUMN stock_restore_failure.reason    IS '복원 실패 사유 (예외 메시지)';
 COMMENT ON COLUMN stock_restore_failure.failed_at IS '복원 실패 일시';
+
+-- ====================================
+-- Kafka Outbox
+-- ====================================
+CREATE TABLE IF NOT EXISTS kafka_outbox (
+    id            BIGSERIAL PRIMARY KEY,
+    topic         VARCHAR(100) NOT NULL,
+    aggregate_id  BIGINT       NOT NULL,
+    payload       TEXT         NOT NULL,
+    status        VARCHAR(20)  NOT NULL,
+    attempts      INT          NOT NULL DEFAULT 0,
+    last_error    TEXT,
+    created_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
+    published_at  TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_kafka_outbox_pending
+    ON kafka_outbox (created_at)
+    WHERE status = 'PENDING';
+
+CREATE INDEX IF NOT EXISTS idx_kafka_outbox_published_at
+    ON kafka_outbox (published_at)
+    WHERE status = 'PUBLISHED';
+
+COMMENT ON COLUMN kafka_outbox.id           IS 'Outbox row 고유 식별자 (PK, auto-increment)';
+COMMENT ON COLUMN kafka_outbox.topic        IS 'Kafka 토픽 이름 (예: order-created)';
+COMMENT ON COLUMN kafka_outbox.aggregate_id IS 'Kafka 파티션 키. 이 프로젝트는 orderId 사용';
+COMMENT ON COLUMN kafka_outbox.payload      IS 'Kafka 메시지 본문 (JSON 문자열)';
+COMMENT ON COLUMN kafka_outbox.status       IS '발행 상태 (PENDING / PUBLISHED / FAILED)';
+COMMENT ON COLUMN kafka_outbox.attempts     IS '발행 시도 횟수. 5회 초과 시 FAILED 전환';
+COMMENT ON COLUMN kafka_outbox.last_error   IS '가장 최근 발행 실패 원인 메시지';
+COMMENT ON COLUMN kafka_outbox.created_at   IS 'Outbox row 생성 시각 (호출자 트랜잭션 커밋 시각)';
+COMMENT ON COLUMN kafka_outbox.published_at IS 'Kafka 발행 성공 시각 (PENDING/FAILED 상태에선 NULL)';

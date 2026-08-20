@@ -31,6 +31,7 @@ import com.whale.order.domain.store.repository.StoreRepository;
 import com.whale.order.global.exception.DuplicateRequestException;
 import com.whale.order.global.exception.PaymentFailedException;
 import com.whale.order.global.idempotency.IdempotencyService;
+import com.whale.order.global.outbox.KafkaOutboxService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +63,7 @@ public class PaymentService {
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final StockRepository stockRepository;
     private final IdempotencyService idempotencyService;
+    private final KafkaOutboxService kafkaOutboxService;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
@@ -202,8 +204,12 @@ public class PaymentService {
                 orderHistoryRepository.save(OrderStatusHistory.builder()
                         .orders(order).status(OrderStatus.PENDING).changedBy(null).build());
 
-                // DB 커밋 이후 Kafka 발행 및 장바구니 삭제 — OrderEventListener(AFTER_COMMIT)에서 처리.
-                // 커밋 실패 시 메시지 미발행 + 장바구니 보존 → 일관성 확보.
+                // Outbox 도입: 커밋과 동일 트랜잭션에서 발행 예약 → 원자성 확보.
+                // 이 호출을 try-catch 로 감싸면 원자성 깨짐. 예외는 그대로 상위로 던져야 함.
+                String outboxPayload = "{\"orderId\":" + order.getOrderId() + "}";
+                kafkaOutboxService.enqueue("order-created", order.getOrderId(), outboxPayload);
+
+                // 장바구니 삭제는 여전히 AFTER_COMMIT 리스너에서 처리 (Redis 작업, outbox 대상 아님).
                 eventPublisher.publishEvent(new OrderCreatedEvent(order.getOrderId(), memberId));
 
                 Counter.builder("payment.processed")

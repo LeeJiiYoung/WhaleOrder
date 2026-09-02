@@ -71,7 +71,7 @@ export default function CartPage() {
       navigate('/stores')
       return
     }
-    navigate('/payment', {
+    navigate('/toss-payment', {
       state: {
         orderType,
         customerRequest: customerRequest.trim() || null,

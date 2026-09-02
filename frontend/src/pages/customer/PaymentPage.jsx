@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { processPayment } from '../../api/payment'
 import CustomerLayout from '../../components/customer/CustomerLayout'
+import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
+
 import styles from './PaymentPage.module.css'
 
+const clientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+const customerKey = "FRq0BgMFf9tykXUrcaekD";
 const PAYMENT_METHODS = [
   { value: 'CREDIT_CARD', label: '신용/체크카드', icon: '💳' },
   { value: 'KAKAO_PAY',   label: '카카오페이',    icon: '🟡' },

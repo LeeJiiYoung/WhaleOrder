@@ -40,6 +40,7 @@ export default function CartPage() {
     try {
       const res = await updateQuantity(itemKey, quantity)
       setCart(res.data.data)
+      console.log(res.data.data)
     } catch (err) {
       alert(err.response?.data?.message || '수량 변경에 실패했습니다')
     }
@@ -77,6 +78,10 @@ export default function CartPage() {
         customerRequest: customerRequest.trim() || null,
         totalPrice: cart.totalPrice,
         totalCount: cart.totalCount,
+        items: cart.items.map((item) => ({
+          menuName: item.menuName,
+          quantity: item.quantity,
+        })),
       },
     })
   }

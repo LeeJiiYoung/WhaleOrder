@@ -172,7 +172,7 @@ CREATE TABLE payment (
     order_id        BIGINT          NOT NULL UNIQUE,
     member_id       BIGINT          NOT NULL,
     amount          BIGINT          NOT NULL,
-    method          VARCHAR(30)     NOT NULL,   -- CREDIT_CARD, KAKAO_PAY, NAVER_PAY
+    method          VARCHAR(30),                -- CREDIT_CARD, KAKAO_PAY, NAVER_PAY (prepare 단계엔 NULL, confirm에서 채움)
     status          VARCHAR(20)     NOT NULL,   -- PENDING, SUCCESS, FAILED, CANCELLED
     external_tx_id  VARCHAR(255),
     failed_reason   TEXT,

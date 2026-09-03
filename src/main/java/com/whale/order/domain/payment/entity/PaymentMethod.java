@@ -7,7 +7,11 @@ package com.whale.order.domain.payment.entity;
  * - NAVER_PAY  : 네이버페이
  */
 public enum PaymentMethod {
-    CREDIT_CARD,
-    KAKAO_PAY,
-    NAVER_PAY
+    QUICK_TRANSFER,   // 퀵계좌이체
+    CARD,             // 신용·체크카드
+    TOSS_PAY,         // toss pay
+    PAYCO,            // PAYCO
+    KAKAO_PAY,        // kakao pay
+    NAVER_PAY,        // N pay
+    ETC               // 기타
 }

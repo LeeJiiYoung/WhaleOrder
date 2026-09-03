@@ -37,7 +37,7 @@ public class Payment extends BaseEntity {
     private Long amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(length = 30)
     private PaymentMethod method;
 
     @Enumerated(EnumType.STRING)
@@ -68,6 +68,12 @@ public class Payment extends BaseEntity {
     public void success(String externalTxId) {
         this.status = PaymentStatus.SUCCESS;
         this.externalTxId = externalTxId;
+    }
+
+    // 토스 결제 승인 처리 — prepare 단계엔 몰랐던 실제 결제수단을 여기서 확정한다
+    public void success(String externalTxId, PaymentMethod method) {
+        this.method = method;
+        success(externalTxId);
     }
 
     // PG사 결제 실패 처리

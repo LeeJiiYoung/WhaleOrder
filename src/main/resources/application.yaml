@@ -66,6 +66,10 @@ jwt:
   access-token-expiry: 1800000    # 30분 (ms)
   refresh-token-expiry: 604800000 # 7일 (ms)
 
+# 토스페이먼츠 (기본값은 토스 문서에 공개된 테스트용 시크릿 키 — 로컬 개발용, 운영에선 TOSS_SECRET_KEY로 교체)
+toss:
+  secret-key: ${TOSS_SECRET_KEY:test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6}
+
 # 애플리케이션 공통 설정 (프로필 무관 기본값 — 누락 시 startup 실패를 방지)
 # OAuth2 로그인 성공 후 프론트로 토큰을 전달할 리다이렉트 주소. 운영에서는 OAUTH2_REDIRECT_URI 로 교체
 app:

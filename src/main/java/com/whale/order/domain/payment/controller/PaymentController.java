@@ -1,8 +1,6 @@
 package com.whale.order.domain.payment.controller;
 
-import com.whale.order.domain.payment.dto.PaymentInfoResponse;
-import com.whale.order.domain.payment.dto.PaymentRequest;
-import com.whale.order.domain.payment.dto.PaymentResponse;
+import com.whale.order.domain.payment.dto.*;
 import com.whale.order.domain.payment.service.PaymentService;
 import com.whale.order.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -75,5 +73,38 @@ public class PaymentController {
         Long memberId = Long.parseLong(userDetails.getUsername());
         PaymentInfoResponse response = paymentService.getPaymentByOrder(orderId, memberId);
         return ResponseEntity.ok(ApiResponse.ok("조회 성공", response));
+    }
+
+    @Operation(summary = "결제 준비", description = "결제창 호출 전 주문·금액을 서버에 임시 저장하고 orderId를 발급")
+    @PostMapping("/prepare")
+    public ResponseEntity<ApiResponse<PaymentPrepareResponse>> prepare(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody PaymentPrepareRequest request) {
+
+        Long memberId = Long.parseLong(userDetails.getUsername());
+        PaymentPrepareResponse response = paymentService.prepare(memberId, request);
+        return ResponseEntity.ok(ApiResponse.ok("주문이 준비됐습니다", response));
+    }
+
+    /**
+     * 토스 결제 승인(confirm) 처리.
+     *
+     * <p>successUrl 리다이렉트로 받은 paymentKey·orderId·amount를 그대로 넘겨받아,
+     * prepare 때 저장해둔 금액과 대조 검증한 뒤 토스 결제승인 API를 호출한다.
+     * 승인 성공 시에만 결제·주문이 최종 확정되며, Kafka로 주문 처리가 시작된다.</p>
+     *
+     * @param userDetails 인증된 회원 정보
+     * @param request     paymentKey · orderId · amount
+     * @return 결제 결과 (승인번호, 결제 수단, 결제 금액 등)
+     */
+    @Operation(summary = "결제 승인", description = "토스 결제창 successUrl 리다이렉트 후 최종 승인 확정 → 성공 시 Kafka로 주문 처리 시작")
+    @PostMapping("/confirm")
+    public ResponseEntity<ApiResponse<PaymentResponse>> confirm(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody PaymentConfirmRequest request) {
+
+        Long memberId = Long.parseLong(userDetails.getUsername());
+        PaymentResponse response = paymentService.confirm(memberId, request);
+        return ResponseEntity.ok(ApiResponse.ok("결제가 완료됐습니다", response));
     }
 }

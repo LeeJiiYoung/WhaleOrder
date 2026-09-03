@@ -1,4 +1,9 @@
 spring:
+  # Kafka 미사용 (로컬에서 브로커 없이 실행) — 자동설정 제외로 KafkaTemplate 빈 미생성
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
   # PostgreSQL
   datasource:
     url: jdbc:postgresql://localhost:5432/whaleorder
@@ -24,12 +29,17 @@ spring:
     init:
       mode: never
 
-  # JPA (개발환경 - 테이블 자동 생성 + SQL 로그)
+  # JPA (개발환경 - 테이블 자동 생성)
   jpa:
     hibernate:
       ddl-auto: update   # 기존 데이터 유지, 스키마 변경분만 반영
     defer-datasource-initialization: true
-    show-sql: true
+    # show-sql: true 였을 때 콘솔에 매초 찍히던 "Hibernate: select ..." 는 이거였음 —
+    # 이건 org.hibernate.SQL 로거(logging.level)랑 완전히 별개로, Hibernate가 System.out에
+    # 직접 찍는 옛날 방식이라 로그 레벨을 아무리 조정해도 안 잡혔던 것. 꺼서 해결.
+    # 쿼리 확인하고 싶으면 이걸 다시 true로 바꾸거나, 위 logging.level의
+    # org.hibernate.SQL/org.hibernate.orm.jdbc.bind 를 DEBUG/TRACE로 바꿔서 재시작.
+    show-sql: false
 
   # 카카오 OAuth2 (실제 키는 환경변수로 주입, 없으면 dev 플레이스홀더 사용)
   security:
@@ -52,13 +62,27 @@ app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/oauth2/callback}
 
+# Kafka 관련 커스텀 빈(KafkaConfig·OrderKafkaProducer·OrderKafkaConsumer)을 끈다.
+# 위 spring.autoconfigure.exclude로 KafkaTemplate 자동설정도 함께 제외해야
+# 의존성 주입 실패 없이 앱이 뜬다 (하나만 하면 기동 실패).
+# false면 OrderEventListener/KafkaOutboxWorker가 Kafka 대신 process()를 동기 호출하는 폴백으로 동작한다.
 kafka:
-  enabled: true
+  enabled: false
 
 logging:
   level:
     com.whale.order: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE
+    # outbox 워커는 1초마다 폴링 로그를 찍어서(KafkaOutboxWorker.publishPending, 원래 DEBUG 의도)
+    # 위 패키지 전체 DEBUG 설정에 묻혀 매초 스팸이 됨 — 이 패키지만 INFO로 올려서 조용히 시킴
+    # (enqueue 는 INFO라 그대로 보임, 실패/FAILED 전환은 WARN/ERROR라 역시 그대로 보임)
+    com.whale.order.global.outbox: INFO
+    # SQL 디버그(DEBUG)를 켜두면 outbox 워커가 1초마다 날리는 SELECT까지 매초 찍혀서
+    # 스팸이 됨 — 이건 com.whale.order 패키지 로거가 아니라 org.hibernate.SQL 이라
+    # 위 outbox 로그 레벨 조정과는 별개로 껐어야 했음. 특정 쿼리만 골라 끄는 건 logback
+    # 설정만으로는 안 되고(내용 기반 필터링에 janino 등 추가 라이브러리 필요) 그 정도까지는
+    # 과해서, 로컬에서는 SQL 디버그 자체를 끔. 특정 쿼리 찍어보고 싶을 때만 아래 두 줄을
+    # 잠깐 DEBUG/TRACE로 바꾸고 재시작해서 확인.
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

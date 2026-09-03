@@ -1,0 +1,89 @@
+.page {
+  max-width: 480px;
+  margin: 60px auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 6px;
+}
+
+.desc {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.codeHint {
+  font-size: 12px;
+  color: #9ca3af;
+  font-family: monospace;
+  margin-top: -14px;
+  margin-bottom: 20px;
+}
+
+.summary {
+  width: 100%;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.summaryLabel { font-size: 13px; color: #6b7280; font-weight: 500; }
+.summaryValue { font-size: 14px; color: #111; font-weight: 700; }
+
+.primaryBtn {
+  width: 100%;
+  padding: 16px;
+  background: #4f46e5;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 8px;
+}
+.primaryBtn:hover { background: #4338ca; }
+
+.secondaryBtn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 8px;
+}
+.secondaryBtn:hover { border-color: #9ca3af; color: #374151; }

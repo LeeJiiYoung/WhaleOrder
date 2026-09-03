@@ -27,6 +27,8 @@ import AdminMemberPage from './pages/admin/AdminMemberPage'
 import MyProfilePage from './pages/customer/MyProfilePage'
 import PaymentPage from './pages/customer/PaymentPage'
 import TossPaymentPage from './pages/customer/TossPaymentPage'
+import PaymentSuccessPage from './pages/customer/PaymentSuccessPage'
+import PaymentFailPage from './pages/customer/PaymentFailPage'
 
 // JWT payload의 exp(Unix초)를 확인해 만료 여부 판단
 function isTokenValid(token) {
@@ -86,6 +88,8 @@ export default function App() {
         <Route path="/events" element={<PrivateRoute><EventListPage /></PrivateRoute>} />
         <Route path="/events/:eventId" element={<PrivateRoute><EventDetailPage /></PrivateRoute>} />
         <Route path="/toss-payment" element={<PrivateRoute><TossPaymentPage /></PrivateRoute>} />
+        <Route path="/success" element={<PrivateRoute><PaymentSuccessPage /></PrivateRoute>} />
+        <Route path="/fail" element={<PrivateRoute><PaymentFailPage /></PrivateRoute>} />
 
         {/* 매장 */}
         <Route path="/admin/store-create" element={<AdminRoute><StoreCreatePage /></AdminRoute>} />

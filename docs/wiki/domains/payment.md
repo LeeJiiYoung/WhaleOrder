@@ -9,8 +9,8 @@
 | 분류 | 파일 |
 |------|------|
 | Entity | `Payment`, `PaymentHistory`, `PaymentMethod`, `PaymentStatus` |
-| Controller | `PaymentController` (`POST /api/payments/prepare`, `POST /api/payments/confirm`, `GET /api/payments/orders/{orderId}`) |
-| Service | `PaymentService` (`prepare`, `confirm`, `cancelPayment`, `getPaymentByOrder`) |
+| Controller | `PaymentController` (`POST /api/payments/prepare`, `POST /api/payments/confirm`, `POST /api/payments/cancel-pending`, `GET /api/payments/orders/{orderId}`) |
+| Service | `PaymentService` (`prepare`, `confirm`, `cancelPayment`, `cancelAwaitingPayment`, `cancelAwaitingPaymentSystem`, `getPaymentByOrder`), `PaymentSweepScheduler` |
 | 외부 연동 | `TossPaymentClient` (토스 `/v1/payments/confirm`, `/v1/payments/{paymentKey}/cancel` 호출) |
 | Repository | `PaymentRepository`, `PaymentHistoryRepository` |
 
@@ -35,7 +35,7 @@ PaymentService.prepare()
    ├─ 1. 장바구니 조회 + 표시 금액 확인
    ├─ 2. 매장 OPEN / 메뉴 isOnSale / Stock 존재 검증
    ├─ 3. SHA-256 멱등성 키 (memberId : storeId : orderType : cart) — Redis SET NX EX
-   ├─ 4. Orders + Payment(PENDING, method 없음) 저장 + PaymentHistory(PENDING)
+   ├─ 4. Orders(AWAITING_PAYMENT) + Payment(PENDING, method 없음) 저장 + PaymentHistory(PENDING)
    └─ 5. { orderId, tossOrderId("whale-{id}"), amount, orderName } 반환
         └─ idempotencyService.saveResult(key, response)
 
@@ -52,11 +52,11 @@ PaymentService.confirm()
    ├─ 4. 표시 금액 재검증 (payment.amount vs request.amount)
    ├─ 5. TossPaymentClient.confirm() → 토스 실제 승인 API 호출 (Basic Auth)
    │
-   ├─ 성공 → Payment SUCCESS(paymentKey, method) + PaymentHistory(SUCCESS)
-   │          + eventPublisher.publishEvent(OrderCreatedEvent)
+   ├─ 성공 → order.confirmPayment() (AWAITING_PAYMENT → PENDING) + Payment SUCCESS(paymentKey, method)
+   │          + PaymentHistory(SUCCESS) + eventPublisher.publishEvent(OrderCreatedEvent)
    │          + kafkaOutboxService.enqueue("order-created", ...)
    │
-   └─ 실패(토스 4xx/5xx) → Payment FAILED + PaymentHistory(FAILED) + order.cancel() + History(CANCELLED)
+   └─ 실패(토스 4xx/5xx) → Payment FAILED + PaymentHistory(FAILED) + order.cancelUnpaid() + History(CANCELLED)
               + throw PaymentFailedException
               └─ noRollbackFor 로 outer는 commit (시도 이력 보존)
               └─ catch에서 idempotencyService.delete(key) → 재시도 허용
@@ -67,6 +67,41 @@ OrderEventListener.onOrderCreated  (AFTER_COMMIT)
    ├─ Kafka publish (order-created)
    └─ cartService.clearCart(memberId)
 ```
+
+## 결제 대기(AWAITING_PAYMENT) 정리
+
+`prepare`는 실제 결제가 이뤄지기 **전에** 주문을 만든다 — 토스 결제창을 열려면 orderId가 먼저 있어야 하기 때문. 그래서 주문은 `AWAITING_PAYMENT`(결제 대기)로 시작해 `confirm` 성공 시에만 `PENDING`(접수 대기)으로 넘어간다. 이 둘을 분리하지 않고 처음부터 `PENDING`으로 만들면(과거 Mock PG `pay()` 시절 설계) "매장에 접수됐다"는 뜻의 `PENDING`이 "결제도 안 끝났다"는 상태까지 뭉뚱그리게 되어, 결제창에서 취소·거절되거나 사용자가 그냥 이탈해도 주문이 실제로 접수된 것처럼 어드민 큐·고객 주문 목록에 남는 문제가 있었다.
+
+confirm까지 가지 못하고 끝나는 경로는 세 가지이고, 정리 방식도 다르다.
+
+| 경로 | 트리거 | 정리 방법 |
+|------|--------|----------|
+| 결제창 자체 취소/거절 (약관 미동의, 창 닫기 등) | `widgets.requestPayment()`가 프런트에서 reject | 정리 안 함(의도적) — 사용자가 같은 화면에서 바로 재시도 가능해야 하므로 |
+| 토스가 결제 거절 → `/fail` 리다이렉트 | `PaymentFailPage` 진입 | `POST /api/payments/cancel-pending` → `PaymentService.cancelAwaitingPayment()` |
+| 사용자가 결제창 도중 탭을 닫거나 이탈 | (콜백 없음) | `PaymentSweepScheduler`가 5분마다 30분 이상 `AWAITING_PAYMENT`인 주문을 정리 |
+
+```java
+private void doCancelAwaitingPayment(Orders order, String reason) {
+    if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) return;  // 이미 confirm 성공했거나 이미 정리됨 — 무시
+
+    paymentRepository.findByOrders(order).ifPresent(payment -> {
+        payment.fail(reason);
+        savePaymentHistory(payment, PaymentStatus.FAILED, reason);
+    });
+    order.cancelUnpaid();                       // AWAITING_PAYMENT 상태에서만 허용
+    orderHistoryRepository.save(... CANCELLED ...);
+
+    // prepare()의 SHA-256 멱등성 캐시도 함께 무효화 — 안 지우면 카트가 그대로인 채 60초 안에
+    // 재시도할 때 이 (이제 취소된) orderId를 그대로 돌려줘버린다.
+    idempotencyService.delete(generatePrepareIdempotencyKey(...));
+}
+```
+
+- `cancelAwaitingPayment(memberId, tossOrderId, reason)` — 고객 요청 경로. 소유자 검증 포함
+- `cancelAwaitingPaymentSystem(orderId, reason)` — 스케줄러 전용. 소유자 검증 없이 orderId만으로 정리
+- 둘 다 `confirm`과 같은 Redis 멱등성 락 키(`"confirm:" + orderId`)를 공유 — `confirm`이 마침 진행 중이면 락 선점에 실패해 조용히 아무 것도 안 하고 반환한다. 실제로 결제가 확정되는 주문을 여기서 잘못 취소하는 사고를 막기 위함
+- 이미 `AWAITING_PAYMENT`가 아니면(이미 성공했거나 이미 정리됐으면) 그대로 무시 — 몇 번을 호출해도 안전(멱등)
+- 관리자 주문 목록(`GET /api/admin/orders`)과 고객 "내 주문" 목록 둘 다 필터 미지정 시 `AWAITING_PAYMENT`를 기본 제외한다 — 결제가 확정되지 않은 임시 주문은 매장 입장에서도, 고객 입장에서도 아직 "존재하는 주문"이 아니기 때문
 
 ## 토스 API 통신 로깅
 

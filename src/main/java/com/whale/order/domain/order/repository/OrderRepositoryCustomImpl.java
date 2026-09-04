@@ -4,6 +4,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.whale.order.domain.order.dto.OrderCursor;
+import com.whale.order.domain.order.entity.OrderStatus;
 import com.whale.order.domain.order.entity.Orders;
 import com.whale.order.domain.order.entity.QOrders;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,11 @@ public class OrderRepositoryCustomImpl implements OrderRepositoryCustom {
                 // 메모리로 올려 페이징한다(HHH000104 → 대용량 시 OOM).
                 // orderItems·menu 는 지연 로딩 + default_batch_fetch_size(100) 로 IN 절 일괄 조회된다.
                 .join(order.store).fetchJoin()
-                .where(order.member.memberId.eq(memberId), cursorCondition(order, cursor))
+                // AWAITING_PAYMENT는 결제가 확정되지 않은 임시 주문이라 "내 주문" 목록에는 노출하지 않는다.
+                // (토스 결제창 취소/거절 시 곧 CANCELLED로 정리되지만, 정리 전 짧은 구간도 가릴 필요가 있다)
+                .where(order.member.memberId.eq(memberId),
+                        order.status.ne(OrderStatus.AWAITING_PAYMENT),
+                        cursorCondition(order, cursor))
                 .orderBy(order.createdAt.desc(), order.orderId.desc())
                 .limit(limit)
                 .fetch();

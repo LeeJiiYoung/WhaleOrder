@@ -59,7 +59,7 @@
 
 ## Order — `/api/orders`, `/api/admin/orders`
 
-> 주문 **생성**은 결제와 묶여 있어 `POST /api/payments/prepare` 에서 처리한다(주문·결제 레코드를 PENDING 으로 먼저 만들고, 토스 결제창 승인 후 `POST /api/payments/confirm` 이 최종 확정한다). 이 도메인은 조회/취소만 노출.
+> 주문 **생성**은 결제와 묶여 있어 `POST /api/payments/prepare` 에서 처리한다(주문을 AWAITING_PAYMENT 로 먼저 만들고, 토스 결제창 승인 후 `POST /api/payments/confirm` 이 PENDING 으로 최종 확정한다). 이 도메인은 조회/취소만 노출.
 
 | Method | Path | 설명 |
 |--------|------|------|
@@ -80,6 +80,7 @@
 |--------|------|------|
 | POST | `/api/payments/prepare` | 결제 준비 — 주문·금액을 서버에 임시 저장하고 토스 전용 orderId 발급 |
 | POST | `/api/payments/confirm` | 결제 승인 — successUrl 리다이렉트로 받은 paymentKey·orderId·amount로 토스 승인 API 호출, 최종 확정 |
+| POST | `/api/payments/cancel-pending` | 결제 대기(AWAITING_PAYMENT) 주문 정리 — 토스 결제창 취소/거절로 confirm까지 못 간 주문을 CANCELLED로 정리 (멱등) |
 | GET | `/api/payments/orders/{orderId}` | 주문별 결제 정보 조회 |
 
 ## Event — `/api/events`, `/api/admin`

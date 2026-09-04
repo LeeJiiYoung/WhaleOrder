@@ -38,14 +38,16 @@ public class AdminOrderController {
     /**
      * 주문 목록을 조회한다.
      *
-     * <p>상태 필터를 복수로 지정할 수 있으며, 미입력 시 전체 조회된다.
+     * <p>상태 필터를 복수로 지정할 수 있으며, 미입력 시 PENDING·PREPARING·COMPLETED·CANCELLED가 조회된다.
+     * AWAITING_PAYMENT(결제 대기 중인 임시 주문)는 미입력 시 기본적으로 제외된다 — 아직 결제가
+     * 확정되지 않아 매장 입장에선 접수 대상이 아니기 때문. 필요하면 명시적으로 필터에 넣어 조회할 수 있다.
      * OWNER는 본인 매장 주문만 반환된다.</p>
      *
-     * @param statuses    조회할 주문 상태 목록 (PENDING·PREPARING·COMPLETED·CANCELLED)
+     * @param statuses    조회할 주문 상태 목록 (AWAITING_PAYMENT·PENDING·PREPARING·COMPLETED·CANCELLED)
      * @param userDetails 인증된 관리자 정보
      * @return 주문 목록
      */
-    @Operation(summary = "주문 목록 조회", description = "상태 필터 복수 가능 (PENDING, PREPARING, COMPLETED, CANCELLED)")
+    @Operation(summary = "주문 목록 조회", description = "상태 필터 복수 가능. 미입력 시 AWAITING_PAYMENT를 제외한 전체 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrders(
             @RequestParam(required = false) List<OrderStatus> statuses,

@@ -80,11 +80,19 @@ public class Orders extends BaseEntity {
         this.totalPrice = totalPrice;
         this.orderType = orderType;
         this.customerRequest = customerRequest;
-        this.status = OrderStatus.PENDING; // 결제 완료 후 접수 대기 상태로 시작
+        // 토스 결제창 호출 전(prepare 시점)이라 아직 결제 승인 전 — AWAITING_PAYMENT로 시작한다.
+        // confirm()이 성공해야 비로소 PENDING(접수 대기)으로 전이한다.
+        this.status = OrderStatus.AWAITING_PAYMENT;
     }
 
     public void addOrderItem(OrderItem orderItem) {
         this.orderItems.add(orderItem);
+    }
+
+    // 토스 결제 승인(confirm) 성공 시 호출 — 결제 대기 → 접수 대기로 전이
+    public void confirmPayment() {
+        validateStatus(OrderStatus.AWAITING_PAYMENT);
+        this.status = OrderStatus.PENDING;
     }
 
     // 제조 시작
@@ -116,6 +124,16 @@ public class Orders extends BaseEntity {
     public void cancelByAdmin() {
         if (this.status != OrderStatus.PENDING && this.status != OrderStatus.PREPARING) {
             throw new IllegalStateException("완료되었거나 이미 취소된 주문은 취소할 수 없습니다.");
+        }
+        this.status = OrderStatus.CANCELLED;
+    }
+
+    // 결제 미완료 정리 — 토스 결제창 취소/거절 또는 confirm 승인 거절 시 호출.
+    // AWAITING_PAYMENT 상태에서만 허용 — 이미 PENDING(결제 승인 완료)으로 넘어간 주문은
+    // 이 메서드로 취소할 수 없다(그건 cancel()/cancelByAdmin()의 몫).
+    public void cancelUnpaid() {
+        if (this.status != OrderStatus.AWAITING_PAYMENT) {
+            throw new IllegalStateException("결제 대기 중인 주문만 이 방법으로 취소할 수 있습니다.");
         }
         this.status = OrderStatus.CANCELLED;
     }

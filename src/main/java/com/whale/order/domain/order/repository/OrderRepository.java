@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,4 +35,7 @@ public interface OrderRepository extends JpaRepository<Orders, Long>, OrderRepos
 
     // 회원 탈퇴 가능 여부 판정 - 접수/제조 중 주문이 하나라도 있으면 탈퇴를 막는다
     boolean existsByMember_MemberIdAndStatusIn(Long memberId, List<OrderStatus> statuses);
+
+    // 결제 대기(AWAITING_PAYMENT) 상태로 오래 방치된 주문 조회 - PaymentSweepScheduler 전용
+    List<Orders> findByStatusAndCreatedAtBefore(OrderStatus status, LocalDateTime cutoff);
 }

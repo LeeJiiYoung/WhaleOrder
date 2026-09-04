@@ -17,32 +17,40 @@
 ## 생명주기
 
 ```
-PENDING ──► PREPARING ──► COMPLETED
-   │            │
-   └────────────┴──► CANCELLED   (제조 완료 이후는 취소 불가)
+AWAITING_PAYMENT ──► PENDING ──► PREPARING ──► COMPLETED
+        │               │            │
+        └───────────────┴────────────┴──► CANCELLED   (제조 완료 이후는 취소 불가)
 ```
 
-- `OrderStatus` enum 은 위 4가지뿐 (`OrderStatus.java`)
+- `OrderStatus` enum 은 위 5가지 (`OrderStatus.java`)
+- `AWAITING_PAYMENT`(결제 대기)는 `PENDING`(접수 대기)과 별개 상태다 — `prepare()`가 만든 주문은
+  토스 결제가 실제로 승인되기 전까지 `AWAITING_PAYMENT`이고, `confirm()` 성공 시에만 `PENDING`으로
+  넘어간다. 매장 접수 큐·고객 "내 주문" 목록에는 기본적으로 노출되지 않는다. 자세한 배경과 정리
+  방식은 [Payment 도메인의 "결제 대기 정리" 절](payment.md#결제-대기awaiting_payment-정리) 참조
 - 취소 허용 범위는 **호출 주체에 따라 다름**:
   - 고객 `Orders.cancel()` — `PENDING` 만 (`Orders.java`)
   - 관리자 `Orders.cancelByAdmin()` — `PENDING` · `PREPARING` (`Orders.java`)
+  - `Orders.cancelUnpaid()` — `AWAITING_PAYMENT` 만. 결제가 확정되기 전 임시 주문 정리 전용
+    (고객·관리자 취소가 아니라 결제 실패/방치 정리 경로에서만 쓰인다)
   - **`COMPLETED` 이후는 어느 쪽도 취소 불가**
 - 모든 상태 전이는 `OrderStatusHistory` 에 기록
 
 ## 핵심 플로우
 
-### 주문 생성 — 선결제 (`PaymentService.pay()`)
+### 주문 생성 — 선결제 (`PaymentService.prepare()` → `confirm()`)
 
-주문 **생성** 진입점은 결제 도메인의 `PaymentService.pay()`. `OrderService` 는 조회·취소·상태 변경만 담당.
+주문 **생성** 진입점은 결제 도메인의 `PaymentService.prepare()`. `OrderService` 는 조회·취소·상태 변경만 담당.
 
 ```
 1. 장바구니 조회 + 매장 OPEN / 메뉴 isOnSale / Stock 존재 검증
-2. SHA-256 멱등성 키 (memberId : storeId : method : orderType : cart)
-3. Orders + Payment(PENDING) 저장
-4. Mock 결제 90% / 실패 시 throw → 전체 롤백
-5. 성공 시 OrderCreatedEvent 발행 (AFTER_COMMIT)
-6. ━ outer 트랜잭션 commit ━
-7. OrderEventListener → Kafka publish + 장바구니 비우기
+2. SHA-256 멱등성 키 (memberId : storeId : orderType : cart)
+3. Orders(AWAITING_PAYMENT) + Payment(PENDING) 저장
+4. 토스 결제창 오픈 → 사용자 결제 → successUrl 리다이렉트
+5. PaymentService.confirm() — 토스 승인 API 호출
+   성공 시 order.confirmPayment()로 PENDING 전이 / 실패 시 order.cancelUnpaid()로 CANCELLED 전이
+6. 성공 시 OrderCreatedEvent 발행 (AFTER_COMMIT)
+7. ━ outer 트랜잭션 commit ━
+8. OrderEventListener → Kafka publish + 장바구니 비우기
 ```
 
 → 자세한 결제 흐름은 [Payment 도메인](payment.md) 참조.

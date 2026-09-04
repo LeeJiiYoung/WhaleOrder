@@ -286,10 +286,10 @@ public class PaymentService {
      *
      * <p>successUrl 리다이렉트로 받은 paymentKey·orderId·amount를 그대로 넘겨받는다.
      * prepare 때 저장해둔 금액과 대조 검증한 뒤 토스 승인 API를 호출하고,
-     * 성공하면 pay()의 성공 분기와 동일하게 Kafka outbox·OrderCreatedEvent를 발행한다.</p>
+     * 성공하면 주문을 AWAITING_PAYMENT → PENDING으로 전이시키며 Kafka outbox·OrderCreatedEvent를 발행한다.</p>
      *
      * noRollbackFor = PaymentFailedException — Payment.FAILED / Orders.CANCELLED 전이를
-     * DB에 보존하기 위해 pay()와 동일한 정책을 쓴다.
+     * DB에 보존하기 위한 정책이다.
      */
     @Transactional(noRollbackFor = PaymentFailedException.class)
     public PaymentResponse confirm(Long memberId, PaymentConfirmRequest request) {
@@ -342,10 +342,12 @@ public class PaymentService {
                 tossResponse = tossPaymentClient.confirm(request.paymentKey(), request.orderId(), request.amount());
             } catch (RestClientResponseException e) {
                 // 토스가 승인을 거절(4xx/5xx) — Payment.FAILED 전환 + 주문 취소 (Saga 보상)
+                // 이 시점의 주문은 아직 AWAITING_PAYMENT(결제 대기)이지 PENDING(접수 대기)이 아니므로
+                // cancel()이 아니라 cancelUnpaid()를 쓴다.
                 payment.fail("토스 승인 거절: " + e.getStatusCode());
                 savePaymentHistory(payment, PaymentStatus.FAILED, e.getResponseBodyAsString());
 
-                order.cancel();
+                order.cancelUnpaid();
                 orderHistoryRepository.save(OrderStatusHistory.builder()
                         .orders(order).status(OrderStatus.CANCELLED).changedBy(null).build());
 
@@ -363,6 +365,7 @@ public class PaymentService {
             payment.success(tossResponse.paymentKey(), method);
             savePaymentHistory(payment, PaymentStatus.SUCCESS, null);
 
+            order.confirmPayment(); // AWAITING_PAYMENT → PENDING(접수 대기)
             orderHistoryRepository.save(OrderStatusHistory.builder()
                     .orders(order).status(OrderStatus.PENDING).changedBy(null).build());
 
@@ -391,6 +394,103 @@ public class PaymentService {
             idempotencyService.delete(key);
             throw e;
         }
+    }
+
+    /**
+     * 결제 대기(AWAITING_PAYMENT) 주문 정리 — 고객 요청 경로.
+     *
+     * <p>토스가 결제를 거절해 successUrl까지 가지 못하고 failUrl로 리다이렉트된 경우
+     * (PaymentFailPage 진입 시) confirm()이 아예 호출되지 않아 prepare()가 만든 주문이
+     * AWAITING_PAYMENT 상태로 남는다. 프런트가 이 메서드를 호출해 그 임시 주문을 정리한다.</p>
+     *
+     * <p>결제창이 열리기 전/도중에 사용자가 취소한 경우(약관 미동의·창 닫기 등)는 일부러 여기서
+     * 처리하지 않는다 — 그 경우 사용자는 같은 화면(TossPaymentPage)에 그대로 남아있어 방금 그
+     * tossOrderId로 곧장 재시도할 가능성이 높은데, 여기서 취소해버리면 재시도가 막힌다.
+     * 그런 케이스까지 포함해 정말 방치된 주문은 {@link #cancelAwaitingPaymentSystem} 스케줄러가 정리한다.</p>
+     *
+     * <p>confirm()과 같은 멱등성 락 키를 공유해 동시 실행을 막는다 — confirm이 마침 진행 중이면
+     * (락 선점 실패) 아무것도 하지 않고 조용히 반환한다. 실제로 결제가 확정되고 있는 주문을 여기서
+     * 잘못 취소하는 사고를 막기 위함이다. 몇 번을 호출해도 안전하다(멱등) — {@link #doCancelAwaitingPayment} 참고.
+     */
+    @Transactional
+    public void cancelAwaitingPayment(Long memberId, String tossOrderId, String reason) {
+        Long orderId = parseTossOrderId(tossOrderId);
+        String key = CONFIRM_IDEMPOTENCY_PREFIX + orderId;
+
+        if (!idempotencyService.markProcessing(key)) {
+            log.info("[결제대기정리] confirm 처리 중이라 건너뜀 orderId={}", orderId);
+            return;
+        }
+        try {
+            Orders order = orderRepository.findByIdWithDetails(orderId)
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다"));
+            if (!order.getMember().getMemberId().equals(memberId)) {
+                throw new IllegalArgumentException("본인 주문만 취소할 수 있습니다");
+            }
+            doCancelAwaitingPayment(order, reason);
+        } finally {
+            // 확정된 결과가 아니라 그냥 락일 뿐이므로 saveResult 없이 바로 해제 — 재시도·재확인 가능하게 둔다.
+            idempotencyService.delete(key);
+        }
+    }
+
+    /**
+     * 결제 대기(AWAITING_PAYMENT) 주문 정리 — 시스템(스케줄러) 전용 경로.
+     *
+     * <p>고객이 결제창을 띄워놓고 탭을 닫거나 브라우저를 꺼버리는 등, 클라이언트가 성공/실패
+     * 어느 쪽으로도 콜백을 보내지 못하는 경우를 대비한 마지막 안전망. 소유자 검증 없이
+     * orderId만으로 정리한다는 점이 {@link #cancelAwaitingPayment}와 다르다 — 사용자 요청이 아니라
+     * 서버가 스스로 오래 방치된 주문을 청소하는 것이기 때문이다. 스케줄러 외 다른 곳에서 호출하지 않는다.</p>
+     */
+    @Transactional
+    public void cancelAwaitingPaymentSystem(Long orderId, String reason) {
+        String key = CONFIRM_IDEMPOTENCY_PREFIX + orderId;
+        if (!idempotencyService.markProcessing(key)) {
+            log.info("[결제대기정리:시스템] confirm 처리 중이라 건너뜀 orderId={}", orderId);
+            return;
+        }
+        try {
+            orderRepository.findByIdWithDetails(orderId)
+                    .ifPresent(order -> doCancelAwaitingPayment(order, reason));
+        } finally {
+            idempotencyService.delete(key);
+        }
+    }
+
+    /**
+     * {@link #cancelAwaitingPayment}·{@link #cancelAwaitingPaymentSystem} 공통 로직.
+     * 주문이 이미 AWAITING_PAYMENT가 아니면(이미 confirm 성공했거나 이미 정리됨) 조용히 무시한다 —
+     * 결제 안 된 주문 삭제가 목적이지 이미 끝난 결제를 건드리는 게 아니다.
+     */
+    private void doCancelAwaitingPayment(Orders order, String reason) {
+        if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
+            log.info("[결제대기정리] 이미 처리된 주문이라 건너뜀 orderId={} status={}", order.getOrderId(), order.getStatus());
+            return;
+        }
+
+        paymentRepository.findByOrders(order).ifPresent(payment -> {
+            payment.fail(reason);
+            savePaymentHistory(payment, PaymentStatus.FAILED, reason);
+        });
+
+        order.cancelUnpaid();
+        orderHistoryRepository.save(OrderStatusHistory.builder()
+                .orders(order).status(OrderStatus.CANCELLED).changedBy(null).build());
+
+        // prepare()의 멱등성 캐시가 이 주문을 계속 돌려주지 않도록 함께 무효화한다 — 카트가 그때와
+        // 그대로면 실제로 지워지고(재시도 시 새 주문 생성), 이미 달라졌다면 키가 안 맞아 조용히 무시된다.
+        // 실패해도 취소 자체는 이미 끝난 뒤이므로 그냥 로그만 남기고 넘어간다.
+        try {
+            Long memberId = order.getMember().getMemberId();
+            CartResponse currentCart = cartService.getCart(memberId);
+            PaymentPrepareRequest originalShape = new PaymentPrepareRequest(
+                    order.getStore().getStoreId(), order.getOrderType(), order.getTotalPrice(), order.getCustomerRequest());
+            idempotencyService.delete(generatePrepareIdempotencyKey(memberId, originalShape, currentCart));
+        } catch (Exception e) {
+            log.warn("[결제대기정리] prepare 캐시 무효화 실패(무시 가능) orderId={}", order.getOrderId(), e);
+        }
+
+        log.info("[결제대기정리] 완료 orderId={} reason={}", order.getOrderId(), reason);
     }
 
     /**

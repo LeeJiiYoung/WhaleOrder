@@ -84,4 +84,25 @@ public class PaymentController {
         PaymentResponse response = paymentService.confirm(memberId, request);
         return ResponseEntity.ok(ApiResponse.ok("결제가 완료됐습니다", response));
     }
+
+    /**
+     * 결제 대기(AWAITING_PAYMENT) 주문 정리.
+     *
+     * <p>토스 결제창이 취소·거절되어 confirm까지 가지 못한 경우, prepare()가 만든 임시 주문을
+     * 클라이언트가 능동적으로 정리하기 위해 호출한다. 이미 확정됐거나 이미 정리된 주문이면
+     * 아무 일도 하지 않으므로 여러 번 호출해도 안전하다.</p>
+     *
+     * @param userDetails 인증된 회원 정보
+     * @param request     토스 전용 orderId ("whale-17" 형식)
+     */
+    @Operation(summary = "결제 대기 주문 정리", description = "토스 결제창 취소/거절로 confirm까지 못 간 주문을 CANCELLED로 정리 (멱등)")
+    @PostMapping("/cancel-pending")
+    public ResponseEntity<ApiResponse<Void>> cancelPending(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody PaymentCancelPendingRequest request) {
+
+        Long memberId = Long.parseLong(userDetails.getUsername());
+        paymentService.cancelAwaitingPayment(memberId, request.orderId(), "토스 결제창 취소/거절");
+        return ResponseEntity.ok(ApiResponse.ok("정리됐습니다"));
+    }
 }

@@ -33,6 +33,12 @@ public class OrderService {
     private final OrderSseService orderSseService;
     private final PaymentService paymentService;
 
+    // 어드민 목록에서 상태 필터 없이 조회할 때 기본으로 보여줄 상태들.
+    // AWAITING_PAYMENT(결제 대기 중인 임시 주문)는 결제가 확정되지 않았으므로 제외한다 —
+    // 매장 입장에선 아직 존재하지 않는 주문이나 마찬가지라 접수 대상이 아니다.
+    private static final List<OrderStatus> ADMIN_DEFAULT_STATUSES =
+            List.of(OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.COMPLETED, OrderStatus.CANCELLED);
+
     // SSE 구독 전 주문 소유권 검증 후 반환 (OrderQueueController 전용)
     @Transactional(readOnly = true)
     public Orders findOrderForSse(Long orderId, Long memberId) {
@@ -129,7 +135,8 @@ public class OrderService {
 
         List<Orders> orders;
         if (statuses == null || statuses.isEmpty()) {
-            orders = orderRepository.findAllWithDetails();
+            // 필터 미지정 시 "전체"가 아니라 ADMIN_DEFAULT_STATUSES(AWAITING_PAYMENT 제외)로 조회.
+            orders = orderRepository.findByStatusesWithDetails(ADMIN_DEFAULT_STATUSES);
         } else if (statuses.size() == 1) {
             orders = orderRepository.findByStatusWithDetails(statuses.get(0));
         } else {

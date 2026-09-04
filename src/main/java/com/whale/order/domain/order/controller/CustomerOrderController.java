@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * 고객 주문 API.
  *
- * <p>주문 생성은 결제 API({@code POST /api/payments})에서 처리한다.
+ * <p>주문 생성은 결제 API({@code POST /api/payments/prepare})에서 처리한다.
  * 이 컨트롤러는 주문 조회/상세/취소만 담당한다.</p>
  */
 @Tag(name = "주문 (고객)", description = "주문 조회 · 상세 · 취소")

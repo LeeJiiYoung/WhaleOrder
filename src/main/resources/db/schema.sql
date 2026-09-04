@@ -120,7 +120,7 @@ CREATE TABLE orders (
     version             BIGINT          NOT NULL DEFAULT 0,
     member_id           BIGINT          NOT NULL,
     store_id            BIGINT          NOT NULL,
-    status              VARCHAR(20)     NOT NULL,   -- PENDING, PREPARING, COMPLETED, CANCELLED
+    status              VARCHAR(20)     NOT NULL,   -- AWAITING_PAYMENT, PENDING, PREPARING, COMPLETED, CANCELLED
     total_price         BIGINT          NOT NULL,
     order_type          VARCHAR(20)     NOT NULL,   -- TAKEOUT, DINE_IN
     customer_request    VARCHAR(500),
@@ -388,7 +388,7 @@ COMMENT ON COLUMN orders.order_id         IS '주문 고유 식별자 (PK, auto-
 COMMENT ON COLUMN orders.version          IS 'JPA 낙관 락용 버전. cancelOrder와 Kafka Consumer 동시 실행 시 lost update 방지';
 COMMENT ON COLUMN orders.member_id        IS '주문한 회원 ID (FK → member)';
 COMMENT ON COLUMN orders.store_id         IS '주문 대상 매장 ID (FK → store)';
-COMMENT ON COLUMN orders.status           IS '주문 상태 (PENDING | PREPARING | COMPLETED | CANCELLED)';
+COMMENT ON COLUMN orders.status           IS '주문 상태 (AWAITING_PAYMENT | PENDING | PREPARING | COMPLETED | CANCELLED)';
 COMMENT ON COLUMN orders.total_price      IS '주문 총 금액 (원). 옵션 추가 요금 포함';
 COMMENT ON COLUMN orders.order_type       IS '주문 유형 (TAKEOUT | DINE_IN)';
 COMMENT ON COLUMN orders.customer_request IS '고객 특별 요청 사항';
@@ -411,7 +411,7 @@ COMMENT ON COLUMN order_item.options       IS '주문 당시 선택 옵션 스�
 
 COMMENT ON COLUMN order_status_history.history_id  IS '이력 고유 식별자 (PK, auto-increment)';
 COMMENT ON COLUMN order_status_history.order_id    IS '대상 주문 ID (FK → orders)';
-COMMENT ON COLUMN order_status_history.status      IS '전이된 주문 상태 (PENDING | PREPARING | COMPLETED | CANCELLED)';
+COMMENT ON COLUMN order_status_history.status      IS '전이된 주문 상태 (AWAITING_PAYMENT | PENDING | PREPARING | COMPLETED | CANCELLED)';
 COMMENT ON COLUMN order_status_history.changed_by  IS '상태를 변경한 회원 ID. NULL 이면 시스템 자동 전이';
 COMMENT ON COLUMN order_status_history.changed_at  IS '상태 변경 일시';
 

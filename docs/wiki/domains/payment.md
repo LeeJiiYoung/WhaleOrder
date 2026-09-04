@@ -1,6 +1,6 @@
 # Payment — 결제
 
-> Mock 결제(성공 90% / 실패 10%) + 선결제 흐름의 진입점. 주문 생성도 여기서 함께 처리.
+> 토스페이먼츠 결제위젯(v2) 연동. `prepare`(주문 임시 저장) → 결제창 → `confirm`(승인 확정) 2단계 흐름이며, 주문 생성은 `prepare` 시점에 함께 처리된다.
 
 **디렉토리**: `src/main/java/com/whale/order/domain/payment/`
 
@@ -9,49 +9,57 @@
 | 분류 | 파일 |
 |------|------|
 | Entity | `Payment`, `PaymentHistory`, `PaymentMethod`, `PaymentStatus` |
-| Controller | `PaymentController` (`POST /api/payments`, `GET /api/payments/orders/{orderId}`) |
-| Service | `PaymentService` (`pay`, `cancelPayment`, `getPaymentByOrder`) |
+| Controller | `PaymentController` (`POST /api/payments/prepare`, `POST /api/payments/confirm`, `GET /api/payments/orders/{orderId}`) |
+| Service | `PaymentService` (`prepare`, `confirm`, `cancelPayment`, `getPaymentByOrder`) |
+| 외부 연동 | `TossPaymentClient` (토스 `/v1/payments/confirm`, `/v1/payments/{paymentKey}/cancel` 호출) |
 | Repository | `PaymentRepository`, `PaymentHistoryRepository` |
 
-## Mock 결제
+## 토스 orderId 변환
 
-- 외부 PG 없이 `ThreadLocalRandom` 확률(90% 성공)로 시뮬레이션
-- 성공 시 `MOCK-{UUID}` 트랜잭션 ID 발급
-- 실패 시 `PaymentFailedException` → `@Transactional(noRollbackFor = PaymentFailedException)` 덕에 시도 이력(`Payment.FAILED`, `PaymentHistory(FAILED)`, `Orders.CANCELLED`)은 commit 으로 보존
+토스가 요구하는 `orderId`는 영문/숫자/`-`/`_` 로 이루어진 6~64자 문자열이다. 우리 내부 PK(`Long`, 1~2자리도 흔함)를 그대로 못 쓰므로, `prepare` 응답에서만 `"whale-" + 내부 orderId`(`TOSS_ORDER_ID_PREFIX`) 형태의 토스 전용 문자열을 만들어 내려준다. DB에는 여전히 내부 PK만 저장하며, `confirm` 요청으로 돌아온 토스 orderId는 `parseTossOrderId()`가 접두사를 검증·제거해 내부 PK로 되돌린다 — 접두사가 없거나 뒷부분이 숫자가 아니면 위조된 값으로 보고 거부한다.
 
 ## 표시 금액 확인 (Amount Confirmation)
 
-클라이언트가 결제 화면에서 본 금액(`PaymentRequest.expectedAmount`)을 서버의 cart 합계와 대조해 **가격 변동 · 다른 탭 카트 동시 수정 · 중간자 변조**를 차단한다.
+클라이언트가 결제 화면에서 본 금액(`PaymentPrepareRequest.expectedAmount`)을 서버의 cart 합계와 대조해 **가격 변동 · 다른 탭 카트 동시 수정 · 중간자 변조**를 차단한다. 검증은 두 시점에서 이뤄진다.
 
-- **실제 청구액은 항상 서버 cart 기준** — 클라이언트가 보낸 값은 비교용일 뿐, PG에 전달되는 금액은 아님
-- 불일치 시 `IllegalStateException("표시된 금액과 실제 금액이 다릅니다. 장바구니를 새로고침해주세요.")`
-- WARN 로그로 시도 횟수 모니터링 가능
-- `expectedAmount` 는 `@NotNull + @PositiveOrZero` — 프런트(`PaymentPage.jsx`)에서 cart total 을 항상 함께 전송
-- Service 레이어에는 여전히 null guard 가 남아 있음 (어노테이션 검증은 컨트롤러 `@Valid` 에서만 자동 실행 → service 직접 호출 대비 defensive)
+- **prepare**: `expectedAmount` vs `cart.totalPrice()` — 불일치 시 `IllegalStateException`
+- **confirm**: successUrl 리다이렉트로 돌아온 `amount` vs `prepare`에서 저장해둔 `payment.getAmount()` — 리다이렉트 과정에서 금액이 조작되지 않았는지 재확인. 불일치 시 `IllegalStateException("결제 금액이 일치하지 않습니다")`
+- **실제 청구액은 항상 토스 결제창에 전달된 금액**이며, 토스 승인 API 자체도 금액을 재검증한다
 
-## 핵심 플로우 — 선결제
+## 핵심 플로우 — prepare → 결제창 → confirm
 
 ```
-POST /api/payments
+POST /api/payments/prepare   @Transactional
    ▼
-PaymentService.pay()  @Transactional
-   ├─ 1. 장바구니 조회
-   ├─ 2. 표시 금액 확인 (expectedAmount vs cart.totalPrice — null 이면 skip)
-   ├─ 3. 매장 OPEN / 메뉴 isOnSale / Stock 존재 검증
-   ├─ 4. SHA-256 멱등성 키 (memberId : storeId : method : orderType : cart) — Redis SET NX EX
-   │     ├─ getResult(key) 캐시 hit  → 반환
-   │     └─ markProcessing(key) false → DuplicateRequestException
-   ├─ 5. Orders + Payment(PENDING) 저장 + PaymentHistory(PENDING)
-   ├─ 6. Mock 결제 판정 (90% 성공)
+PaymentService.prepare()
+   ├─ 1. 장바구니 조회 + 표시 금액 확인
+   ├─ 2. 매장 OPEN / 메뉴 isOnSale / Stock 존재 검증
+   ├─ 3. SHA-256 멱등성 키 (memberId : storeId : orderType : cart) — Redis SET NX EX
+   ├─ 4. Orders + Payment(PENDING, method 없음) 저장 + PaymentHistory(PENDING)
+   └─ 5. { orderId, tossOrderId("whale-{id}"), amount, orderName } 반환
+        └─ idempotencyService.saveResult(key, response)
+
+━ 프런트: 토스 결제위젯(widgets.requestPayment) 오픈 → 사용자 결제 ━
+━ 토스가 successUrl로 브라우저 리다이렉트 (paymentKey·orderId·amount 쿼리 파라미터) ━
+
+POST /api/payments/confirm   @Transactional(noRollbackFor = PaymentFailedException)
+   ▼
+PaymentService.confirm()
+   ├─ 1. tossOrderId → 내부 orderId 역변환 (parseTossOrderId)
+   ├─ 2. confirm 전용 멱등성 락 ("confirm:" + orderId, Redis SET NX EX)
+   │     └─ StrictMode 이중 호출·네트워크 재시도·새로고침 등으로 동시에 들어와도 1회만 처리
+   ├─ 3. 이미 SUCCESS면 토스 재승인 없이 캐시된 결과 반환 (멱등)
+   ├─ 4. 표시 금액 재검증 (payment.amount vs request.amount)
+   ├─ 5. TossPaymentClient.confirm() → 토스 실제 승인 API 호출 (Basic Auth)
    │
-   ├─ 성공 → Payment SUCCESS + PaymentHistory(SUCCESS)
+   ├─ 성공 → Payment SUCCESS(paymentKey, method) + PaymentHistory(SUCCESS)
    │          + eventPublisher.publishEvent(OrderCreatedEvent)
-   │          + idempotencyService.saveResult(key, response)
+   │          + kafkaOutboxService.enqueue("order-created", ...)
    │
-   └─ 실패 → Payment FAILED + PaymentHistory(FAILED) + order.cancel() + History(CANCELLED)
+   └─ 실패(토스 4xx/5xx) → Payment FAILED + PaymentHistory(FAILED) + order.cancel() + History(CANCELLED)
               + throw PaymentFailedException
-              └─ @Transactional(noRollbackFor) 로 outer 는 commit (시도 이력 보존)
-              └─ catch 에서 idempotencyService.delete(key) → 재시도 허용
+              └─ noRollbackFor 로 outer는 commit (시도 이력 보존)
+              └─ catch에서 idempotencyService.delete(key) → 재시도 허용
 
 ━ outer commit ━
 
@@ -60,7 +68,11 @@ OrderEventListener.onOrderCreated  (AFTER_COMMIT)
    └─ cartService.clearCart(memberId)
 ```
 
-## 결제 환불 — `cancelPayment(order, reason)`
+## 토스 API 통신 로깅
+
+`TossPaymentClient`는 `RestClient` + `ClientHttpRequestInterceptor`로 토스와 주고받은 모든 요청/응답(메서드·URI·body·status)을 `[토스API 요청]`/`[토스API 응답]` 로그로 남긴다. 응답 스트림을 인터셉터와 실제 파싱 양쪽에서 읽어야 하므로 `BufferingClientHttpRequestFactory`로 감싸 스트림을 재사용 가능하게 했다.
+
+## 결제 환불(취소) — `cancelPayment(order, reason)`
 
 고객 자가 취소(`OrderService.cancelOrder`)와 시스템 보상(`OrderCancelService.cancelOrder`) 양쪽이 재사용하는 공통 헬퍼.
 
@@ -70,7 +82,11 @@ public void cancelPayment(Orders order, String reason) {
     paymentRepository.findByOrders(order)
         .filter(p -> p.getStatus() == PaymentStatus.SUCCESS)  // 안전 가드
         .ifPresent(payment -> {
-            payment.cancel(reason);            // Payment.cancel()이 다시 SUCCESS 검증
+            TossCancelResponse tossResponse =
+                tossPaymentClient.cancel(payment.getExternalTxId(), reason);  // 토스 취소 API 먼저 호출
+            // 토스가 거절하면 PaymentFailedException을 던져 호출부 트랜잭션 자체를 롤백시킨다.
+
+            payment.cancel(reason);
             paymentRepository.save(payment);
             paymentHistoryRepository.save(... CANCELLED ...);
         });
@@ -78,7 +94,11 @@ public void cancelPayment(Orders order, String reason) {
 ```
 
 - `SUCCESS` 만 통과 — PENDING/FAILED/CANCELLED 결제는 안전하게 skip
-- `Payment.cancel()` 자체도 SUCCESS 가 아니면 `IllegalStateException` — 이중 가드
+- **토스 취소 API를 먼저 호출해 실제로 승인받은 뒤에만** 우리 DB도 `CANCELLED`로 바꾼다
+- 토스가 취소를 거절하면 예외를 그대로 던져 호출부(주문 취소·재고 복구 포함)의 트랜잭션 전체를 롤백시킨다 — `prepare`/`confirm`과 달리 `noRollbackFor`를 쓰지 않는다. "환불 실패 이력을 남기고 주문은 취소된 채로 두는" 대신, 돈이 안 돌아왔으면 주문 취소 자체도 없었던 일로 되돌리는 정책
+- 이 정책은 고객 자가 취소·관리자 취소·재고 부족으로 인한 시스템 자동 취소(Kafka `OrderProcessingService`/`OrderCancelService`) 세 경로 모두에 동일하게 적용된다 — `cancelPayment()`가 공통으로 재사용되기 때문
+- `Payment.cancel()` 자체도 SUCCESS가 아니면 `IllegalStateException` — 이중 가드
+- `externalTxId`가 `"MOCK-"`로 시작하는 레거시 테스트 데이터는 토스 취소를 건너뛴다 (과거 Mock PG 시절 데이터 방어용 가드, 지금은 새로 발생하지 않음)
 
 ## 도메인 invariant (음수 + overflow 차단)
 
@@ -87,10 +107,10 @@ public void cancelPayment(Orders order, String reason) {
 | `Payment.amount` | `Long` / DB `BIGINT` | 타입 |
 | `Payment` 생성자 | `amount >= 0` | 코드 |
 | `payment` 테이블 | `CHECK (amount >= 0)` | DB |
-| `PaymentRequest.expectedAmount` | `@NotNull + @PositiveOrZero` (`Long`) | 컨트롤러 `@Valid` |
+| `PaymentPrepareRequest.expectedAmount` | `@NotNull + @PositiveOrZero` (`Long`) | 컨트롤러 `@Valid` |
+| `PaymentConfirmRequest.amount` | `@NotNull + @PositiveOrZero` (`Long`) | 컨트롤러 `@Valid` |
 
 ## 관련 문서
 
 - [Order 도메인](order.md) — 주문 생성/취소 흐름 전체
 - [Saga 보상 트랜잭션](../architecture/saga-compensation.md)
-- 학습 노트: [Mock 결제 & Saga 패턴 (2026-05-27)](../notes/개념정리_20260527.md)

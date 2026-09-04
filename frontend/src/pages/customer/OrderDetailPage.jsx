@@ -108,6 +108,16 @@ export default function OrderDetailPage() {
     try {
       const res = await cancelOrder(orderId)
       setOrder(res.data.data)
+
+      // cancelOrder 응답엔 주문 정보만 담겨 있어 결제 카드가 새로고침 전까지 옛 상태(결제 완료)로
+      // 남아있었다. 취소가 성공했다는 건 결제 환불도 이미 끝났다는 뜻이므로(환불 실패 시
+      // 서버에서 주문 취소 자체가 롤백된다) 결제 정보도 바로 다시 불러와 최신 상태로 맞춘다.
+      try {
+        const paymentRes = await getPaymentByOrder(orderId)
+        setPayment(paymentRes.data.data)
+      } catch {
+        // 결제 정보 재조회 실패는 무시 — 주문 취소 자체는 이미 성공했다
+      }
     } catch (err) {
       alert(err.response?.data?.message || '취소에 실패했습니다')
     } finally {

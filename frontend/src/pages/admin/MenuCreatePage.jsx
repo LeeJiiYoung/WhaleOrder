@@ -123,6 +123,11 @@ export default function MenuCreatePage() {
       <Breadcrumb items={[{ label: '메뉴 관리' }, { label: '메뉴 등록' }]} />
       <h1 className={styles.pageTitle}>메뉴 등록</h1>
 
+      <div className={styles.infoNotice}>
+        ℹ️ 메뉴를 등록해도 바로 판매되지 않아요. 등록 후 <strong>재고관리</strong>에서 판매할 매장에
+        재고를 한 번 설정(무제한이면 -1)해야 고객이 주문할 수 있어요.
+      </div>
+
       <div className={styles.layout}>
         {/* 이미지 업로드 영역 */}
         <div className={styles.imageSection}>

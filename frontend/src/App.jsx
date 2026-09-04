@@ -25,7 +25,6 @@ import EventManagePage from './pages/admin/EventManagePage'
 import GoodsManagePage from './pages/admin/GoodsManagePage'
 import AdminMemberPage from './pages/admin/AdminMemberPage'
 import MyProfilePage from './pages/customer/MyProfilePage'
-import PaymentPage from './pages/customer/PaymentPage'
 import TossPaymentPage from './pages/customer/TossPaymentPage'
 import PaymentSuccessPage from './pages/customer/PaymentSuccessPage'
 import PaymentFailPage from './pages/customer/PaymentFailPage'
@@ -64,7 +63,7 @@ function AdminRoute({ children }) {
  * 앱 루트 컴포넌트. 전체 라우팅 구조를 정의한다.
  *
  * - 공개 경로: /login, /signup, /oauth2/callback
- * - 고객 경로 (PrivateRoute): /stores, /menus, /cart, /payment, /orders/:id, /events 등
+ * - 고객 경로 (PrivateRoute): /stores, /menus, /cart, /toss-payment, /orders/:id, /events 등
  * - 관리자 경로 (AdminRoute): /admin/** (매장·메뉴·주문·재고·한정판매·회원 관리), ADMIN/OWNER 접근 가능
  */
 export default function App() {
@@ -81,7 +80,6 @@ export default function App() {
         <Route path="/menus" element={<PrivateRoute><CustomerMenuListPage /></PrivateRoute>} />
         <Route path="/menus/:menuId" element={<PrivateRoute><CustomerMenuDetailPage /></PrivateRoute>} />
         <Route path="/cart" element={<PrivateRoute><CartPage /></PrivateRoute>} />
-        <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
         <Route path="/orders/:orderId" element={<PrivateRoute><OrderDetailPage /></PrivateRoute>} />
         <Route path="/my-orders" element={<PrivateRoute><MyOrdersPage /></PrivateRoute>} />
         <Route path="/profile"   element={<PrivateRoute><MyProfilePage /></PrivateRoute>} />

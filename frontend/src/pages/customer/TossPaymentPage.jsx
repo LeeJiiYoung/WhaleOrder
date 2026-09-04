@@ -11,6 +11,13 @@ const customerKey = "FRq0BgMFf9tykXUrcaekD";
 
 const ORDER_TYPE_LABEL = {TAKEOUT: '포장', DINE_IN: '매장 내 취식'}
 
+// widgets.requestPayment()가 결제창을 열기 전 클라이언트 단에서 막을 때 던지는 토스 SDK 에러 코드.
+// 참고: https://docs.tosspayments.com/sdk/v2/error-codes
+const TOSS_SDK_ERROR_MESSAGE = {
+    NEED_AGREEMENT_WITH_REQUIRED_TERMS: '필수 약관에 동의해주세요.',
+    USER_CANCEL: '결제를 취소했어요.',
+}
+
 /**
  * 고객 결제 페이지. (@route /toss-payment)
  *
@@ -34,6 +41,8 @@ export default function TossPaymentPage() {
 
     const storeId = localStorage.getItem('selectedStoreId')
     const storeName = localStorage.getItem('selectedStoreName')
+    // CustomerLayout과 동일한 방식으로 로그인 사용자 닉네임을 읽는다 (로그인 시 저장됨)
+    const nickname = localStorage.getItem('nickname') || '고객'
 
     // 서버 prepare 응답 — 실제 결제창 호출(orderId·orderName·금액)은 전부 이 값만 사용한다
     const [prepared, setPrepared] = useState(null)
@@ -141,11 +150,13 @@ export default function TossPaymentPage() {
                 orderName: prepared.orderName,
                 successUrl: window.location.origin + "/success",
                 failUrl: window.location.origin + "/fail",
-                customerName: "김토스",
-                customerMobilePhone: "01012341234",
+                customerName: nickname,
             })
         } catch (err) {
-            setError(err.response?.data?.message || '결제에 실패했습니다. 다시 시도해주세요.')
+            // widgets.requestPayment()가 던지는 건 토스 SDK 에러(err.code/err.message)라
+            // 우리 백엔드 axios 에러 형식(err.response.data.message)과 다르다.
+            // 결제창이 열리기 전 클라이언트 단에서 걸러지는 대표 케이스만 메시지를 따로 안내한다.
+            setError(TOSS_SDK_ERROR_MESSAGE[err.code] || err.message || '결제에 실패했습니다. 다시 시도해주세요.')
         } finally {
             setPaying(false)
         }
@@ -157,49 +168,52 @@ export default function TossPaymentPage() {
         <CustomerLayout>
             <div className={styles.page}>
                 <h1 className={styles.title}>결제하기</h1>
-                {/* 주문 요약 */}
-                <div id="payment-method">
-                    <section className={styles.card}>
-                        <h2 className={styles.sectionTitle}>주문 정보</h2>
+
+                {/* 주문 요약 — 토스 위젯 마운트 지점(#payment-method)과 분리된 별도 카드 */}
+                <section className={styles.card}>
+                    <h2 className={styles.sectionTitle}>주문 정보</h2>
+                    <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>매장</span>
+                        <span className={styles.infoValue}>{storeName}</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>주문 방식</span>
+                        <span className={styles.infoValue}>{ORDER_TYPE_LABEL[orderType]}</span>
+                    </div>
+                    {items?.length > 0 && (
                         <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>매장</span>
-                            <span className={styles.infoValue}>{storeName}</span>
+                            <span className={styles.infoLabel}>주문 상품</span>
+                            <span className={styles.infoValueList}>
+                                {items.map((it, idx) => (
+                                    <span key={idx}>{it.menuName}{it.quantity > 1 ? ` x${it.quantity}` : ''}</span>
+                                ))}
+                            </span>
                         </div>
+                    )}
+                    {customerRequest && (
                         <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>주문 방식</span>
-                            <span className={styles.infoValue}>{ORDER_TYPE_LABEL[orderType]}</span>
+                            <span className={styles.infoLabel}>요청사항</span>
+                            <span className={styles.infoValue}>{customerRequest}</span>
                         </div>
-                        {items?.length > 0 && (
-                            <div className={styles.infoRow}>
-                                <span className={styles.infoLabel}>주문 상품</span>
-                                <span className={styles.infoValueList}>
-                                    {items.map((it, idx) => (
-                                        <span key={idx}>{it.menuName}{it.quantity > 1 ? ` x${it.quantity}` : ''}</span>
-                                    ))}
-                                </span>
-                            </div>
-                        )}
-                        {customerRequest && (
-                            <div className={styles.infoRow}>
-                                <span className={styles.infoLabel}>요청사항</span>
-                                <span className={styles.infoValue}>{customerRequest}</span>
-                            </div>
-                        )}
-                        <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>상품 수</span>
-                            <span className={styles.infoValue}>{totalCount}개</span>
-                        </div>
-                        <div className={`${styles.infoRow} ${styles.infoRowTotal}`}>
-                            <span className={styles.infoLabel}>합계</span>
-                            <span className={styles.totalPrice}>{totalPrice?.toLocaleString()}원</span>
-                        </div>
-                    </section>
-                </div>
-                {/* 이용약관 UI */}
-                <div id="agreement"/>
+                    )}
+                    <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>상품 수</span>
+                        <span className={styles.infoValue}>{totalCount}개</span>
+                    </div>
+                    <div className={`${styles.infoRow} ${styles.infoRowTotal}`}>
+                        <span className={styles.infoLabel}>합계</span>
+                        <span className={styles.totalPrice}>{totalPrice?.toLocaleString()}원</span>
+                    </div>
+                </section>
+
                 <div className={styles.mockNotice}>
                     ℹ️ 토스페이먼츠 테스트 결제입니다. 실제 결제는 이루어지지 않습니다.
                 </div>
+
+                {/* 결제 수단 UI — 토스 SDK가 이 안에 직접 렌더링한다 (다른 콘텐츠를 넣지 않는다) */}
+                <div id="payment-method"/>
+                {/* 이용약관 UI */}
+                <div id="agreement"/>
 
                 {prepareError && <div className={styles.errorBox}>{prepareError}</div>}
                 {error && <div className={styles.errorBox}>{error}</div>}

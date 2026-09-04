@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {useNavigate, useSearchParams} from 'react-router-dom'
 import {confirmPayment} from '../../api/payment'
 import CustomerLayout from '../../components/customer/CustomerLayout'
@@ -22,7 +22,16 @@ export default function PaymentSuccessPage() {
     const orderId = searchParams.get('orderId')
     const amount = searchParams.get('amount')
 
+    // React StrictMode(개발 모드)가 마운트 시 이 effect를 두 번 실행하면 confirm이 거의 동시에
+    // 두 번 나간다. 토스 confirm API는 같은 paymentKey로 두 번 승인 요청을 받으면 두 번째는
+    // 거절하므로(이미 승인 처리됨), 실제로는 결제가 성공했는데도 두 번째 응답의 에러가 화면을
+    // 덮어써 "실패" 화면이 뜰 수 있다. TossPaymentPage의 prepare 가드와 동일하게 ref로 막는다.
+    const confirmedOnceRef = useRef(false)
+
     useEffect(() => {
+        if (confirmedOnceRef.current) return
+        confirmedOnceRef.current = true
+
         if (!paymentKey || !orderId || !amount) {
             setStatus('failed')
             setError('결제 정보가 올바르지 않습니다.')

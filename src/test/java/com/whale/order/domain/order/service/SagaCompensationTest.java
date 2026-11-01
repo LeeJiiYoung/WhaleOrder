@@ -265,7 +265,7 @@ class SagaCompensationTest extends TestContainerBase {
                 .orders(order)
                 .member(member)
                 .amount(order.getTotalPrice())
-                .method(PaymentMethod.CREDIT_CARD)
+                .method(PaymentMethod.CARD)
                 .build();
         // PG사 승인 완료 상태로 설정 — 취소 시 Payment.cancel()이 SUCCESS 여부를 검증함
         payment.success("MOCK-TX-" + order.getOrderId());

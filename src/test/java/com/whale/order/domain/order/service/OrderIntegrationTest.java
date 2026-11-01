@@ -229,7 +229,7 @@ class OrderIntegrationTest extends TestContainerBase {
                 .orders(order)
                 .member(customer)
                 .amount(order.getTotalPrice())
-                .method(PaymentMethod.CREDIT_CARD)
+                .method(PaymentMethod.CARD)
                 .build();
         payment.success("MOCK-" + order.getOrderId());
         return paymentRepository.save(payment);

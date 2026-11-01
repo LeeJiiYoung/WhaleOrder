@@ -213,6 +213,7 @@ class MemberWithdrawTest extends TestContainerBase {
         Orders order = orderRepository.save(Orders.builder()
                 .member(member).store(store)
                 .totalPrice(4500L).orderType(OrderType.TAKEOUT).build());
+        order.confirmPayment(); // AWAITING_PAYMENT → PENDING
         if (status == OrderStatus.PREPARING) {
             order.startPreparing();
         } else if (status == OrderStatus.COMPLETED) {

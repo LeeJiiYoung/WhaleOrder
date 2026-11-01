@@ -213,6 +213,7 @@ class OrderIntegrationTest extends TestContainerBase {
                 .totalPrice(menu.getBasePrice() * quantity)
                 .orderType(OrderType.TAKEOUT)
                 .build());
+        order.confirmPayment(); // AWAITING_PAYMENT → PENDING (보상 트랜잭션 cancel() 전제 조건)
 
         OrderItem item = OrderItem.builder()
                 .orders(order)

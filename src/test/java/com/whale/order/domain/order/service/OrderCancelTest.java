@@ -196,6 +196,7 @@ class OrderCancelTest extends TestContainerBase {
                 .member(customer).store(store)
                 .totalPrice(menu.getBasePrice()).orderType(OrderType.TAKEOUT)
                 .build());
+        order.confirmPayment(); // AWAITING_PAYMENT → PENDING
 
         OrderItem item = OrderItem.builder()
                 .orders(order).menu(menu).quantity(1).unitPrice(menu.getBasePrice()).build();

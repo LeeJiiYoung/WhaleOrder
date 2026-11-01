@@ -249,6 +249,7 @@ class SagaCompensationTest extends TestContainerBase {
                 .totalPrice(menu.getBasePrice())
                 .orderType(OrderType.TAKEOUT)
                 .build());
+        order.confirmPayment(); // AWAITING_PAYMENT → PENDING (cancel/compensate 전제 조건)
 
         OrderItem item = OrderItem.builder()
                 .orders(order)

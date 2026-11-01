@@ -190,13 +190,15 @@ class OrderCursorPagingTest extends TestContainerBase {
 
     private void 주문_생성(int count, Member member) {
         for (int i = 0; i < count; i++) {
-            orderRepository.save(Orders.builder()
+            Orders order = orderRepository.save(Orders.builder()
                     .member(member)
                     .store(store)
                     .totalPrice(4500L)
                     .orderType(OrderType.TAKEOUT)
                     .customerRequest("요청" + i)
                     .build());
+            order.confirmPayment(); // AWAITING_PAYMENT → PENDING
+            orderRepository.save(order);
         }
     }
 }

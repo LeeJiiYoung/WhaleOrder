@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -64,6 +65,8 @@ public class Member extends BaseEntity {
     @Column(nullable = false, length = 20)
     private MemberRole role;
 
+    // DB 레벨 DEFAULT 도 걸어 둔다 — ddl-auto 로 만든 스키마에서 is_deleted 를 생략한 네이티브 INSERT 가 NOT NULL 위반으로 실패하지 않도록
+    @ColumnDefault("false")
     @Column(nullable = false)
     private boolean isDeleted = false;
 

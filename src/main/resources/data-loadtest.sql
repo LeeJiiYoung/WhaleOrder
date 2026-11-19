@@ -7,14 +7,14 @@
 -- 1. 부하 테스트용 회원 50명 (testuser1 ~ testuser50, 비밀번호 adminadmin)
 -- 멱등성 키가 memberId 를 포함하므로 VU 별로 다른 계정을 써야 진짜 동시성 테스트가 됨
 -- ────────────────────────────────────────────────
-INSERT INTO member (member_id, user_id, password, name, nickname, phone, provider, role, created_at, updated_at)
+INSERT INTO member (member_id, user_id, password, name, nickname, phone, provider, role, is_deleted, created_at, updated_at)
 SELECT 100 + gs,
        'testuser' || gs,
        '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u',
        '테스트' || gs,
        '테스터' || gs,
        '010-1000-' || LPAD(gs::text, 4, '0'),
-       'LOCAL', 'CUSTOMER', NOW(), NOW()
+       'LOCAL', 'CUSTOMER', false, NOW(), NOW()
 FROM generate_series(1, 50) AS gs
 -- member_id 는 이 스크립트가 직접 지정하는 값이라 멱등성 기준으로 안전하다.
 -- user_id 를 기준으로 삼으면 안 된다 — 회원이 탈퇴하면 익명화로 user_id 가 deleted_{id} 로 바뀌어

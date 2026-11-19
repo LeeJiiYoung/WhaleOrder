@@ -7,12 +7,12 @@
 -- 1. 회원 (admin / customer / owner 2명)
 -- ────────────────────────────────────────────────
 -- 비밀번호 (BCrypt strength=10): 전부 adminadmin
-INSERT INTO member (member_id, user_id, password, name, nickname, phone, provider, role, created_at, updated_at)
+INSERT INTO member (member_id, user_id, password, name, nickname, phone, provider, role, is_deleted, created_at, updated_at)
 VALUES
-    (1, 'admin',    '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u', '관리자',   '관리자',  '010-0000-0001', 'LOCAL', 'ADMIN',    NOW(), NOW()),
-    (2, 'customer', '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u', '테스트고객', '고객님',  '010-0000-0002', 'LOCAL', 'CUSTOMER', NOW(), NOW()),
-    (3, 'owner',    '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u', '점주김',   '점주',    '010-0000-0003', 'LOCAL', 'OWNER',    NOW(), NOW()),
-    (4, 'owner2',   '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u', '점주박',   '점주2',   '010-0000-0004', 'LOCAL', 'OWNER',    NOW(), NOW())
+    (1, 'admin',    '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u', '관리자',   '관리자',  '010-0000-0001', 'LOCAL', 'ADMIN',    false, NOW(), NOW()),
+    (2, 'customer', '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u', '테스트고객', '고객님',  '010-0000-0002', 'LOCAL', 'CUSTOMER', false, NOW(), NOW()),
+    (3, 'owner',    '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u', '점주김',   '점주',    '010-0000-0003', 'LOCAL', 'OWNER',    false, NOW(), NOW()),
+    (4, 'owner2',   '$2a$10$3qpkbjGCoFjuCTkZk5rZGeiv/DgLfEBBWzq5ZoRSWxaLbuMyUbO3u', '점주박',   '점주2',   '010-0000-0004', 'LOCAL', 'OWNER',    false, NOW(), NOW())
 ON CONFLICT (user_id) DO NOTHING;
 
 SELECT setval('member_member_id_seq', (SELECT MAX(member_id) FROM member));

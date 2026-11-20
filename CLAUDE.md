@@ -1,9 +1,9 @@
 # 만드려고 하는것
 사이렌 오더
 
-1. 동시성 제어: 수천 명이 동시에 주문할 때 발생하는 재고 차감 문제 해결 (Redis 분산 락 또는 DB 비관적 락 활용).
+1. 동시성 제어: 수천 명이 동시에 주문할 때 발생하는 재고 차감 문제 해결 (Redisson 분산 락 + JPA @Version 낙관적 락 이중 방어, StockLockFacade).
 
-2. 실시간 상태 전송: 주문 접수 → 제조 중 → 완료 상태를 클라이언트에 실시간으로 푸시 (WebSocket 또는 Server-Sent Events).
+2. 실시간 상태 전송: 주문 접수 → 제조 중 → 완료 상태를 클라이언트에 실시간으로 푸시 (Server-Sent Events, OrderSseService).
 
 3. 장애 내성 설계: 결제 외부 API 연동 실패 시 보상 트랜잭션(Saga 패턴) 처리.
 
@@ -36,4 +36,4 @@
 ## 역할 분담
 # 주문, 결제, 회원 정보	PostgreSQL (RDBMS)	데이터 무결성이 중요하며, 엄격한 트랜잭션(ACID) 보장이 필요함.
 # 장바구니, 세션 데이터	Redis (NoSQL)	데이터 수명이 짧고, 초당 수만 건의 읽기/쓰기 성능이 필요함.
-# 실시간 주문 현황 (제조 중 등)	Redis / MongoDB	빠른 상태 업데이트와 정합성보다는 응답 속도가 중요함.
+# 실시간 주문 현황 (제조 중 등)	애플리케이션 메모리 (OrderSseService의 ConcurrentHashMap, 단일 서버 한정)	주문 상태의 원본은 PostgreSQL이고, SSE 연결과 전달 대기 결과만 메모리에 둔다. 다중 서버로 확장하려면 Redis Pub/Sub 필요(미구현).
